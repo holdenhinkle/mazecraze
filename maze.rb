@@ -39,7 +39,7 @@ class Board
   private
 
   def create_grids
-    # start and finish don't loop around - fix this
+    # How to handle n number of barriers
     grids = []
     0.upto(size - 1) do |start|
       (start + 1).upto(size - 1) do |finish|
@@ -49,17 +49,22 @@ class Board
     grids << Grid.new(size, 1, 0)
   end
 
-  # def barrier_range(x, y)
-  #   grid_size = [x, y].sort
-  #   case grid_size
-  #   when [2, 3] then [1]
-  #   when [3, 3] then [1, 2]
-  #   when [3, 4] then [1, 2]
-  #   when [4, 4] then [2, 3]
-  #   when [4, 5] then [2, 5]
-  #   when [5, 5] then [3, 5]
-  #   end
-  # end
+  create seperate method that looks at grid with start and finish, then creates
+  new iteration of adding n number of barriers to it
+
+  block 
+
+  def barrier_range
+    grid_size = [x_axis_value, y_axis_value].sort
+    case grid_size
+    when [2, 3] then [1]
+    when [3, 3] then [1, 2]
+    when [3, 4] then [1, 2]
+    when [4, 4] then [2, 3]
+    when [4, 5] then [2, 5]
+    when [5, 5] then [3, 5]
+    end
+  end
 end
   
 # Each grid contains:
@@ -86,6 +91,8 @@ class Grid
                 Square.new(:taken, :start)
               elsif index == finish_index
                 Square.new(:not_taken, :finish)
+              # elsif barrier.include?(index)
+              #   Square.new(:taken, :barrier)
               else
                 Square.new(:not_taken, :normal)
               end
