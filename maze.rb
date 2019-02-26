@@ -1,7 +1,5 @@
 require 'pry'
 
-# A hash of all boards, with board_type (x/y dimensions) hashes that contain the 
-# boards = { board_5x2: [board_object, board_object], board_5x3: [board_object] }
 class Boards
   attr_reader :boards
 
@@ -21,41 +19,48 @@ class Boards
   end
 end
 
-# Each board contains
-# size
-# x-axis value
-# y-axis value
-# an array of grids for the board size
 class Board
-  attr_reader :size, :x_axis_value, :y_axis_value, :grids
+  attr_reader :size, :x_axis_length, :y_axis_length, :grids
 
   def initialize(x, y)
     @size = x * y
-    @x_axis_value = x
-    @y_axis_value = y
+    @x_axis_length = x
+    @y_axis_length = y
     @grids = create_grids
   end
 
   private
 
   def create_grids
-    # How to handle n number of barriers
-    grids = []
-    0.upto(size - 1) do |start|
-      (start + 1).upto(size - 1) do |finish|
-        grids << Grid.new(size, start, finish)
+    grid_permutations.each_with_object([]) do |grids, grid_objects|
+      grids.each do |grid|
+        grid_objects << Grid.new(grid)
       end
     end
-    grids << Grid.new(size, 1, 0)
   end
 
-  create seperate method that looks at grid with start and finish, then creates
-  new iteration of adding n number of barriers to it
-
-  block 
+  def grid_permutations
+    grids = []
+    barrier_range.min.upto(barrier_range.max) do |number_of_barriers|
+      grid = []
+      size.times do
+        grid << if grid.none?('s')
+                  's'
+                elsif grid.none?('f')
+                  'f'
+                elsif grid.count('b') != number_of_barriers
+                  'b'
+                else
+                  'n'
+                end
+      end
+      grids << grid
+    end
+    grids.map { |g| g.permutation.to_a.uniq }
+  end
 
   def barrier_range
-    grid_size = [x_axis_value, y_axis_value].sort
+    grid_size = [x_axis_length, y_axis_length].sort
     case grid_size
     when [2, 3] then [1]
     when [3, 3] then [1, 2]
@@ -66,53 +71,40 @@ class Board
     end
   end
 end
-  
-# Each grid contains:
-# array of sqaures
-# grid status
-# grid solutions
+
 class Grid
   attr_reader :squares
   attr_accessor :status, :solutions
 
-  def initialize(size, start_index, finish_index)
-    @squares = create_grid(size, start_index, finish_index)
+  def initialize(grid)
+    @squares = create_grid(grid)
     @status = nil
     @solutions = []
-    # @number_of_barrier_squares = number_of_barrier_squares
   end
 
   private
 
-  def create_grid(size, start_index, finish_index)
-    grid = []
-    size.times do |index|
-      grid << if index == start_index
-                Square.new(:taken, :start)
-              elsif index == finish_index
-                Square.new(:not_taken, :finish)
-              # elsif barrier.include?(index)
-              #   Square.new(:taken, :barrier)
-              else
-                Square.new(:not_taken, :normal)
-              end
+  def create_grid(grid)
+    grid.each.map do |square|
+      case square
+      when 's' then Square.new(:start, :taken)
+      when 'f' then Square.new(:finish, :not_taken)
+      when 'b' then Square.new(:barrier, :taken)
+      when 'n' then Square.new(:normal, :not_taken)
+      end
     end
-    grid
   end
 end
 
-# Each square has a status and a type
 class Square
   attr_reader :type
   attr_accessor :status
 
-  def initialize(status, type)
-    @status = status # can be :taken or :non-taken
-    @type = type # can be :start, :end, :normal, :barrier
+  def initialize(type, status)
+    @status = status
+    @type = type
   end
 end
 
 max_board_dimension = 3
 boards = Boards.new(max_board_dimension)
-binding.pry
-puts boards
