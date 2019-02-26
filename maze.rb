@@ -32,14 +32,17 @@ class Board
   private
 
   def create_grids
-    grid_permutations.each_with_object([]) do |grids, grid_objects|
-      grids.each do |grid|
-        grid_objects << Grid.new(grid)
+    grid_permutations.each_with_object([]) do |grid_layouts, grid_objects|
+      grid_layouts.each do |grid_layout|
+        grid = Grid.new(grid_layout)
+        next unless grid.valid?
+        grid_objects << grid
       end
     end
   end
 
   def grid_permutations
+    # redo this with each with object to shorted method length?
     grids = []
     barrier_range.min.upto(barrier_range.max) do |number_of_barriers|
       grid = []
@@ -70,6 +73,8 @@ class Board
     when [5, 5] then [3, 5]
     end
   end
+
+
 end
 
 class Grid
@@ -93,6 +98,21 @@ class Grid
       when 'n' then Square.new(:normal, :not_taken)
       end
     end
+  end
+
+  def valid?
+    valid_finish_square? && has_one_solution?
+  end
+
+  def valid_finish_square?
+  end
+
+  def has_one_solution?
+    calculate_solutions
+    solutions.size == 1
+  end
+
+  def calculate_solutions
   end
 end
 
