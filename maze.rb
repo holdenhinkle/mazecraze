@@ -1,168 +1,200 @@
 require 'pry'
 
 class Boards
-  attr_reader :boards
+  attr_reader :all_boards
 
-  def initialize(max)
-    @boards = {}
-    create_boards(3, 2, max)
+  def initialize(boards)
+    @all_boards = {}
+    create_boards(boards)
   end
 
   private
 
-  def create_boards(x_axis, y_axis, max)
-    y_axis.upto(max) do |y_length|
-      x_axis.upto(max) do |x_length|
-        boards["board_#{x_length}x#{y_length}".to_sym] = Board.new(x_length, y_length)
-      end
+  def create_boards(boards)
+    boards.each do |board|
+      @all_boards["board_#{board[:x]}x#{board[:y]}".to_sym] = Board.new(board)
     end
   end
 end
 
 class Board
-  attr_reader :size, :x_axis_length, :y_axis_length, :grids
+  attr_reader :size, :num_starts, :num_barriers, :grids
 
-  def initialize(x, y)
-    @size = x * y
-    @x_axis_length = x
-    @y_axis_length = y
-    @grids = create_grids(x, y)
+  def initialize(board)
+    @size = board[:x] * board[:y]
+    @num_starts = board[:num_starts]
+    @num_barriers = board[:num_barriers]
+    @grids = create_grids(board)
   end
 
   private
 
-  def create_grids(x, y)
-    grid_permutations.each_with_object([]) do |grid_layouts, grid_objects|
-      grid_layouts.each do |grid_layout|
-        grid = Grid.new(grid_layout, x, y)
-        next unless grid.valid?
-        grid_objects << grid
-      end
+  def create_grids(board)
+    permutations(layout).each_with_object([]) do |grid_layout, grid_objects|
+      grid = Grid.new(board, grid_layout)
+      next unless grid.valid?
+      grid_objects << grid
     end
   end
 
-  def grid_permutations
-    # redo this with each with object to shorted method length?
-    grids = []
-    barrier_range.min.upto(barrier_range.max) do |number_of_barriers|
-      grid = []
-      size.times do
-        grid << if grid.none?('s')
-                  's'
-                elsif grid.none?('f')
-                  'f'
-                elsif grid.count('b') != number_of_barriers
-                  'b'
-                else
-                  'n'
-                end
-      end
-      grids << grid
+  def layout
+    grid = []
+    size.times do
+      grid << if count_makers(grid, 's') != num_starts
+                format_start_marker(grid)
+              elsif count_makers(grid, 'f') != num_starts
+                format_finish_marker(grid)
+              elsif grid.count('b') != num_barriers
+                'b'
+              else
+                'n'
+              end
     end
-    grids.map { |g| g.permutation.to_a.uniq }
+    grid
   end
 
-  def barrier_range
-    grid_size = [x_axis_length, y_axis_length].sort
-    case grid_size
-    when [2, 3] then [1]
-    when [3, 3] then [1, 2]
-    when [2, 4] then [1, 2] # DELETE - FOR TESTING PURPOSES
-    when [3, 4] then [1, 2]
-    when [4, 4] then [2, 3]
-    when [4, 5] then [2, 5]
-    when [5, 5] then [3, 5]
-    end
+  def permutations(layout)
+    layout.permutation.to_a.uniq
+  end
+
+  def count_makers(grid, marker)
+    grid.count { |square| square.match(Regexp.new(Regexp.escape(marker))) }
+  end
+
+  def format_start_marker(grid)
+    s_counter = 0
+    grid.each { |marker| s_counter += 1 if marker.match(/s/) }
+    "s#{s_counter + 1}"
+  end
+
+  def format_finish_marker(grid)
+    s_counter = 0
+    grid.each { |marker| s_counter += 1 if marker.match(/f/) }
+    "f#{s_counter + 1}"
   end
 end
 
 class Grid
-  attr_reader :squares, :x, :y, :start, :finish, :size
-  attr_accessor :status, :solution
+  attr_reader :squares, :x, :y, :solution, :level
 
-  def initialize(grid, x, y)
-    @size = x * y
-    @start = nil
-    @finish = nil
+  def initialize(board, grid)
     @squares = create_grid(grid)
-    @x = x
-    @y = y
-    # @solution = calculate_solutions
-    # @level = game_level
+    @x = board[:x]
+    @y = board[:y]
+    @solution = []
+    @level = board[:level]
   end
 
   def valid?
-    valid_finish_square? # && has_one_solution?
+    valid_finish_squares? # && has_one_solution?
   end
 
   private
 
   def create_grid(grid)
-    grid.each.map.with_index do |square, index|
-      case square
-      when 's'
-        @start = index
-        Square.new(:start, :taken)
-      when 'f'
-        @finish = index
-        Square.new(:finish, :not_taken)
-      when 'b' then Square.new(:barrier, :taken)
-      when 'n' then Square.new(:normal, :not_taken)
+    grid.map do |square|
+      if square.match(/s/)
+        Square.new("start_#{square.match(/\d/)}".to_sym, :taken)
+      elsif square.match(/f/)
+        Square.new("finish_#{square.match(/\d/)}".to_sym, :not_taken)
+      elsif square == 'b'
+        Square.new(:barrier, :taken)
+      elsif square == 'n'
+        Square.new(:normal, :not_taken)
       end
     end
   end
 
-  # def game_level
-  # end
-
   # def calculate_solutions
   # end
 
-  def valid_finish_square?
+  def size
+    squares.count
+  end
+
+  def start_squares
+    results = {}
+    squares.each_with_index do |square, index| 
+      results[square.type] = index if square.type.match(/s/)
+    end
+    results
+  end
+
+  def finish_squares
+    results = {}
+    squares.each_with_index do |square, index|
+      results[square.type] = index if square.type.match(/f/)
+    end
+    results
+  end
+
+  def valid_finish_squares?
+    finish_squares.all? { |_, index| valid_finish_square?(index) }
+  end
+
+  def valid_finish_square?(square)
     connections = 0
-    if normal_square_above?
+    if normal_square_above?(square, :finish)
       connections += 1
-    elsif normal_square_right?
+    end
+
+    if normal_square_right?(square, :finish)
       connections += 1
       return false if connections > 1
-    elsif normal_square_below?
+    end
+
+    if normal_square_below?(square, :finish)
       connections += 1
       return false if connections > 1
-    elsif normal_square_left?
+    end
+
+    if normal_square_left?(square, :finish)
       connections += 1
       return false if connections > 1
     end
     true
   end
 
-
-  # PASS IN SQUARE TO THE FOLLOWING METHODS SO THEY CAN BE REUSED
-  # RIGHT NOW THEY ONLY HAVE TO DO WITH 'FINISH' SQUARE
-  # RENAME FINISH SQUARE SO I CAN CALL THE 'FINISH' SQUARE IN IRB
-
-  # AND MAKE THE 'FINISH' SQUARE NOT NEXT TO 'START' SQUARE - THIS WON'T WORK FOR VALIDATION
-  # OF NON-FINISH SQUARES
-  def normal_square_above?
-    square = finish - x
-    return false if square.negative? || squares[square].taken?
+  def normal_square_above?(square, type = :normal)
+    square -= x
+    if type == :finish
+      return false if square.negative? || squares[square].taken? ||
+                      squares[square].start_square?
+    elsif square.negative? || squares[square].taken?
+      return false
+    end
     true
   end
 
-  def normal_square_right?
-    return false if right_border_indices.include?(finish) ||
-                    squares[finish + 1].taken?
+  def normal_square_right?(square, type = :normal)
+    if type == :finish
+      return false if right_border_indices.include?(square) ||
+                      squares[square + 1].taken? || squares[square].start_square?
+
+    elsif right_border_indices.include?(square) || squares[square + 1].taken?
+      return false
+    end
     true
   end
 
-  def normal_square_below?
-    square = finish + x
-    return false if square > size - 1 || squares[square].taken?
+  def normal_square_below?(square, type = :normal)
+    square += x
+    if type == :finish
+      return false if square > size - 1 || squares[square].taken? ||
+                      squares[square].start_square?
+    elsif square > size - 1 || squares[square].taken?
+      return false
+    end
     true
   end
 
-  def normal_square_left?
-    return false if left_border_indices.include?(finish) ||
-                    squares[finish - 1].taken?
+  def normal_square_left?(square, type = :normal)
+    if type == :finish
+      return false if left_border_indices.include?(square) ||
+                      squares[square - 1].taken? || squares[square].start_square?
+    elsif left_border_indices.include?(square) || squares[square - 1].taken?
+      return false
+    end
     true
   end
 
@@ -196,12 +228,23 @@ class Square
     return true if status == :taken
     false
   end
+
+  def start_square?
+    type.match(/s/)
+  end
+
+  def finish_square?
+    type.match(/f/)
+  end
 end
 
-max_board_dimension = 4
-boards = Boards.new(max_board_dimension)
+boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 }]
 
-p boards
+# boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 },
+#           { x: 3, y: 2, num_starts: 1, num_barriers: 2, level: 1 }]
 
-# create array of boards and grids to be created, instead of setting start x and y with a max
-x, y, number_of_barriers, game_level
+all_boards = Boards.new(boards)
+
+binding.pry
+
+p all_boards
