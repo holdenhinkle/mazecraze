@@ -138,17 +138,8 @@ class Grid
   end
 
   def connected_to_start_square?(square)
-    if next_square_up(square)
-      return true if squares[next_square_up(square)].start_square?
-    end
-    if next_square_right(square)
-      return true if squares[next_square_right(square)].start_square?
-    end
-    if next_square_down(square)
-      return true if squares[next_square_down(square)].start_square?
-    end
-    if next_square_left(square)
-      return true if squares[next_square_left(square)].start_square?
+    surrounding_squares(square).each do |sq|
+      return true if squares[sq].start_square?
     end
     false
   end
@@ -228,6 +219,23 @@ class Grid
   def next_square_left(square)
     return nil if left_border_indices.include?(square)
     square - 1
+  end
+
+  def surrounding_squares(square)
+    results = []
+    if next_square_up(square)
+      results << next_square_up(square)
+    end
+    if next_square_right(square)
+      results << next_square_right(square)
+    end
+    if next_square_down(square)
+      results << next_square_down(square)
+    end
+    if next_square_left(square)
+      results << next_square_left(square)
+    end
+    results
   end
 end
 
