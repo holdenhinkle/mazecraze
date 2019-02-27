@@ -202,3 +202,6 @@ max_board_dimension = 4
 boards = Boards.new(max_board_dimension)
 
 p boards
+
+# create array of boards and grids to be created, instead of setting start x and y with a max
+x, y, number_of_barriers, game_level
