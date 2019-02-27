@@ -133,69 +133,65 @@ class Grid
   end
 
   def valid_finish_square?(square)
+    return false if connected_to_start_square?(square)
+    connected_to_more_than_one_normal_square?(square)
+  end
+
+  def connected_to_start_square?(square)
+    if next_square_up(square)
+      return true if squares[next_square_up(square)].start_square?
+    end
+    if next_square_right(square)
+      return true if squares[next_square_right(square)].start_square?
+    end
+    if next_square_down(square)
+      return true if squares[next_square_down(square)].start_square?
+    end
+    if next_square_left(square)
+      return true if squares[next_square_left(square)].start_square?
+    end
+    false
+  end
+
+  def connected_to_more_than_one_normal_square?(square)
     connections = 0
-    if normal_square_above?(square, :finish)
-      connections += 1
-    end
-
-    if normal_square_right?(square, :finish)
-      connections += 1
-      return false if connections > 1
-    end
-
-    if normal_square_below?(square, :finish)
-      connections += 1
-      return false if connections > 1
-    end
-
-    if normal_square_left?(square, :finish)
-      connections += 1
-      return false if connections > 1
-    end
-    true
+    connections += 1 if normal_square_above?(square)
+    connections += 1 if normal_square_right?(square)
+    connections += 1 if normal_square_below?(square)
+    connections += 1 if normal_square_left?(square)
+    connections > 1
   end
 
-  def normal_square_above?(square, type = :normal)
-    square -= x
-    if type == :finish
-      return false if square.negative? || squares[square].taken? ||
-                      squares[square].start_square?
-    elsif square.negative? || squares[square].taken?
-      return false
+  def normal_square_above?(square)
+    next_square = next_square_up(square)
+    if next_square
+      return squares[next_square].normal_square? && squares[next_square].not_taken?
     end
-    true
+    false
   end
 
-  def normal_square_right?(square, type = :normal)
-    if type == :finish
-      return false if right_border_indices.include?(square) ||
-                      squares[square + 1].taken? || squares[square].start_square?
-
-    elsif right_border_indices.include?(square) || squares[square + 1].taken?
-      return false
+  def normal_square_right?(square)
+    next_square = next_square_right(square)
+    if next_square
+      return squares[next_square].normal_square? && squares[next_square].not_taken?
     end
-    true
+    false
   end
 
-  def normal_square_below?(square, type = :normal)
-    square += x
-    if type == :finish
-      return false if square > size - 1 || squares[square].taken? ||
-                      squares[square].start_square?
-    elsif square > size - 1 || squares[square].taken?
-      return false
+  def normal_square_below?(square)
+    next_square = next_square_down(square)
+    if next_square
+      return squares[next_square].normal_square? && squares[next_square].not_taken?
     end
-    true
+    false
   end
 
-  def normal_square_left?(square, type = :normal)
-    if type == :finish
-      return false if left_border_indices.include?(square) ||
-                      squares[square - 1].taken? || squares[square].start_square?
-    elsif left_border_indices.include?(square) || squares[square - 1].taken?
-      return false
+  def normal_square_left?(square)
+    next_square = next_square_left(square)
+    if next_square
+      return squares[next_square].normal_square? && squares[next_square].not_taken?
     end
-    true
+    false
   end
 
   def one_solution?
@@ -213,6 +209,26 @@ class Grid
     (0..size - 1).step(x) { |index| results << index }
     results
   end
+
+  def next_square_up(square)
+    next_square = square - x
+    next_square.negative? ? nil : next_square
+  end
+
+  def next_square_right(square)
+    return nil if right_border_indices.include?(square)
+    square + 1
+  end
+
+  def next_square_down(square)
+    next_square = square + x
+    next_square > size - 1 ? nil : next_square
+  end
+
+  def next_square_left(square)
+    return nil if left_border_indices.include?(square)
+    square - 1
+  end
 end
 
 class Square
@@ -229,12 +245,20 @@ class Square
     false
   end
 
+  def not_taken?
+    !taken?
+  end
+
   def start_square?
-    type.match(/s/)
+    true if type.match(/s/)
   end
 
   def finish_square?
-    type.match(/f/)
+    true if type.match(/f/)
+  end
+
+  def normal_square?
+    type == :normal
   end
 end
 
@@ -244,7 +268,5 @@ boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 }]
 #           { x: 3, y: 2, num_starts: 1, num_barriers: 2, level: 1 }]
 
 all_boards = Boards.new(boards)
-
 binding.pry
-
 p all_boards
