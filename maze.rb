@@ -33,16 +33,24 @@ class Board
   private
 
   def create_grids(board)
-    counter = 1
+    counter = starting_file_number + 1
     file_path = permutations(layout)
     File.open(file_path, "r").each_line do |grid_layout|
-      binding.pry
       grid = Grid.new(board, JSON.parse(grid_layout))
       next unless grid.valid?
       save_grid!(grid, counter)
       counter += 1
     end
-    File.rmdir(file_path)
+    FileUtils.rm(file_path)
+  end
+
+  def starting_file_number
+    largest_number = 0
+    Dir[File.join(data_path, "/levels/level_1/*")].each do |f|
+      number = f.match(/\d+.yml/).to_s.match(/\d+/).to_s.to_i
+      largest_number = number if number > largest_number
+    end
+    largest_number
   end
 
   def layout
@@ -67,22 +75,17 @@ class Board
 
   def permutations(layout)
     file_path = File.join(data_path, "/levels/grid_scratch_file.txt")
-    FileUtils.mkdir_p(file_path) unless File.directory?(file_path)
-    File.new(file_path), "w") unless File.exist?(file_path)
+    FileUtils.mkdir_p(File.dirname(file_path)) unless File.directory?(File.dirname(file_path))
+    File.new(file_path, "w") unless File.exist?(file_path)
 
     each_permutation(layout) do |permutation|
       next if grid_layout_exists?(file_path, permutation)
-      File.open(file_path), "a") do |f|
+      File.open(file_path, "a") do |f|
         f.write(permutation)
         f.write("\n")
       end
     end
     file_path
-    # results = []
-    # each_permutation(layout) do |permutation|
-    #   results << permutation unless results.include?(permutation)
-    # end
-    # results
   end
 
   def grid_layout_exists?(file_path, permutation)
