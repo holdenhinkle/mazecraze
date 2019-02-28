@@ -129,77 +129,35 @@ end
 module Solvable
   def solve
     solutions = []
-    results = []
-    results << { path: [start_square], grid: self }
+    results = [{ path: [start_square], grid: self }]
     until results.empty?
-      possible_solution = results.shift
-      last_square = possible_solution[:path].last
-
+      current_path = results.shift
+      last_square = current_path[:path].last
       if next_square_up(last_square) && squares[next_square_up(last_square)].not_taken?
-        next_square = next_square_up(last_square)
-
-        updated_path = possible_solution[:path].clone.push(next_square)
-        updated_grid = possible_solution[:grid].clone
-
-        clone_squares
-        updated_grid.squares[next_square].taken!
-        if squares[next_square].finish_square? && all_squares_taken?
-          solutions << updated_path
-        else
-          results << { path: updated_path, grid: updated_grid }
-        end
+        move_to_square(current_path, next_square_up(last_square), solutions, results)
       end
-
       if next_square_right(last_square) && squares[next_square_right(last_square)].not_taken?
-        next_square = next_square_right(last_square)
-
-        updated_path = possible_solution[:path].clone.push(next_square)
-        updated_grid = possible_solution[:grid].clone
-
-        clone_squares
-        updated_grid.squares[next_square].taken!
-        if squares[next_square].finish_square? && all_squares_taken?
-          solutions << updated_path
-        else
-          results << { path: updated_path, grid: updated_grid }
-        end
+        move_to_square(current_path, next_square_right(last_square), solutions, results)
       end
-
       if next_square_down(last_square) && squares[next_square_down(last_square)].not_taken?
-        next_square = next_square_down(last_square)
-
-        updated_path = possible_solution[:path].clone.push(next_square)
-        updated_grid = possible_solution[:grid].clone
-
-        clone_squares
-        updated_grid.squares[next_square].taken!
-        if squares[next_square].finish_square? && all_squares_taken?
-          solutions << updated_path
-        else
-          results << { path: updated_path, grid: updated_grid }
-        end
+        move_to_square(current_path, next_square_down(last_square), solutions, results)
       end
-
       if next_square_left(last_square) && squares[next_square_left(last_square)].not_taken?
-        next_square = next_square_left(last_square)
-
-        updated_path = possible_solution[:path].clone.push(next_square)
-        updated_grid = possible_solution[:grid].clone
-
-        clone_squares
-        updated_grid.squares[next_square].taken!
-        if squares[next_square].finish_square? && all_squares_taken?
-          solutions << updated_path
-        else
-          results << { path: updated_path, grid: updated_grid }
-        end
+        move_to_square(current_path, next_square_left(last_square), solutions, results)
       end
     end
     solutions
   end
 
-  def clone_squares
-    squares.map(&:clone)
+  def move_to_square(current_path, next_square, solutions, results)
+    updated_path = current_path[:path].clone.push(next_square)
+    updated_grid = Marshal.load(Marshal.dump(current_path[:grid]))
+    updated_grid.squares[next_square].taken!
+    if squares[next_square].finish_square? && all_squares_taken?
+      solutions << updated_path
+    elsif squares[next_square].normal_square?
+      results << { path: updated_path, grid: updated_grid }
+    end
   end
 end
 
@@ -213,7 +171,6 @@ class Grid
     @x = board[:x]
     @y = board[:y]
     @solution = solve
-    p @solution
     @level = board[:level]
   end
 
