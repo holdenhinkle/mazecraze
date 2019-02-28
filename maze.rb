@@ -127,6 +127,7 @@ class Board
 end
 
 module Solvable
+  # **** make next_square_up_not_taken? methods to shorten line length ****
   def each_path(results)
     current_attempt = Marshal.load(Marshal.dump(results.shift))
     current_square = current_attempt[:path].last
@@ -137,7 +138,6 @@ module Solvable
   end
 
   def solve
-
     # **** RESULTS NEVER BECOME EMPTY! ****
     solutions = []
     results = [{ path: [start_square], grid: self }]
@@ -320,6 +320,7 @@ class Grid
     square - 1
   end
 
+  # DO I NEED THIS?
   def reset_normal_squares
     squares.each { |square| square.status = :not_taken }
   end
