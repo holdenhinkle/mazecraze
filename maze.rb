@@ -126,7 +126,80 @@ class Board
   end
 end
 
+module Solvable
+  def solve
+    find_solutions
+    one_solution?
+  end
+
+  def find_solutions
+    results = []
+    results << squares.start_square
+    until results.empty
+      possible_solution = results.shift
+
+      if next_square_up && squares[next_square_up].not_taken?
+        next_square = next_square_up
+        updated_path = possible_solution[:path].clone.push(next_square)
+        updated_grid = possible_solution[:grid].clone
+        updated_grid.squares(next_square).taken!
+        if squares(next_square).finish_square? && grid.solved?
+          grid.solution << updated_path
+        else
+          results << { path: updated_path, grid: updated_grid }
+        end
+      end
+
+      if next_square_right && squares[next_square_right].not_taken?
+        next_square = next_square_right
+        updated_path = possible_solution[:path].clone.push(next_square)
+        updated_grid = possible_solution[:grid].clone
+        updated_grid.squares(next_square).taken!
+        if squares(next_square).finish_square? && grid.solved?
+          grid.solution << updated_path
+        else
+          results << { path: updated_path, grid: updated_grid }
+        end
+      end
+
+      if next_square_down && squares[next_square_down].not_taken?
+        next_square = next_square_down
+        updated_path = possible_solution[:path].clone.push(next_square)
+        updated_grid = possible_solution[:grid].clone
+        updated_grid.squares(next_square).taken!
+        if squares(next_square).finish_square? && grid.solved?
+          grid.solution << updated_path
+        else
+          results << { path: updated_path, grid: updated_grid }
+        end
+      end
+
+      if next_square_left && squares[next_square_left].not_taken?
+        next_square = next_square_left
+        updated_path = possible_solution[:path].clone.push(next_square)
+        updated_grid = possible_solution[:grid].clone
+        updated_grid.squares(next_square).taken!
+        if squares(next_square).finish_square? && grid.solved?
+          grid.solution << updated_path
+        else
+          results << { path: updated_path, grid: updated_grid }
+        end
+      end
+    end
+  end
+
+  def solved?
+    grid.squares.any?(&:not_taken?)
+  end
+
+  def one_solution?
+    solution.size == 1
+  end
+end
+
 class Grid
+  include Solvable
+
   attr_reader :squares, :x, :y, :solution, :level
 
   def initialize(board, grid)
@@ -192,10 +265,7 @@ class Grid
   end
 
   def connected_to_start_square?(square)
-    surrounding_squares(square).each do |sq|
-      return true if squares[sq].start_square?
-    end
-    false
+    surrounding_squares(square).any? { |sq| squares[sq].start_square? }
   end
 
   def connected_to_more_than_one_normal_square?(square)
@@ -241,10 +311,6 @@ class Grid
       return squares[next_square].normal_square? && squares[next_square].not_taken?
     end
     false
-  end
-
-  def one_solution?
-    solution.size == 1
   end
 
   def right_border_indices
@@ -329,13 +395,12 @@ class Square
   end
 end
 
-# boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 }]
+boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 }]
 
-boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 },
-          { x: 3, y: 3, num_starts: 1, num_barriers: 1, level: 1 },
-          { x: 3, y: 3, num_starts: 1, num_barriers: 2, level: 1 },
-          { x: 4, y: 3, num_starts: 1, num_barriers: 1, level: 1 },
-          { x: 4, y: 3, num_starts: 1, num_barriers: 2, level: 1 },
-        ]
+# boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 },
+#           { x: 3, y: 3, num_starts: 1, num_barriers: 1, level: 1 },
+#           { x: 3, y: 3, num_starts: 1, num_barriers: 2, level: 1 },
+#           { x: 4, y: 3, num_starts: 1, num_barriers: 1, level: 1 },
+#           { x: 4, y: 3, num_starts: 1, num_barriers: 2, level: 1 }]
 
 Boards.new(boards)
