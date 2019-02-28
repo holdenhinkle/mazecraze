@@ -1,4 +1,6 @@
 require 'pry'
+require 'yaml'
+require 'fileutils'
 
 class Boards
   attr_reader :all_boards
@@ -30,10 +32,12 @@ class Board
   private
 
   def create_grids(board)
-    permutations(layout).each_with_object([]) do |grid_layout, grid_objects|
+    counter = 1
+    permutations(layout).each do |grid_layout|
       grid = Grid.new(board, grid_layout)
       next unless grid.valid?
-      grid_objects << grid
+      save_grid!(grid, counter)
+      counter += 1
     end
   end
 
@@ -53,24 +57,65 @@ class Board
     grid
   end
 
+  def each_permutation(layout)
+    layout.permutation { |permutation| yield(permutation) }
+  end
+
   def permutations(layout)
-    layout.permutation.to_a.uniq
+    directory = "grid_layouts"
+    directory_path = File.join(data_path, directory)
+    FileUtils.mkdir_p(directory_path) unless File.directory?(directory_path)
+    File.new(File.join(directory_path, "all_layouts.txt"), "w") unless File.exist?(File.join(directory_path, "all_layouts.txt"))
+
+    each_permutation(layout) do |permutation|
+      next if grid_layout_exists?(directory_path, permutation)
+      File.open(File.join(directory_path, "all_layouts.txt"), "a") do |f|
+        f.write(permutation)
+        f.write("\n")
+      end
+    end
+    # results = []
+    # each_permutation(layout) do |permutation|
+    #   results << permutation unless results.include?(permutation)
+    # end
+    # results
+  end
+
+  def grid_layout_exists?(directory_path, permutation)
+    File.foreach(File.join(directory_path, "all_layouts.txt")).any? do |line|
+      line.include?(permutation.to_s)
+    end
   end
 
   def count_makers(grid, marker)
     grid.count { |square| square.match(Regexp.new(Regexp.escape(marker))) }
   end
 
+  # refactor - combine this method and the one below
   def format_start_marker(grid)
     s_counter = 0
     grid.each { |marker| s_counter += 1 if marker.match(/s/) }
     "s#{s_counter + 1}"
   end
 
+  # refactor - combine this method and the one above
   def format_finish_marker(grid)
     s_counter = 0
     grid.each { |marker| s_counter += 1 if marker.match(/f/) }
     "f#{s_counter + 1}"
+  end
+
+  def save_grid!(grid, index)
+    directory = "level_#{grid.level}"
+    directory_path = File.join(data_path, directory)
+    FileUtils.mkdir_p(directory_path) unless File.directory?(directory_path)
+    File.open(File.join(directory_path, "#{index}.yml"), "w") do |file|
+      file.write(grid.to_yaml)
+    end
+  end
+
+  def data_path
+    File.expand_path("../data/levels", __FILE__)
   end
 end
 
@@ -112,6 +157,7 @@ class Grid
     squares.count
   end
 
+  # Refactor - combine below
   def start_squares
     results = {}
     squares.each_with_index do |square, index| 
@@ -120,6 +166,7 @@ class Grid
     results
   end
 
+  # Refactor - combine - above
   def finish_squares
     results = {}
     squares.each_with_index do |square, index|
@@ -153,6 +200,7 @@ class Grid
     connections > 1
   end
 
+  # Refactor
   def normal_square_above?(square)
     next_square = next_square_up(square)
     if next_square
@@ -161,6 +209,7 @@ class Grid
     false
   end
 
+  # Refactor
   def normal_square_right?(square)
     next_square = next_square_right(square)
     if next_square
@@ -169,6 +218,7 @@ class Grid
     false
   end
 
+  # Refactor
   def normal_square_below?(square)
     next_square = next_square_down(square)
     if next_square
@@ -177,6 +227,7 @@ class Grid
     false
   end
 
+  # Refactor
   def normal_square_left?(square)
     next_square = next_square_left(square)
     if next_square
@@ -221,6 +272,7 @@ class Grid
     square - 1
   end
 
+  # Refactor
   def surrounding_squares(square)
     results = []
     if next_square_up(square)
@@ -270,11 +322,13 @@ class Square
   end
 end
 
-boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 }]
+# boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 }]
 
-# boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 },
-#           { x: 3, y: 2, num_starts: 1, num_barriers: 2, level: 1 }]
+boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 },
+          { x: 3, y: 3, num_starts: 1, num_barriers: 1, level: 1 },
+          { x: 3, y: 3, num_starts: 1, num_barriers: 2, level: 1 },
+          { x: 4, y: 3, num_starts: 1, num_barriers: 1, level: 1 },
+          { x: 4, y: 3, num_starts: 1, num_barriers: 2, level: 1 },
+        ]
 
-all_boards = Boards.new(boards)
-binding.pry
-p all_boards
+Boards.new(boards)
