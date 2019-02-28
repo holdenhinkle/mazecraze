@@ -127,12 +127,8 @@ class Board
 end
 
 module Solvable
-  def solvable?
-    find_solutions
-    one_solution?
-  end
-
-  def find_solutions
+  def solve
+    solutions = []
     results = []
     results << { path: [start_square], grid: self }
     until results.empty?
@@ -144,8 +140,8 @@ module Solvable
         updated_path = possible_solution[:path].clone.push(next_square)
         updated_grid = possible_solution[:grid].clone
         updated_grid.squares[next_square].taken!
-        if squares[next_square].finish_square? && solved?
-          solution << updated_path
+        if squares[next_square].finish_square? && all_squares_taken?
+          solutions << updated_path
         else
           results << { path: updated_path, grid: updated_grid }
         end
@@ -156,8 +152,8 @@ module Solvable
         updated_path = possible_solution[:path].clone.push(next_square)
         updated_grid = possible_solution[:grid].clone
         updated_grid.squares[next_square].taken!
-        if squares[next_square].finish_square? && solved?
-          solution << updated_path
+        if squares[next_square].finish_square? && all_squares_taken?
+          solutions << updated_path
         else
           results << { path: updated_path, grid: updated_grid }
         end
@@ -168,8 +164,8 @@ module Solvable
         updated_path = possible_solution[:path].clone.push(next_square)
         updated_grid = possible_solution[:grid].clone
         updated_grid.squares[next_square].taken!
-        if squares[next_square].finish_square? && solved?
-          solution << updated_path
+        if squares[next_square].finish_square? && all_squares_taken?
+          solutions << updated_path
         else
           results << { path: updated_path, grid: updated_grid }
         end
@@ -180,21 +176,14 @@ module Solvable
         updated_path = possible_solution[:path].clone.push(next_square)
         updated_grid = possible_solution[:grid].clone
         updated_grid.squares[next_square].taken!
-        if squares[next_square].finish_square? && solved?
-          solution << updated_path
+        if squares[next_square].finish_square? && all_squares_taken?
+          solutions << updated_path
         else
           results << { path: updated_path, grid: updated_grid }
         end
       end
     end
-  end
-
-  def solved?
-    squares.any?(&:not_taken?)
-  end
-
-  def one_solution?
-    solution.size == 1
+    solutions
   end
 end
 
@@ -207,12 +196,16 @@ class Grid
     @squares = create_grid(grid)
     @x = board[:x]
     @y = board[:y]
-    @solution = []
+    @solution = solve
     @level = board[:level]
   end
 
   def valid?
-    valid_finish_squares? && solvable?
+    valid_finish_squares? && one_solution?
+  end
+
+  def one_solution?
+    solution.size == 1
   end
 
   private
@@ -230,9 +223,6 @@ class Grid
       end
     end
   end
-
-  # def calculate_solutions
-  # end
 
   def size
     squares.count
@@ -350,6 +340,10 @@ class Grid
   def next_square_left(square)
     return nil if left_border_indices.include?(square)
     square - 1
+  end
+
+  def all_squares_taken?
+    squares.none?(&:not_taken?)
   end
 
   # Refactor
