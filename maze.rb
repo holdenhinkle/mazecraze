@@ -33,7 +33,7 @@ class Board
   private
 
   def create_grids(board)
-    counter = starting_file_number + 1
+    counter = starting_file_number(board[:level]) + 1
     file_path = permutations(layout)
     File.open(file_path, "r").each_line do |grid_layout|
       grid = Grid.new(board, JSON.parse(grid_layout))
@@ -44,9 +44,9 @@ class Board
     FileUtils.rm(file_path)
   end
 
-  def starting_file_number
+  def starting_file_number(level)
     largest_number = 0
-    Dir[File.join(data_path, "/levels/level_1/*")].each do |f|
+    Dir[File.join(data_path, "/levels/level_#{level}/*")].each do |f|
       number = f.match(/\d+.yml/).to_s.match(/\d+/).to_s.to_i
       largest_number = number if number > largest_number
     end
