@@ -137,8 +137,11 @@ module Solvable
 
       if next_square_up(last_square) && squares[next_square_up(last_square)].not_taken?
         next_square = next_square_up(last_square)
+
         updated_path = possible_solution[:path].clone.push(next_square)
         updated_grid = possible_solution[:grid].clone
+
+        clone_squares
         updated_grid.squares[next_square].taken!
         if squares[next_square].finish_square? && all_squares_taken?
           solutions << updated_path
@@ -149,8 +152,11 @@ module Solvable
 
       if next_square_right(last_square) && squares[next_square_right(last_square)].not_taken?
         next_square = next_square_right(last_square)
+
         updated_path = possible_solution[:path].clone.push(next_square)
         updated_grid = possible_solution[:grid].clone
+
+        clone_squares
         updated_grid.squares[next_square].taken!
         if squares[next_square].finish_square? && all_squares_taken?
           solutions << updated_path
@@ -161,8 +167,11 @@ module Solvable
 
       if next_square_down(last_square) && squares[next_square_down(last_square)].not_taken?
         next_square = next_square_down(last_square)
+
         updated_path = possible_solution[:path].clone.push(next_square)
         updated_grid = possible_solution[:grid].clone
+
+        clone_squares
         updated_grid.squares[next_square].taken!
         if squares[next_square].finish_square? && all_squares_taken?
           solutions << updated_path
@@ -173,8 +182,11 @@ module Solvable
 
       if next_square_left(last_square) && squares[next_square_left(last_square)].not_taken?
         next_square = next_square_left(last_square)
+
         updated_path = possible_solution[:path].clone.push(next_square)
         updated_grid = possible_solution[:grid].clone
+
+        clone_squares
         updated_grid.squares[next_square].taken!
         if squares[next_square].finish_square? && all_squares_taken?
           solutions << updated_path
@@ -184,6 +196,10 @@ module Solvable
       end
     end
     solutions
+  end
+
+  def clone_squares
+    squares.map(&:clone)
   end
 end
 
@@ -197,11 +213,13 @@ class Grid
     @x = board[:x]
     @y = board[:y]
     @solution = solve
+    p @solution
     @level = board[:level]
   end
 
   def valid?
-    valid_finish_squares? && one_solution?
+    # valid_finish_squares? && 
+    one_solution?
   end
 
   def one_solution?
@@ -343,7 +361,13 @@ class Grid
   end
 
   def all_squares_taken?
-    squares.none?(&:not_taken?)
+    # binding.pry
+    # squares.all?(&:taken?)
+    squares.count(&:taken?) == 6
+  end
+
+  def reset_normal_squares
+    squares.each { |square| square.status = :not_taken }
   end
 
   # Refactor
