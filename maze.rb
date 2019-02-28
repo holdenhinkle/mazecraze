@@ -128,26 +128,28 @@ end
 
 module Solvable
   def each_path(results)
-    current_path = Marshal.load(Marshal.dump(results.shift))
-    current_square = current_path[:path].last
-    yield(current_path, next_square_up(current_square)) if next_square_up(current_square) && squares[next_square_up(current_square)].not_taken?
-    yield(current_path, next_square_right(current_square)) if next_square_right(current_square) && squares[next_square_right(current_square)].not_taken?
-    yield(current_path, next_square_down(current_square)) if next_square_down(current_square) && squares[next_square_down(current_square)].not_taken?
-    yield(current_path, next_square_left(current_square)) if next_square_left(current_square) && squares[next_square_left(current_square)].not_taken?
+    current_attempt = Marshal.load(Marshal.dump(results.shift))
+    current_square = current_attempt[:path].last
+    yield(current_attempt, next_square_up(current_square)) if next_square_up(current_square) && squares[next_square_up(current_square)].not_taken?
+    yield(current_attempt, next_square_right(current_square)) if next_square_right(current_square) && squares[next_square_right(current_square)].not_taken?
+    yield(current_attempt, next_square_down(current_square)) if next_square_down(current_square) && squares[next_square_down(current_square)].not_taken?
+    yield(current_attempt, next_square_left(current_square)) if next_square_left(current_square) && squares[next_square_left(current_square)].not_taken?
   end
 
   def solve
+
+    # **** RESULTS NEVER BECOME EMPTY! ****
     solutions = []
     results = [{ path: [start_square], grid: self }]
     until results.empty?
-      each_path(results) do |current_path, next_square|
-        updated_path = Marshal.load(Marshal.dump(current_path[:path])).push(next_square)
-        updated_grid = Marshal.load(Marshal.dump(current_path[:grid]))
-        updated_grid.squares[next_square].taken!
-        if updated_grid.squares[next_square].finish_square? && updated_grid.all_squares_taken?
-          solutions << updated_path
-        elsif updated_grid.squares[next_square].normal_square?
-          results << { path: updated_path, grid: updated_grid }
+      each_path(results) do |current_attempt, next_square|
+        path_copy = Marshal.load(Marshal.dump(current_attempt[:path])).push(next_square)
+        grid_copy = Marshal.load(Marshal.dump(current_attempt[:grid]))
+        grid_copy.squares[next_square].taken!
+        if grid_copy.squares[next_square].finish_square? && grid_copy.all_squares_taken?
+          solutions << path_copy
+        elsif grid_copy.squares[next_square].normal_square?
+          results << { path: path_copy, grid: grid_copy }
         end
       end
     end
@@ -165,6 +167,7 @@ class Grid
     @squares = create_grid(grid)
     @x = board[:x]
     @y = board[:y]
+    binding.pry
     # @solution = solve
     @level = board[:level]
   end
