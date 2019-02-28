@@ -127,60 +127,61 @@ class Board
 end
 
 module Solvable
-  def solve
+  def solvable?
     find_solutions
     one_solution?
   end
 
   def find_solutions
     results = []
-    results << squares.start_square
-    until results.empty
+    results << { path: [start_square], grid: self }
+    until results.empty?
       possible_solution = results.shift
+      last_square = possible_solution[:path].last
 
-      if next_square_up && squares[next_square_up].not_taken?
-        next_square = next_square_up
+      if next_square_up(last_square) && squares[next_square_up(last_square)].not_taken?
+        next_square = next_square_up(last_square)
         updated_path = possible_solution[:path].clone.push(next_square)
         updated_grid = possible_solution[:grid].clone
-        updated_grid.squares(next_square).taken!
-        if squares(next_square).finish_square? && grid.solved?
-          grid.solution << updated_path
+        updated_grid.squares[next_square].taken!
+        if squares[next_square].finish_square? && solved?
+          solution << updated_path
         else
           results << { path: updated_path, grid: updated_grid }
         end
       end
 
-      if next_square_right && squares[next_square_right].not_taken?
-        next_square = next_square_right
+      if next_square_right(last_square) && squares[next_square_right(last_square)].not_taken?
+        next_square = next_square_right(last_square)
         updated_path = possible_solution[:path].clone.push(next_square)
         updated_grid = possible_solution[:grid].clone
-        updated_grid.squares(next_square).taken!
-        if squares(next_square).finish_square? && grid.solved?
-          grid.solution << updated_path
+        updated_grid.squares[next_square].taken!
+        if squares[next_square].finish_square? && solved?
+          solution << updated_path
         else
           results << { path: updated_path, grid: updated_grid }
         end
       end
 
-      if next_square_down && squares[next_square_down].not_taken?
-        next_square = next_square_down
+      if next_square_down(last_square) && squares[next_square_down(last_square)].not_taken?
+        next_square = next_square_down(last_square)
         updated_path = possible_solution[:path].clone.push(next_square)
         updated_grid = possible_solution[:grid].clone
-        updated_grid.squares(next_square).taken!
-        if squares(next_square).finish_square? && grid.solved?
-          grid.solution << updated_path
+        updated_grid.squares[next_square].taken!
+        if squares[next_square].finish_square? && solved?
+          solution << updated_path
         else
           results << { path: updated_path, grid: updated_grid }
         end
       end
 
-      if next_square_left && squares[next_square_left].not_taken?
-        next_square = next_square_left
+      if next_square_left(last_square) && squares[next_square_left(last_square)].not_taken?
+        next_square = next_square_left(last_square)
         updated_path = possible_solution[:path].clone.push(next_square)
         updated_grid = possible_solution[:grid].clone
-        updated_grid.squares(next_square).taken!
-        if squares(next_square).finish_square? && grid.solved?
-          grid.solution << updated_path
+        updated_grid.squares[next_square].taken!
+        if squares[next_square].finish_square? && solved?
+          solution << updated_path
         else
           results << { path: updated_path, grid: updated_grid }
         end
@@ -189,7 +190,7 @@ module Solvable
   end
 
   def solved?
-    grid.squares.any?(&:not_taken?)
+    squares.any?(&:not_taken?)
   end
 
   def one_solution?
@@ -211,7 +212,7 @@ class Grid
   end
 
   def valid?
-    valid_finish_squares? # && has_one_solution?
+    valid_finish_squares? && solvable?
   end
 
   private
@@ -275,6 +276,12 @@ class Grid
     connections += 1 if normal_square_below?(square)
     connections += 1 if normal_square_left?(square)
     connections > 1
+  end
+
+  def start_square
+    squares.each_with_index do |square, index|
+      return index if square.start_square?
+    end
   end
 
   # Refactor
@@ -380,6 +387,10 @@ class Square
 
   def not_taken?
     !taken?
+  end
+
+  def taken!
+    self.status = :taken
   end
 
   def start_square?
