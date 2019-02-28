@@ -1,6 +1,7 @@
 require 'pry'
 require 'yaml'
 require 'fileutils'
+require 'json'
 
 class Boards
   attr_reader :all_boards
@@ -33,12 +34,15 @@ class Board
 
   def create_grids(board)
     counter = 1
-    permutations(layout).each do |grid_layout|
-      grid = Grid.new(board, grid_layout)
+    file_path = permutations(layout)
+    File.open(file_path, "r").each_line do |grid_layout|
+      binding.pry
+      grid = Grid.new(board, JSON.parse(grid_layout))
       next unless grid.valid?
       save_grid!(grid, counter)
       counter += 1
     end
+    File.rmdir(file_path)
   end
 
   def layout
@@ -62,18 +66,18 @@ class Board
   end
 
   def permutations(layout)
-    directory = "grid_layouts"
-    directory_path = File.join(data_path, directory)
-    FileUtils.mkdir_p(directory_path) unless File.directory?(directory_path)
-    File.new(File.join(directory_path, "all_layouts.txt"), "w") unless File.exist?(File.join(directory_path, "all_layouts.txt"))
+    file_path = File.join(data_path, "/levels/grid_scratch_file.txt")
+    FileUtils.mkdir_p(file_path) unless File.directory?(file_path)
+    File.new(file_path), "w") unless File.exist?(file_path)
 
     each_permutation(layout) do |permutation|
-      next if grid_layout_exists?(directory_path, permutation)
-      File.open(File.join(directory_path, "all_layouts.txt"), "a") do |f|
+      next if grid_layout_exists?(file_path, permutation)
+      File.open(file_path), "a") do |f|
         f.write(permutation)
         f.write("\n")
       end
     end
+    file_path
     # results = []
     # each_permutation(layout) do |permutation|
     #   results << permutation unless results.include?(permutation)
@@ -81,8 +85,8 @@ class Board
     # results
   end
 
-  def grid_layout_exists?(directory_path, permutation)
-    File.foreach(File.join(directory_path, "all_layouts.txt")).any? do |line|
+  def grid_layout_exists?(file_path, permutation)
+    File.foreach(file_path).any? do |line|
       line.include?(permutation.to_s)
     end
   end
@@ -106,7 +110,7 @@ class Board
   end
 
   def save_grid!(grid, index)
-    directory = "level_#{grid.level}"
+    directory = "/levels/level_#{grid.level}"
     directory_path = File.join(data_path, directory)
     FileUtils.mkdir_p(directory_path) unless File.directory?(directory_path)
     File.open(File.join(directory_path, "#{index}.yml"), "w") do |file|
@@ -115,7 +119,7 @@ class Board
   end
 
   def data_path
-    File.expand_path("../data/levels", __FILE__)
+    File.expand_path("../data", __FILE__)
   end
 end
 
