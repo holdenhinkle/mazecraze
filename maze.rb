@@ -128,7 +128,7 @@ end
 
 module Solvable
   def each_path(results)
-    current_path = results.shift
+    current_path = Marshal.load(Marshal.dump(results.shift))
     current_square = current_path[:path].last
     yield(current_path, next_square_up(current_square)) if next_square_up(current_square) && squares[next_square_up(current_square)].not_taken?
     yield(current_path, next_square_right(current_square)) if next_square_right(current_square) && squares[next_square_right(current_square)].not_taken?
@@ -141,16 +141,17 @@ module Solvable
     results = [{ path: [start_square], grid: self }]
     until results.empty?
       each_path(results) do |current_path, next_square|
-        updated_path = current_path[:path].clone.push(next_square)
+        updated_path = Marshal.load(Marshal.dump(current_path[:path])).push(next_square)
         updated_grid = Marshal.load(Marshal.dump(current_path[:grid]))
         updated_grid.squares[next_square].taken!
-        if squares[next_square].finish_square? && all_squares_taken?
+        if updated_grid.squares[next_square].finish_square? && updated_grid.all_squares_taken?
           solutions << updated_path
-        elsif squares[next_square].normal_square?
+        elsif updated_grid.squares[next_square].normal_square?
           results << { path: updated_path, grid: updated_grid }
         end
       end
     end
+    p solutions
     solutions
   end
 end
@@ -164,17 +165,21 @@ class Grid
     @squares = create_grid(grid)
     @x = board[:x]
     @y = board[:y]
-    @solution = solve
+    # @solution = solve
     @level = board[:level]
   end
 
   def valid?
-    # valid_finish_squares? && 
-    one_solution?
+    valid_finish_squares?
+    # one_solution?
   end
 
   def one_solution?
     solution.size == 1
+  end
+
+  def all_squares_taken?
+    squares.all?(&:taken?)
   end
 
   private
@@ -221,7 +226,8 @@ class Grid
 
   def valid_finish_square?(square)
     return false if connected_to_start_square?(square)
-    connected_to_more_than_one_normal_square?(square)
+    return false if connected_to_more_than_one_normal_square?(square)
+    true
   end
 
   def connected_to_start_square?(square)
@@ -309,10 +315,6 @@ class Grid
   def next_square_left(square)
     return nil if left_border_indices.include?(square)
     square - 1
-  end
-
-  def all_squares_taken?
-    squares.all?(&:taken?)
   end
 
   def reset_normal_squares
