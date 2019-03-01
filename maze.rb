@@ -128,8 +128,7 @@ end
 
 module Solvable
   # **** make next_square_up_not_taken? methods to shorten line length ****
-  def each_path(results)
-    current_attempt = Marshal.load(Marshal.dump(results.shift))
+  def attempt(current_attempt)
     current_square = current_attempt[:path].last
     yield(current_attempt, next_square_up(current_square)) if next_square_up(current_square) && squares[next_square_up(current_square)].not_taken?
     yield(current_attempt, next_square_right(current_square)) if next_square_right(current_square) && squares[next_square_right(current_square)].not_taken?
@@ -137,44 +136,40 @@ module Solvable
     yield(current_attempt, next_square_left(current_square)) if next_square_left(current_square) && squares[next_square_left(current_square)].not_taken?
   end
 
-  def solve
-    # **** RESULTS NEVER BECOME EMPTY! ****
-    solutions = []
-    results = [{ path: [start_square], grid: self }]
-    until results.empty?
-      each_path(results) do |current_attempt, next_square|
+  def solve(results)
+    while results[:grid].squares.count(&:not_taken?) < results[:grid].squares.count
+      binding.pry
+      attempt(Marshal.load(Marshal.dump(results))) do |current_attempt, next_square|
         path_copy = Marshal.load(Marshal.dump(current_attempt[:path])).push(next_square)
         grid_copy = Marshal.load(Marshal.dump(current_attempt[:grid]))
         grid_copy.squares[next_square].taken!
         if grid_copy.squares[next_square].finish_square? && grid_copy.all_squares_taken?
           solutions << path_copy
+          break
         elsif grid_copy.squares[next_square].normal_square?
-          results << { path: path_copy, grid: grid_copy }
+          solve({ path: path_copy, grid: grid_copy })
         end
       end
     end
-    p solutions
-    solutions
   end
 end
 
 class Grid
   include Solvable
 
-  attr_reader :squares, :x, :y, :solution, :level
+  attr_reader :squares, :x, :y, :solutions, :level
 
   def initialize(board, grid)
     @squares = create_grid(grid)
     @x = board[:x]
     @y = board[:y]
-    binding.pry
-    # @solution = solve
     @level = board[:level]
+    @solutions = []
+    solve({ path: [start_square], grid: self })
   end
 
   def valid?
-    valid_finish_squares?
-    # one_solution?
+    valid_finish_squares? && one_solution?
   end
 
   def one_solution?
