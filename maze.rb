@@ -3,6 +3,9 @@ require 'yaml'
 require 'fileutils'
 require 'json'
 
+require_relative 'navigable'
+require_relative 'solvable'
+
 class Boards
   attr_reader :all_boards
 
@@ -126,35 +129,8 @@ class Board
   end
 end
 
-module Solvable
-  # **** make next_square_up_not_taken? methods to shorten line length ****
-  def attempt(current_attempt)
-    current_square = current_attempt[:path].last
-    yield(current_attempt, next_square_up(current_square)) if next_square_up(current_square) && squares[next_square_up(current_square)].not_taken?
-    yield(current_attempt, next_square_right(current_square)) if next_square_right(current_square) && squares[next_square_right(current_square)].not_taken?
-    yield(current_attempt, next_square_down(current_square)) if next_square_down(current_square) && squares[next_square_down(current_square)].not_taken?
-    yield(current_attempt, next_square_left(current_square)) if next_square_left(current_square) && squares[next_square_left(current_square)].not_taken?
-  end
-
-  def solve(results)
-    while results[:grid].squares.count(&:not_taken?) < results[:grid].squares.count
-      binding.pry
-      attempt(Marshal.load(Marshal.dump(results))) do |current_attempt, next_square|
-        path_copy = Marshal.load(Marshal.dump(current_attempt[:path])).push(next_square)
-        grid_copy = Marshal.load(Marshal.dump(current_attempt[:grid]))
-        grid_copy.squares[next_square].taken!
-        if grid_copy.squares[next_square].finish_square? && grid_copy.all_squares_taken?
-          solutions << path_copy
-          break
-        elsif grid_copy.squares[next_square].normal_square?
-          solve({ path: path_copy, grid: grid_copy })
-        end
-      end
-    end
-  end
-end
-
 class Grid
+  include Navigable
   include Solvable
 
   attr_reader :squares, :x, :y, :solutions, :level
@@ -165,7 +141,8 @@ class Grid
     @y = board[:y]
     @level = board[:level]
     @solutions = []
-    solve({ path: [start_square], grid: self })
+    @solutions << solve({ path: [start_square_index], grid: self })
+    binding.pry if @solutions != [nil]
   end
 
   def valid?
@@ -173,7 +150,9 @@ class Grid
   end
 
   def one_solution?
-    solution.size == 1
+    # change this to handle array of solutions array
+    solutions != nil
+    # solutions.size == 1
   end
 
   def all_squares_taken?
@@ -200,24 +179,6 @@ class Grid
     squares.count
   end
 
-  # Refactor - combine below
-  def start_squares
-    results = {}
-    squares.each_with_index do |square, index| 
-      results[square.type] = index if square.type.match(/s/)
-    end
-    results
-  end
-
-  # Refactor - combine - above
-  def finish_squares
-    results = {}
-    squares.each_with_index do |square, index|
-      results[square.type] = index if square.type.match(/f/)
-    end
-    results
-  end
-
   def valid_finish_squares?
     finish_squares.all? { |_, index| valid_finish_square?(index) }
   end
@@ -234,85 +195,11 @@ class Grid
 
   def connected_to_more_than_one_normal_square?(square)
     connections = 0
-    connections += 1 if normal_square_above?(square)
-    connections += 1 if normal_square_right?(square)
-    connections += 1 if normal_square_below?(square)
-    connections += 1 if normal_square_left?(square)
+    connections += 1 if normal_not_taken_square_above?(square)
+    connections += 1 if normal_not_taken_square_right?(square)
+    connections += 1 if normal_not_taken_square_below?(square)
+    connections += 1 if normal_not_taken_square_left?(square)
     connections > 1
-  end
-
-  def start_square
-    squares.each_with_index do |square, index|
-      return index if square.start_square?
-    end
-  end
-
-  # Refactor
-  def normal_square_above?(square)
-    next_square = next_square_up(square)
-    if next_square
-      return squares[next_square].normal_square? && squares[next_square].not_taken?
-    end
-    false
-  end
-
-  # Refactor
-  def normal_square_right?(square)
-    next_square = next_square_right(square)
-    if next_square
-      return squares[next_square].normal_square? && squares[next_square].not_taken?
-    end
-    false
-  end
-
-  # Refactor
-  def normal_square_below?(square)
-    next_square = next_square_down(square)
-    if next_square
-      return squares[next_square].normal_square? && squares[next_square].not_taken?
-    end
-    false
-  end
-
-  # Refactor
-  def normal_square_left?(square)
-    next_square = next_square_left(square)
-    if next_square
-      return squares[next_square].normal_square? && squares[next_square].not_taken?
-    end
-    false
-  end
-
-  def right_border_indices
-    results = []
-    (x - 1..size - 1).step(x) { |index| results << index }
-    results
-  end
-
-  def left_border_indices
-    results = []
-    (0..size - 1).step(x) { |index| results << index }
-    results
-  end
-
-  def next_square_up(square)
-    next_square = square - x
-    next_square.negative? ? nil : next_square
-  end
-
-  def next_square_right(square)
-    return nil if right_border_indices.include?(square)
-    square + 1
-  end
-
-  def next_square_down(square)
-    next_square = square + x
-    next_square > size - 1 ? nil : next_square
-  end
-
-  def next_square_left(square)
-    return nil if left_border_indices.include?(square)
-    square - 1
   end
 
   # DO I NEED THIS?
@@ -320,21 +207,12 @@ class Grid
     squares.each { |square| square.status = :not_taken }
   end
 
-  # Refactor
   def surrounding_squares(square)
     results = []
-    if next_square_up(square)
-      results << next_square_up(square)
-    end
-    if next_square_right(square)
-      results << next_square_right(square)
-    end
-    if next_square_down(square)
-      results << next_square_down(square)
-    end
-    if next_square_left(square)
-      results << next_square_left(square)
-    end
+    results << square_index_above(square) if square_above?(square)
+    results << square_index_right(square) if square_right?(square)
+    results << square_index_below(square) if square_below?(square)
+    results << square_index_left(square) if square_left?(square)
     results
   end
 end
@@ -362,11 +240,13 @@ class Square
   end
 
   def start_square?
-    true if type.match(/s/)
+    return true if type.match(/s/)
+    false
   end
 
   def finish_square?
-    true if type.match(/f/)
+    return true if type.match(/f/)
+    false
   end
 
   def normal_square?
