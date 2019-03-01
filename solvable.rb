@@ -20,8 +20,7 @@ module Solvable
       current_grid.squares[next_square].taken!
       if current_grid.squares[next_square].finish_square? &&
          current_grid.all_squares_taken?
-        # p current_path
-        return current_path
+        solutions << current_path
       elsif current_grid.squares[next_square].normal_square?
         solve({ path: current_path, grid: current_grid })
       end

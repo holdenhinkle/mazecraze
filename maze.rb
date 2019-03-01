@@ -141,8 +141,7 @@ class Grid
     @y = board[:y]
     @level = board[:level]
     @solutions = []
-    @solutions << solve({ path: [start_square_index], grid: self })
-    binding.pry if @solutions != [nil]
+    solve({ path: [start_square_index], grid: self })
   end
 
   def valid?
@@ -150,9 +149,7 @@ class Grid
   end
 
   def one_solution?
-    # change this to handle array of solutions array
-    solutions != nil
-    # solutions.size == 1
+    solutions.size == 1
   end
 
   def all_squares_taken?
