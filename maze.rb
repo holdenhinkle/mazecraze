@@ -40,8 +40,8 @@ class Board
     permutations_file_path = create_permutations_file_path
     generate_permutations(layout, permutations_file_path)
     File.open(permutations_file_path, "r").each_line do |grid_layout|
-      grid = SimpleGrid.new(board, JSON.parse(grid_layout))
-      next unless grid.valid && grid.solutions.size == 1
+      grid = Object.const_get(grid_type(board[:type])).new(board, JSON.parse(grid_layout))
+      next unless grid.valid?
       save_grid!(grid, counter)
       counter += 1
     end
@@ -107,9 +107,12 @@ class Board
     grid
   end
 
-  # def grid_type()
-
-  # end
+  def grid_type(type)
+    case type
+    when :simple_grid then 'SimpleGrid'
+    when :warp_grid then "WarpGrid"
+    end
+  end
 
   def save_grid!(grid, index)
     directory = "/levels/level_#{grid.level}"
@@ -176,6 +179,10 @@ class Grid
 end
 
 class SimpleGrid < Grid
+  def valid?
+    valid_grid? && one_solution?
+  end
+
   def valid_grid?
     valid_finish_squares?
   end
@@ -236,7 +243,7 @@ class Square
   end
 end
 
-boards = [{ type: :simple_line, x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 }]
+boards = [{ type: :simple_grid, x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 }]
 
 # boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 },
 #           { x: 3, y: 3, num_starts: 1, num_barriers: 2, level: 1 }]
