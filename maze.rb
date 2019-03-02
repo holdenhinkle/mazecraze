@@ -35,37 +35,17 @@ class Board
 
   private
 
-  # for testing:
   def create_grids(board)
     counter = starting_file_number(board[:level]) + 1
-    test_lines = [#["s1", "b", "f1", "n", "n", "n"], 
-                  ["n", "n", "n", "f1", "b", "s1"], 
-                  ["f1", "b", "s1", "n", "n", "n"]]
-                  #["n", "n", "n", "s1", "b", "f1"]]
-    test_lines.each do |line|
-      grid = Grid.new(board, line)
-      puts line
-      puts "Valid finish square?: #{grid.valid_finish_squares?}"
-      puts "One solution? #{grid.one_solution?}"
+    file_path = permutations(layout)
+    File.open(file_path, "r").each_line do |grid_layout|
+      grid = Grid.new(board, JSON.parse(grid_layout))
       next unless grid.valid?
       save_grid!(grid, counter)
       counter += 1
     end
-    # FileUtils.rm(file_path)
+    FileUtils.rm(file_path)
   end
-
-  # working version:
-  # def create_grids(board)
-  #   counter = starting_file_number(board[:level]) + 1
-  #   file_path = permutations(layout)
-  #   File.open(file_path, "r").each_line do |grid_layout|
-  #     grid = Grid.new(board, JSON.parse(grid_layout))
-  #     next unless grid.valid?
-  #     save_grid!(grid, counter)
-  #     counter += 1
-  #   end
-  #   FileUtils.rm(file_path)
-  # end
 
   def starting_file_number(level)
     largest_number = 0
@@ -156,7 +136,7 @@ class Grid
     @y = board[:y]
     @level = board[:level]
     @solutions = []
-    solve({ path: [start_square_index], grid: self })
+    solve([{ path: [start_square_index], grid: self }])
   end
 
   def valid?
@@ -235,9 +215,9 @@ class Square
   end
 end
 
-boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 2, level: 1 }]
+boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 }]
 
-# boards = [{ x: 3, y: 3, num_starts: 1, num_barriers: 1, level: 1 },
+# boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 },
 #           { x: 3, y: 3, num_starts: 1, num_barriers: 2, level: 1 }]
 
 # boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 },
