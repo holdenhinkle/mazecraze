@@ -1,4 +1,8 @@
 module Solvable
+  def one_solution?
+    solutions.size == 1
+  end
+
   def attempt(current_attempt, process_attempt)
     current_square = current_attempt[:path].last
     process_attempt.call(current_attempt, square_index_above(current_square)) if
