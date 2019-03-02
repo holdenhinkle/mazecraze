@@ -177,19 +177,22 @@ class Grid
   end
 
   def valid_finish_squares?
-    finish_squares.all? { |_, index| valid_finish_square?(index) }
+    all_squares_of_type('f').all? { |_, index| valid_finish_square?(index) }
   end
 
+  #  ** TEST THIS!
   def valid_finish_square?(square)
     return false if connected_to_start_square?(square)
     return false if connected_to_more_than_one_normal_square?(square)
     true
   end
 
+#  ** TEST THIS!
   def connected_to_start_square?(square)
     surrounding_squares(square).any? { |sq| squares[sq].start_square? }
   end
 
+  #  ** TEST THIS!
   def connected_to_more_than_one_normal_square?(square)
     connections = 0
     connections += 1 if normal_not_taken_square_above?(square)
@@ -199,11 +202,7 @@ class Grid
     connections > 1
   end
 
-  # DO I NEED THIS?
-  def reset_normal_squares
-    squares.each { |square| square.status = :not_taken }
-  end
-
+  #  ** TEST THIS!
   def surrounding_squares(square)
     results = []
     results << square_index_above(square) if square_above?(square)
@@ -252,6 +251,10 @@ class Square
 end
 
 boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 }]
+
+# boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 },
+#           { x: 3, y: 3, num_starts: 1, num_barriers: 1, level: 1 },
+#           { x: 3, y: 3, num_starts: 1, num_barriers: 2, level: 1 }]
 
 # boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 },
 #           { x: 3, y: 3, num_starts: 1, num_barriers: 1, level: 1 },

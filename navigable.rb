@@ -49,20 +49,11 @@ module Navigable
     end
   end
 
-  # Refactor - combine below
-  def start_squares
-    results = {}
-    squares.each_with_index do |square, index| 
-      results[square.type] = index if square.type.match(/s/)
-    end
-    results
-  end
-
-  # Refactor - combine - above
-  def finish_squares
+  def all_squares_of_type(type)
     results = {}
     squares.each_with_index do |square, index|
-      results[square.type] = index if square.type.match(/f/)
+      results[square.type] = index if 
+        square.type.match(Regexp.new(Regexp.escape(type)))
     end
     results
   end
@@ -87,22 +78,22 @@ module Navigable
       squares[square_index_left(square)].normal_square?
   end
 
-  def not_taken_square_above?(square, current_grid = self) # must take current_grid
+  def not_taken_square_above?(square, current_grid = self)
     return false unless square_above?(square)
     current_grid.squares[square_index_above(square)].not_taken?
   end
 
-  def not_taken_square_right?(square, current_grid = self) # must take current_grid
+  def not_taken_square_right?(square, current_grid = self)
     return false unless square_right?(square)
     current_grid.squares[square_index_right(square)].not_taken?
   end
 
-  def not_taken_square_below?(square, current_grid = self) # must take current_grid
+  def not_taken_square_below?(square, current_grid = self)
     return false unless square_below?(square)
     current_grid.squares[square_index_below(square)].not_taken?
   end
 
-  def not_taken_square_left?(square, current_grid = self) # must take current_grid
+  def not_taken_square_left?(square, current_grid = self)
     return false unless square_left?(square)
     current_grid.squares[square_index_left(square)].not_taken?
   end
