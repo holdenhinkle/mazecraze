@@ -82,7 +82,7 @@ class Board
     File.new(file_path, "w") unless File.exist?(file_path)
 
     each_permutation(layout) do |permutation|
-      next if grid_layout_exists?(file_path, permutation)
+      next if grid_layout_not_unique?(file_path, permutation)
       File.open(file_path, "a") do |f|
         f.write(permutation)
         f.write("\n")
@@ -91,7 +91,7 @@ class Board
     file_path
   end
 
-  def grid_layout_exists?(file_path, permutation)
+  def grid_layout_not_unique?(file_path, permutation)
     File.foreach(file_path).any? do |line|
       line.include?(permutation.to_s)
     end
