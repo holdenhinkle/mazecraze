@@ -1,4 +1,26 @@
 module Navigable
+  def connected_to_start_square?(square)
+    surrounding_squares(square).any? { |sq| squares[sq].start_square? }
+  end
+
+  def connected_to_more_than_one_normal_square?(square)
+    connections = 0
+    connections += 1 if normal_not_taken_square_above?(square)
+    connections += 1 if normal_not_taken_square_right?(square)
+    connections += 1 if normal_not_taken_square_below?(square)
+    connections += 1 if normal_not_taken_square_left?(square)
+    connections > 1
+  end
+
+  def surrounding_squares(square)
+    results = []
+    results << square_index_above(square) if square_above?(square)
+    results << square_index_right(square) if square_right?(square)
+    results << square_index_below(square) if square_below?(square)
+    results << square_index_left(square) if square_left?(square)
+    results
+  end
+
   def right_border_indices
     results = []
     (x - 1..size - 1).step(x) { |index| results << index }
@@ -28,7 +50,7 @@ module Navigable
   end
 
   def square_above?(square)
-    (square - x).positive?
+    square - size >= -(size - x)
   end
 
   def square_right?(square)
@@ -52,7 +74,7 @@ module Navigable
   def all_squares_of_type(type)
     results = {}
     squares.each_with_index do |square, index|
-      results[square.type] = index if 
+      results[square.type] = index if
         square.type.match(Regexp.new(Regexp.escape(type)))
     end
     results
@@ -96,9 +118,5 @@ module Navigable
   def not_taken_square_left?(square, current_grid = self)
     return false unless square_left?(square)
     current_grid.squares[square_index_left(square)].not_taken?
-  end
-
-  def connected_to_start_square?(square)
-    surrounding_squares(square).any? { |sq| squares[sq].start_square? }
   end
 end
