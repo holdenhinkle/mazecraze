@@ -78,7 +78,8 @@ class Board
 
   def permutations(layout)
     file_path = File.join(data_path, "/levels/grid_scratch_file.txt")
-    FileUtils.mkdir_p(File.dirname(file_path)) unless File.directory?(File.dirname(file_path))
+    FileUtils.mkdir_p(File.dirname(file_path)) unless
+      File.directory?(File.dirname(file_path))
     File.new(file_path, "w") unless File.exist?(file_path)
 
     each_permutation(layout) do |permutation|
@@ -103,7 +104,9 @@ class Board
 
   def format_marker(grid, type)
     s_counter = 0
-    grid.each { |marker| s_counter += 1 if marker.match(Regexp.new(Regexp.escape(type))) }
+    grid.each do |marker| 
+      s_counter += 1 if marker.match(Regexp.new(Regexp.escape(type)))
+    end
     "#{type}#{s_counter + 1}"
   end
 
