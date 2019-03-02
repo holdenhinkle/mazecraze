@@ -60,9 +60,9 @@ class Board
     grid = []
     size.times do
       grid << if count_makers(grid, 's') != num_starts
-                format_start_marker(grid)
+                format_marker(grid, 's')
               elsif count_makers(grid, 'f') != num_starts
-                format_finish_marker(grid)
+                format_marker(grid, 'f')
               elsif grid.count('b') != num_barriers
                 'b'
               else
@@ -101,18 +101,10 @@ class Board
     grid.count { |square| square.match(Regexp.new(Regexp.escape(marker))) }
   end
 
-  # refactor - combine this method and the one below
-  def format_start_marker(grid)
+  def format_marker(grid, type)
     s_counter = 0
-    grid.each { |marker| s_counter += 1 if marker.match(/s/) }
-    "s#{s_counter + 1}"
-  end
-
-  # refactor - combine this method and the one above
-  def format_finish_marker(grid)
-    s_counter = 0
-    grid.each { |marker| s_counter += 1 if marker.match(/f/) }
-    "f#{s_counter + 1}"
+    grid.each { |marker| s_counter += 1 if marker.match(Regexp.new(Regexp.escape(type))) }
+    "#{type}#{s_counter + 1}"
   end
 
   def save_grid!(grid, index)
