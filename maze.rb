@@ -37,14 +37,14 @@ class Board
 
   def create_grids(board)
     counter = starting_file_number(board[:level]) + 1
-    file_path = permutations(layout)
-    File.open(file_path, "r").each_line do |grid_layout|
+    permutations_file_path = generate_permutations(layout)
+    File.open(permutations_file_path, "r").each_line do |grid_layout|
       grid = Grid.new(board, JSON.parse(grid_layout))
       next unless grid.valid && grid.solutions.size == 1
       save_grid!(grid, counter)
       counter += 1
     end
-    FileUtils.rm(file_path)
+    FileUtils.rm(permutations_file_path)
   end
 
   def starting_file_number(level)
@@ -56,27 +56,15 @@ class Board
     largest_number
   end
 
-  def layout
-    grid = []
-    size.times do
-      grid << if count_makers(grid, 's') != num_starts
-                format_marker(grid, 's')
-              elsif count_makers(grid, 'f') != num_starts
-                format_marker(grid, 'f')
-              elsif grid.count('b') != num_barriers
-                'b'
-              else
-                'n'
-              end
-    end
-    grid
+  def data_path
+    File.expand_path("../data", __FILE__)
   end
 
   def each_permutation(layout)
     layout.permutation { |permutation| yield(permutation) }
   end
 
-  def permutations(layout)
+  def generate_permutations(layout)
     file_path = File.join(data_path, "/levels/grid_scratch_file.txt")
     FileUtils.mkdir_p(File.dirname(file_path)) unless
       File.directory?(File.dirname(file_path))
@@ -98,16 +86,20 @@ class Board
     end
   end
 
-  def count_makers(grid, marker)
-    grid.count { |square| square.match(Regexp.new(Regexp.escape(marker))) }
-  end
-
-  def format_marker(grid, type)
-    s_counter = 0
-    grid.each do |marker| 
-      s_counter += 1 if marker.match(Regexp.new(Regexp.escape(type)))
+  def layout
+    grid = []
+    size.times do
+      grid << if count_makers(grid, 's') != num_starts
+                format_marker(grid, 's')
+              elsif count_makers(grid, 'f') != num_starts
+                format_marker(grid, 'f')
+              elsif grid.count('b') != num_barriers
+                'b'
+              else
+                'n'
+              end
     end
-    "#{type}#{s_counter + 1}"
+    grid
   end
 
   def save_grid!(grid, index)
@@ -119,8 +111,16 @@ class Board
     end
   end
 
-  def data_path
-    File.expand_path("../data", __FILE__)
+  def count_makers(grid, marker)
+    grid.count { |square| square.match(Regexp.new(Regexp.escape(marker))) }
+  end
+
+  def format_marker(grid, type)
+    s_counter = 0
+    grid.each do |marker| 
+      s_counter += 1 if marker.match(Regexp.new(Regexp.escape(type)))
+    end
+    "#{type}#{s_counter + 1}"
   end
 end
 
