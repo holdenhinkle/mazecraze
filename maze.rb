@@ -40,7 +40,7 @@ class Board
     permutations_file_path = create_permutations_file_path
     generate_permutations(layout, permutations_file_path)
     File.open(permutations_file_path, "r").each_line do |grid_layout|
-      grid = Grid.new(board, JSON.parse(grid_layout))
+      grid = SimpleGrid.new(board, JSON.parse(grid_layout))
       next unless grid.valid && grid.solutions.size == 1
       save_grid!(grid, counter)
       counter += 1
@@ -107,6 +107,10 @@ class Board
     grid
   end
 
+  # def grid_type()
+
+  # end
+
   def save_grid!(grid, index)
     directory = "/levels/level_#{grid.level}"
     directory_path = File.join(data_path, directory)
@@ -133,24 +137,17 @@ class Grid
   include Navigable
   include Solvable
 
-  attr_reader :x, :y, :squares, :level, :valid, :solutions
+  attr_reader :type, :level, :x, :y, :squares, :valid, :solutions
 
   def initialize(board, grid_layout)
+    @type = board[:type]
+    @level = board[:level]
     @x = board[:x]
     @y = board[:y]
     @squares = create_grid(grid_layout)
-    @level = board[:level]
     @valid = valid_grid?
     @solutions = []
     solve([{ path: [start_square_index], grid: self }]) if @valid
-  end
-
-  def valid_grid?
-    valid_finish_squares?
-  end
-
-  def valid_finish_squares?
-    all_squares_of_type('f').all? { |_, index| valid_finish_square?(index) }
   end
 
   def all_squares_taken?
@@ -176,12 +173,30 @@ class Grid
   def size
     squares.count
   end
+end
+
+class SimpleGrid < Grid
+  def valid_grid?
+    valid_finish_squares?
+  end
+
+  def valid_finish_squares?
+    all_squares_of_type('f').all? { |_, index| valid_finish_square?(index) }
+  end
+
+  private
 
   def valid_finish_square?(square)
     return false if connected_to_start_square?(square)
     return false if connected_to_more_than_one_normal_square?(square)
     true
   end
+end
+
+class WarpableGrid < Grid
+end
+
+class BridgableGrid < Grid
 end
 
 class Square
@@ -221,7 +236,7 @@ class Square
   end
 end
 
-boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 }]
+boards = [{ type: :simple_line, x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 }]
 
 # boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 },
 #           { x: 3, y: 3, num_starts: 1, num_barriers: 2, level: 1 }]

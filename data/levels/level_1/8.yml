@@ -1,0 +1,30 @@
+--- !ruby/object:Grid
+x: 3
+y: 2
+squares:
+- !ruby/object:Square
+  status: :not_taken
+  type: :normal
+- !ruby/object:Square
+  status: :taken
+  type: :start_1
+- !ruby/object:Square
+  status: :taken
+  type: :barrier
+- !ruby/object:Square
+  status: :not_taken
+  type: :normal
+- !ruby/object:Square
+  status: :not_taken
+  type: :normal
+- !ruby/object:Square
+  status: :not_taken
+  type: :finish_1
+level: 1
+valid: true
+solutions:
+- - 1
+  - 0
+  - 3
+  - 4
+  - 5
