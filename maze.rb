@@ -2,6 +2,7 @@ require 'pry'
 require 'yaml'
 require 'fileutils'
 require 'json'
+require 'date'
 
 require_relative 'navigable'
 require_relative 'solvable'
@@ -10,23 +11,22 @@ class Boards
   attr_reader :all_boards
 
   def initialize(boards)
-    @all_boards = {}
     create_boards(boards)
   end
 
   private
 
   def create_boards(boards)
-    boards.each do |board|
-      @all_boards["board_#{board[:x]}x#{board[:y]}".to_sym] = Board.new(board)
-    end
+    boards.each { |board| Board.new(board) }
   end
 end
 
 class Board
-  attr_reader :size, :num_starts, :num_barriers, :grids
+  attr_reader :x, :y, :size, :num_starts, :num_barriers, :grids
 
   def initialize(board)
+    @x = board[:x]
+    @y = board[:y]
     @size = board[:x] * board[:y]
     @num_starts = board[:num_starts]
     @num_barriers = board[:num_barriers]
@@ -37,14 +37,24 @@ class Board
 
   def create_grids(board)
     counter = starting_file_number(board[:level]) + 1
-    permutations_file_path = generate_permutations(layout)
+    permutations_file_path = create_permutations_file_path
+    generate_permutations(layout, permutations_file_path)
     File.open(permutations_file_path, "r").each_line do |grid_layout|
       grid = Grid.new(board, JSON.parse(grid_layout))
       next unless grid.valid && grid.solutions.size == 1
       save_grid!(grid, counter)
       counter += 1
     end
-    FileUtils.rm(permutations_file_path)
+  end
+
+  def create_permutations_file_path
+    permutations_directory = "/levels/grid_permutations/"
+    file_name = "#{x}x _by_#{y}y_#{num_barriers}b_#{DateTime.now}.txt"
+    File.join(data_path, permutations_directory, file_name)
+  end
+
+  def data_path
+    File.expand_path("../data", __FILE__)
   end
 
   def starting_file_number(level)
@@ -56,28 +66,23 @@ class Board
     largest_number
   end
 
-  def data_path
-    File.expand_path("../data", __FILE__)
-  end
-
   def each_permutation(layout)
     layout.permutation { |permutation| yield(permutation) }
   end
 
-  def generate_permutations(layout)
-    file_path = File.join(data_path, "/levels/grid_scratch_file.txt")
-    FileUtils.mkdir_p(File.dirname(file_path)) unless
-      File.directory?(File.dirname(file_path))
-    File.new(file_path, "w") unless File.exist?(file_path)
+  def generate_permutations(layout, permutations_file_path)
+    FileUtils.mkdir_p(File.dirname(permutations_file_path)) unless
+      File.directory?(File.dirname(permutations_file_path))
+    File.new(permutations_file_path, "w") unless
+      File.exist?(permutations_file_path)
 
     each_permutation(layout) do |permutation|
-      next if grid_layout_not_unique?(file_path, permutation)
-      File.open(file_path, "a") do |f|
+      next if grid_layout_not_unique?(permutations_file_path, permutation)
+      File.open(permutations_file_path, "a") do |f|
         f.write(permutation)
         f.write("\n")
       end
     end
-    file_path
   end
 
   def grid_layout_not_unique?(file_path, permutation)
@@ -128,12 +133,12 @@ class Grid
   include Navigable
   include Solvable
 
-  attr_reader :squares, :x, :y, :level, :valid, :solutions
+  attr_reader :x, :y, :squares, :level, :valid, :solutions
 
-  def initialize(board, grid)
-    @squares = create_grid(grid)
+  def initialize(board, grid_layout)
     @x = board[:x]
     @y = board[:y]
+    @squares = create_grid(grid_layout)
     @level = board[:level]
     @valid = valid_grid?
     @solutions = []
