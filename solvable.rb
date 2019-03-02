@@ -1,4 +1,8 @@
 module Solvable
+  def one_solution?
+    solutions.size == 1
+  end
+
   def attempt(current_attempt)
     current_square = current_attempt[:path].last
     yield(current_attempt, square_index_above(current_square)) if

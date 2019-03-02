@@ -140,10 +140,6 @@ class Grid
     valid_finish_squares? && one_solution?
   end
 
-  def one_solution?
-    solutions.size == 1
-  end
-
   def all_squares_taken?
     squares.all?(&:taken?)
   end
