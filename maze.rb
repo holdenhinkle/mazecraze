@@ -44,7 +44,7 @@ class Board
       save_grid!(grid, counter)
       counter += 1
     end
-    FileUtils.rm(file_path)
+    # FileUtils.rm(file_path)
   end
 
   def starting_file_number(level)
@@ -168,21 +168,16 @@ class Grid
     all_squares_of_type('f').all? { |_, index| valid_finish_square?(index) }
   end
 
-  #  ** TEST THIS!
   def valid_finish_square?(square)
-    # binding.pry
-    return false if connected_to_start_square?(square) #PROBLEM!!!!
+    return false if connected_to_start_square?(square)
     return false if connected_to_more_than_one_normal_square?(square)
     true
   end
 
-#  ** TEST THIS!
   def connected_to_start_square?(square)
-    # binding.pry
     surrounding_squares(square).any? { |sq| squares[sq].start_square? }
   end
 
-  #  ** TEST THIS!
   def connected_to_more_than_one_normal_square?(square)
     connections = 0
     connections += 1 if normal_not_taken_square_above?(square)
@@ -192,11 +187,9 @@ class Grid
     connections > 1
   end
 
-  #  ** TEST THIS!
   def surrounding_squares(square)
-    # binding.pry
     results = []
-    results << square_index_above(square) if square_above?(square) #this is a problem
+    results << square_index_above(square) if square_above?(square)
     results << square_index_right(square) if square_right?(square)
     results << square_index_below(square) if square_below?(square)
     results << square_index_left(square) if square_left?(square)
