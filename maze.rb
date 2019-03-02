@@ -193,10 +193,10 @@ class SimpleGrid < Grid
   end
 end
 
-class WarpableGrid < Grid
+class WarpGrid < Grid
 end
 
-class BridgableGrid < Grid
+class BridgeGrid < Grid
 end
 
 class Square
