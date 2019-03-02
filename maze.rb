@@ -40,7 +40,7 @@ class Board
     file_path = permutations(layout)
     File.open(file_path, "r").each_line do |grid_layout|
       grid = Grid.new(board, JSON.parse(grid_layout))
-      next unless grid.valid?
+      next unless grid.valid && grid.solutions.size == 1
       save_grid!(grid, counter)
       counter += 1
     end
@@ -128,19 +128,20 @@ class Grid
   include Navigable
   include Solvable
 
-  attr_reader :squares, :x, :y, :solutions, :level
+  attr_reader :squares, :x, :y, :level, :valid, :solutions
 
   def initialize(board, grid)
     @squares = create_grid(grid)
     @x = board[:x]
     @y = board[:y]
     @level = board[:level]
+    @valid = valid_grid?
     @solutions = []
-    solve([{ path: [start_square_index], grid: self }])
+    solve([{ path: [start_square_index], grid: self }]) if @valid
   end
 
-  def valid?
-    valid_finish_squares? && one_solution?
+  def valid_grid?
+    valid_finish_squares?
   end
 
   def valid_finish_squares?

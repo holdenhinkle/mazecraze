@@ -1,8 +1,4 @@
 module Solvable
-  def one_solution?
-    solutions.size == 1
-  end
-
   def attempt(current_attempt, process_attempt)
     current_square = current_attempt[:path].last
     process_attempt.call(current_attempt, square_index_above(current_square)) if
@@ -17,12 +13,12 @@ module Solvable
 
   def solve(new_attempt)
     new_attempts = new_attempt
+
     process_attempt = Proc.new do |current_attempt, next_square|
       current_attempt = Marshal.load(Marshal.dump(current_attempt))
       current_grid = current_attempt[:grid]
       current_path = current_attempt[:path].push(next_square)
       current_grid.squares[next_square].taken!
-
       if current_grid.squares[next_square].finish_square? &&
          current_grid.all_squares_taken?
         solutions << current_path
