@@ -22,14 +22,17 @@ class Boards
 end
 
 class Board
-  attr_reader :x, :y, :size, :num_starts, :num_barriers, :grids
+  attr_reader :x, :y, :size, 
+              :num_starts, :num_connection_pairs, :num_barriers, :num_bridges, :grids
 
   def initialize(board)
     @x = board[:x]
     @y = board[:y]
     @size = board[:x] * board[:y]
-    @num_starts = board[:num_starts]
-    @num_barriers = board[:num_barriers]
+    @num_starts = board[:connection_pairs] ? 0 : 1
+    @num_connection_pairs = board[:connection_pairs] ? board[:connection_pairs] : 0
+    @num_barriers = board[:num_barriers] ? board[:num_barriers] : 0
+    @num_bridges = board[:num_bridges] ? board[:num_bridges] : 0
     @grids = create_grids(board)
   end
 
@@ -94,14 +97,18 @@ class Board
   def layout
     grid = []
     size.times do
-      grid << if count_makers(grid, 's') != num_starts
-                format_marker(grid, 's')
-              elsif count_makers(grid, 'f') != num_starts
-                format_marker(grid, 'f')
-              elsif grid.count('b') != num_barriers
-                'b'
+      grid << if grid.count('start') != num_starts
+                'start'
+              elsif grid.count('finish') != num_starts
+                'finish'
+              elsif (count_connection_pairs(grid) / 2) != num_connection_pairs
+                format_connection_pair_marker
+              elsif grid.count('barrier') != num_barriers
+                'barrier'
+              elsif grid.count('bridge') != num_bridges
+                'bridge'
               else
-                'n'
+                'normal'
               end
     end
     grid
@@ -109,8 +116,9 @@ class Board
 
   def grid_type(type)
     case type
-    when :simple_grid then 'SimpleGrid'
-    when :warp_grid then "WarpGrid"
+    when :one_line_simple_grid then 'OneLineSimpleGrid'
+    when :one_line_warp_grid then "OneLineWarpGrid"
+    when :one_line_bridge_grid then "OneLineBridgeGrid"
     end
   end
 
@@ -123,16 +131,15 @@ class Board
     end
   end
 
-  def count_makers(grid, marker)
-    grid.count { |square| square.match(Regexp.new(Regexp.escape(marker))) }
+  def count_connection_pairs(grid)
+    grid.count { |square| square =~ /pair/ }
   end
 
-  def format_marker(grid, type)
-    s_counter = 0
-    grid.each do |marker| 
-      s_counter += 1 if marker.match(Regexp.new(Regexp.escape(type)))
-    end
-    "#{type}#{s_counter + 1}"
+  def format_marker(grid)
+    count = count_connection_pairs(grid)
+    pair_classifier = count / 2 + 1
+    pair_sub_classifier = count.even? ? 'a' : 'b'
+    "pair_#{pair_classifier}_#{pair_sub_classifier}"
   end
 end
 
@@ -161,13 +168,17 @@ class Grid
 
   def create_grid(grid)
     grid.map do |square|
-      if square.match(/s/)
-        Square.new("start_#{square.match(/\d/)}".to_sym, :taken)
-      elsif square.match(/f/)
-        Square.new("finish_#{square.match(/\d/)}".to_sym, :not_taken)
-      elsif square == 'b'
+      if square =~ /start/
+        Square.new(:start, :taken)
+      elsif square =~ /finish/
+        Square.new(:finish, :not_taken)
+      elsif square =~ /pair/
+        classifier = square.match(/\d/)
+        subclassifier = square.match(/(?<=_)[a-z]/)
+        PairSquare.new(:pair, :not_taken, classifier, subclassifier)
+      elsif square == 'barrier'
         Square.new(:barrier, :taken)
-      elsif square == 'n'
+      else
         Square.new(:normal, :not_taken)
       end
     end
@@ -178,7 +189,7 @@ class Grid
   end
 end
 
-class SimpleGrid < Grid
+class OneLineSimpleGrid < Grid
   def valid?
     valid_grid? && one_solution?
   end
@@ -200,10 +211,10 @@ class SimpleGrid < Grid
   end
 end
 
-class WarpGrid < Grid
+class OneLineWarpGrid < Grid
 end
 
-class BridgeGrid < Grid
+class OneLineBridgeGrid < Grid
 end
 
 class Square
@@ -243,7 +254,33 @@ class Square
   end
 end
 
-boards = [{ type: :simple_grid, x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 }]
+class PairSquare < Square
+  attr_reader :classifier, :subclassifier
+
+  def initialize(type, status, classifier, subclassifier)
+    super(type, status)
+    @classifier = classifier
+    @subclassifier = subclassifier
+  end
+end
+
+class BridgeSquare < Square
+  attr_accessor :horizontal_taken, :vertical_taken
+
+  def initialize(type, status)
+    super(type, status)
+    @horizontal_taken = false
+    @vertical_taken = false
+  end
+end
+
+# SIMPLE GRID
+# boards = [{ type: :simple_grid, x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 }]
+
+boards = [{ type: :one_line_simple_grid, x: 3, y: 2, num_barriers: 1, level: 1 }]
+
+["start", "finish", "bridge", "normal", "normal", "barrier"]
+
 
 # boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 },
 #           { x: 3, y: 3, num_starts: 1, num_barriers: 2, level: 1 }]
@@ -253,5 +290,8 @@ boards = [{ type: :simple_grid, x: 3, y: 2, num_starts: 1, num_barriers: 1, leve
 #           { x: 3, y: 3, num_starts: 1, num_barriers: 2, level: 1 },
 #           { x: 4, y: 3, num_starts: 1, num_barriers: 1, level: 1 },
 #           { x: 4, y: 3, num_starts: 1, num_barriers: 2, level: 1 }]
+
+# WARP GRID
+
 
 Boards.new(boards)
