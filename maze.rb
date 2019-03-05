@@ -158,7 +158,6 @@ class Grid
     @x = board[:x]
     @y = board[:y]
     @squares = create_grid(grid_layout)
-    binding.pry
     @valid = valid_grid?
     @solutions = []
     solve([{ path: [start_square_index], grid: self }]) if @valid
@@ -200,15 +199,15 @@ class OneLine < Grid
     valid_grid? && one_solution?
   end
 
-  def valid_grid?
-    valid_finish_squares?
-  end
-
-  def valid_finish_squares?
-    all_squares_of_type('f').all? { |_, index| valid_finish_square?(index) }
-  end
-
   private
+
+  def valid_grid?
+    valid_finish_square?(finish_square_index)
+  end
+
+  def finish_square_index
+    squares.each_with_index { |square, idx| return idx if square.finish_square? }
+  end
 
   def valid_finish_square?(square)
     return false if connected_to_start_square?(square)
@@ -224,6 +223,24 @@ class OneLineBridge < Grid
 end
 
 class MultiLine < Grid
+
+  def valid_grid?
+    valid_finish_squares?
+  end
+
+  def valid_finish_squares?
+    all_squares_of_type('pair').all? { |_, index| valid_finish_square?(index) }
+  end
+
+  private
+
+  def valid_pair_square?(square)
+    # update the following:
+    return false if connected_to_start_square?(square)
+    return false if connected_to_more_than_one_normal_square?(square)
+    true
+  end
+
 end
 
 class MultiLineWarp < Grid
@@ -290,9 +307,7 @@ class Bridge < Square
 end
 
 # SIMPLE GRID
-# boards = [{ type: :simple_grid, x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 }]
-
-# boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
+boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
 
 # 1 bridge, 1 barrier
 # boards = [{ type: :one_line_bridge, x: 3, y: 2, num_barriers: 1, num_bridges: 1, level: 1 }]
@@ -309,7 +324,7 @@ end
 #MULTI
 # boards = [{ type: :multi_line_simple, x: 3, y: 2, connection_pairs: 1, num_barriers: 1, level: 1 }]
 
-boards = [{ type: :multi_line_simple, x: 3, y: 3, connection_pairs: 3, num_barriers: 2, level: 1 }]
+# boards = [{ type: :multi_line_simple, x: 3, y: 3, connection_pairs: 3, num_barriers: 2, level: 1 }]
 
 
 # boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 },
