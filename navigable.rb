@@ -4,9 +4,12 @@ module Navigable
   end
 
   def connected_to_pair_square?(square)
-    pair_group = squares[square].type.match(/\d/).to_s
     surrounding_squares(square).any? do |square_index|
-      squares[square_index].type.match(Regexp.new(Regexp.escape(pair_group)))
+      if squares[square_index].type == :pair
+        squares[square_index].group == squares[square].group ? true : false
+      else
+        false
+      end
     end
   end
 

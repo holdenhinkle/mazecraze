@@ -182,7 +182,7 @@ class Grid
       elsif square =~ /pair/
         group = square.match(/\d/).to_s.to_i
         subgroup = square.match(/(?<=_)[a-z]/).to_s
-        Pair.new("pair_#{group}".to_sym, :not_taken, group, subgroup)
+        Pair.new(:pair, :not_taken, group, subgroup)
       elsif square == 'barrier'
         Square.new(:barrier, :taken)
       elsif square == 'bridge'
@@ -223,14 +223,13 @@ class OneLineBridge < Grid
 end
 
 class MultiLine < Grid
+  private
+
   def valid_grid?
     valid_pair_squares?
   end
 
-  private
-
   def valid_pair_squares?
-    binding.pry
     all_squares_of_type('pair').all? { |index| valid_pair_square?(index) }
   end
 
