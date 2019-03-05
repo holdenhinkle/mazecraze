@@ -163,6 +163,10 @@ class Grid
     solve([{ path: [start_square_index], grid: self }]) if @valid
   end
 
+  def valid?
+    valid_grid? && one_solution?
+  end
+
   def all_squares_taken?
     squares.all?(&:taken?)
   end
@@ -195,10 +199,6 @@ class Grid
 end
 
 class OneLine < Grid
-  def valid?
-    valid_grid? && one_solution?
-  end
-
   private
 
   def valid_grid?
@@ -223,24 +223,21 @@ class OneLineBridge < Grid
 end
 
 class MultiLine < Grid
-
   def valid_grid?
-    valid_finish_squares?
-  end
-
-  def valid_finish_squares?
-    all_squares_of_type('pair').all? { |_, index| valid_finish_square?(index) }
+    valid_pair_squares?
   end
 
   private
 
-  def valid_pair_square?(square)
-    # update the following:
-    return false if connected_to_start_square?(square)
-    return false if connected_to_more_than_one_normal_square?(square)
-    true
+  def valid_pair_squares?
+    binding.pry
+    all_squares_of_type('pair').all? { |index| valid_pair_square?(index) }
   end
 
+  def valid_pair_square?(square)
+    return false if connected_to_pair_square?(square)
+    true
+  end
 end
 
 class MultiLineWarp < Grid
@@ -307,7 +304,7 @@ class Bridge < Square
 end
 
 # SIMPLE GRID
-boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
+# boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
 
 # 1 bridge, 1 barrier
 # boards = [{ type: :one_line_bridge, x: 3, y: 2, num_barriers: 1, num_bridges: 1, level: 1 }]
@@ -322,7 +319,7 @@ boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
 # boards = [{ type: :one_line_bridge, x: 3, y: 2, num_bridges: 2, level: 1 }]
 
 #MULTI
-# boards = [{ type: :multi_line_simple, x: 3, y: 2, connection_pairs: 1, num_barriers: 1, level: 1 }]
+boards = [{ type: :multi_line_simple, x: 3, y: 2, connection_pairs: 1, num_barriers: 1, level: 1 }]
 
 # boards = [{ type: :multi_line_simple, x: 3, y: 3, connection_pairs: 3, num_barriers: 2, level: 1 }]
 

@@ -3,6 +3,13 @@ module Navigable
     surrounding_squares(square).any? { |sq| squares[sq].start_square? }
   end
 
+  def connected_to_pair_square?(square)
+    pair_group = squares[square].type.match(/\d/).to_s
+    surrounding_squares(square).any? do |square_index|
+      squares[square_index].type.match(Regexp.new(Regexp.escape(pair_group)))
+    end
+  end
+
   def connected_to_more_than_one_normal_square?(square)
     connections = 0
     connections += 1 if normal_not_taken_square_above?(square)
@@ -72,12 +79,10 @@ module Navigable
   end
 
   def all_squares_of_type(type)
-    results = {}
-    squares.each_with_index do |square, index|
-      results[square.type] = index if
+    squares.each_with_index.with_object([]) do |(square, index), results|
+      results << index if
         square.type.match(Regexp.new(Regexp.escape(type)))
     end
-    results
   end
 
   def normal_not_taken_square_above?(square)
