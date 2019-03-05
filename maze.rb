@@ -102,7 +102,7 @@ class Board
               elsif grid.count('finish') != num_starts
                 'finish'
               elsif (count_connection_pairs(grid) / 2) != num_connection_pairs
-                format_connection_pair_marker
+                format_connection_pair_type(grid)
               elsif grid.count('barrier') != num_barriers
                 'barrier'
               elsif grid.count('bridge') != num_bridges
@@ -119,6 +119,9 @@ class Board
     when :one_line_simple then 'OneLine'
     when :one_line_warp then "OneLineWarp"
     when :one_line_bridge then "OneLineBridge"
+    when :multi_line_simple then 'MultiLine'
+    when :multi_line_warp then "MultiLineWarp"
+    when :multi_line_bridge then "MultiLineBridge"
     end
   end
 
@@ -135,7 +138,7 @@ class Board
     grid.count { |square| square =~ /pair/ }
   end
 
-  def format_marker(grid)
+  def format_connection_pair_type(grid)
     count = count_connection_pairs(grid)
     group = count / 2 + 1
     subgroup = count.even? ? 'a' : 'b'
@@ -155,6 +158,7 @@ class Grid
     @x = board[:x]
     @y = board[:y]
     @squares = create_grid(grid_layout)
+    binding.pry
     @valid = valid_grid?
     @solutions = []
     solve([{ path: [start_square_index], grid: self }]) if @valid
@@ -173,11 +177,13 @@ class Grid
       elsif square =~ /finish/
         Square.new(:finish, :not_taken)
       elsif square =~ /pair/
-        group = square.match(/\d/)
-        subgroup = square.match(/(?<=_)[a-z]/)
-        Pair.new(:pair, :not_taken, group, subgroup)
+        group = square.match(/\d/).to_s.to_i
+        subgroup = square.match(/(?<=_)[a-z]/).to_s
+        Pair.new("pair_#{group}".to_sym, :not_taken, group, subgroup)
       elsif square == 'barrier'
         Square.new(:barrier, :taken)
+      elsif square == 'bridge'
+        Bridge.new(:bridge, :not_taken)
       else
         Square.new(:normal, :not_taken)
       end
@@ -215,6 +221,15 @@ class OneLineWarp < Grid
 end
 
 class OneLineBridge < Grid
+end
+
+class MultiLine < Grid
+end
+
+class MultiLineWarp < Grid
+end
+
+class MultiLineBridge < Grid
 end
 
 class Square
@@ -277,7 +292,25 @@ end
 # SIMPLE GRID
 # boards = [{ type: :simple_grid, x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 }]
 
-boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
+# boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
+
+# 1 bridge, 1 barrier
+# boards = [{ type: :one_line_bridge, x: 3, y: 2, num_barriers: 1, num_bridges: 1, level: 1 }]
+
+# # 2 bridges, 1 barrier
+# boards = [{ type: :one_line_bridge, x: 3, y: 2, num_barriers: 1, num_bridges: 2, level: 1 }]
+
+# # 1 bridge
+# boards = [{ type: :one_line_bridge, x: 3, y: 2, num_bridges: 1, level: 1 }]
+
+# # 2 bridge
+# boards = [{ type: :one_line_bridge, x: 3, y: 2, num_bridges: 2, level: 1 }]
+
+#MULTI
+# boards = [{ type: :multi_line_simple, x: 3, y: 2, connection_pairs: 1, num_barriers: 1, level: 1 }]
+
+boards = [{ type: :multi_line_simple, x: 3, y: 3, connection_pairs: 3, num_barriers: 2, level: 1 }]
+
 
 # boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 },
 #           { x: 3, y: 3, num_starts: 1, num_barriers: 2, level: 1 }]
