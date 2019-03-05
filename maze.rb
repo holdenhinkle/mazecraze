@@ -216,10 +216,10 @@ class OneLine < Grid
   end
 end
 
-class OneLineWarp < Grid
+class OneLineBridge < Oneline
 end
 
-class OneLineBridge < Grid
+class OneLineWarp < Grid
 end
 
 class MultiLine < Grid
@@ -239,10 +239,10 @@ class MultiLine < Grid
   end
 end
 
-class MultiLineWarp < Grid
+class MultiLineBridge < MultiLine
 end
 
-class MultiLineBridge < Grid
+class MultiLineWarp < Grid
 end
 
 class Square
