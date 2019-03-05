@@ -137,9 +137,9 @@ class Board
 
   def format_marker(grid)
     count = count_connection_pairs(grid)
-    pair_classifier = count / 2 + 1
-    pair_sub_classifier = count.even? ? 'a' : 'b'
-    "pair_#{pair_classifier}_#{pair_sub_classifier}"
+    group = count / 2 + 1
+    subgroup = count.even? ? 'a' : 'b'
+    "pair_#{group}_#{subgroup}"
   end
 end
 
@@ -173,9 +173,9 @@ class Grid
       elsif square =~ /finish/
         Square.new(:finish, :not_taken)
       elsif square =~ /pair/
-        classifier = square.match(/\d/)
-        subclassifier = square.match(/(?<=_)[a-z]/)
-        Pair.new(:pair, :not_taken, classifier, subclassifier)
+        group = square.match(/\d/)
+        subgroup = square.match(/(?<=_)[a-z]/)
+        Pair.new(:pair, :not_taken, group, subgroup)
       elsif square == 'barrier'
         Square.new(:barrier, :taken)
       else
@@ -255,12 +255,12 @@ class Square
 end
 
 class Pair < Square
-  attr_reader :classifier, :subclassifier
+  attr_reader :group, :subgroup
 
-  def initialize(type, status, classifier, subclassifier)
+  def initialize(type, status, group, subgroup)
     super(type, status)
-    @classifier = classifier
-    @subclassifier = subclassifier
+    @group = group
+    @subgroup = subgroup
   end
 end
 
