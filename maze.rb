@@ -116,9 +116,9 @@ class Board
 
   def grid_type(type)
     case type
-    when :one_line_simple_grid then 'OneLineSimpleGrid'
-    when :one_line_warp_grid then "OneLineWarpGrid"
-    when :one_line_bridge_grid then "OneLineBridgeGrid"
+    when :one_line_simple then 'OneLine'
+    when :one_line_warp then "OneLineWarp"
+    when :one_line_bridge then "OneLineBridge"
     end
   end
 
@@ -175,7 +175,7 @@ class Grid
       elsif square =~ /pair/
         classifier = square.match(/\d/)
         subclassifier = square.match(/(?<=_)[a-z]/)
-        PairSquare.new(:pair, :not_taken, classifier, subclassifier)
+        Pair.new(:pair, :not_taken, classifier, subclassifier)
       elsif square == 'barrier'
         Square.new(:barrier, :taken)
       else
@@ -189,7 +189,7 @@ class Grid
   end
 end
 
-class OneLineSimpleGrid < Grid
+class OneLine < Grid
   def valid?
     valid_grid? && one_solution?
   end
@@ -211,10 +211,10 @@ class OneLineSimpleGrid < Grid
   end
 end
 
-class OneLineWarpGrid < Grid
+class OneLineWarp < Grid
 end
 
-class OneLineBridgeGrid < Grid
+class OneLineBridge < Grid
 end
 
 class Square
@@ -254,7 +254,7 @@ class Square
   end
 end
 
-class PairSquare < Square
+class Pair < Square
   attr_reader :classifier, :subclassifier
 
   def initialize(type, status, classifier, subclassifier)
@@ -264,7 +264,7 @@ class PairSquare < Square
   end
 end
 
-class BridgeSquare < Square
+class Bridge < Square
   attr_accessor :horizontal_taken, :vertical_taken
 
   def initialize(type, status)
@@ -277,10 +277,7 @@ end
 # SIMPLE GRID
 # boards = [{ type: :simple_grid, x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 }]
 
-boards = [{ type: :one_line_simple_grid, x: 3, y: 2, num_barriers: 1, level: 1 }]
-
-["start", "finish", "bridge", "normal", "normal", "barrier"]
-
+boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
 
 # boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 },
 #           { x: 3, y: 3, num_starts: 1, num_barriers: 2, level: 1 }]
