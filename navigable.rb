@@ -13,6 +13,14 @@ module Navigable
     end
   end
 
+  def border_square?(square)
+    return true if top_border_indices.include?(square)
+    return true if bottom_border_indices.include?(square)
+    return true if right_border_indices.include?(square)
+    return true if left_border_indices.include?(square)
+    false
+  end
+
   def connected_to_more_than_one_normal_square?(square)
     connections = 0
     connections += 1 if normal_not_taken_square_above?(square)
@@ -29,6 +37,14 @@ module Navigable
     results << square_index_below(square) if square_below?(square)
     results << square_index_left(square) if square_left?(square)
     results
+  end
+
+  def top_border_indices
+    (0..x - 1).map { |n| n }
+  end
+
+  def bottom_border_indices
+    (0..size - 1).map { |n| n }.last(x)
   end
 
   def right_border_indices

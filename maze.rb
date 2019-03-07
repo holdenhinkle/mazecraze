@@ -178,7 +178,6 @@ class Grid
   private
 
   def create_grid(grid)
-    binding.pry
     grid.map do |square|
       if square =~ /start/
         Square.new(:start, :taken)
@@ -230,6 +229,20 @@ class OneLineBridge < OneLine
 end
 
 class OneLineWarp < Grid
+  private
+
+  def valid_grid?
+    valid_warp_squares?
+  end
+
+  def valid_warp_squares?
+    all_squares_of_type('warp').all? { |index| valid_warp_square?(index) }
+  end
+
+  def valid_warp_square?(square)
+    return false unless border_square?(square)
+    true
+  end
 end
 
 class MultiLine < Grid
@@ -336,10 +349,10 @@ end
 
 
 # # 1 warp
-# boards = [{ type: :one_line_bridge, x: 3, y: 2, num_warps: 1, level: 1 }]
+boards = [{ type: :one_line_warp, x: 3, y: 2, num_warps: 1, level: 1 }]
 
 # # 2 warps - 3 x 3
-boards = [{ type: :one_line_bridge, x: 3, y: 3, num_warps: 1, level: 1 }]
+# boards = [{ type: :one_line_bridge, x: 3, y: 3, num_warps: 1, level: 1 }]
 
 # # 2 bridge
 # boards = [{ type: :one_line_bridge, x: 3, y: 2, num_bridges: 2, level: 1 }]
