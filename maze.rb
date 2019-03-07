@@ -22,8 +22,9 @@ class Boards
 end
 
 class Board
-  attr_reader :x, :y, :size, 
-              :num_starts, :num_connection_pairs, :num_barriers, :num_bridges, :grids
+  attr_reader :grids, :x, :y, :size,
+              :num_starts, :num_connection_pairs, :num_barriers, :num_bridges,
+              :num_warps
 
   def initialize(board)
     @x = board[:x]
@@ -33,6 +34,7 @@ class Board
     @num_connection_pairs = board[:connection_pairs] ? board[:connection_pairs] : 0
     @num_barriers = board[:num_barriers] ? board[:num_barriers] : 0
     @num_bridges = board[:num_bridges] ? board[:num_bridges] : 0
+    @num_warps = board[:num_warps] ? board[:num_warps] : 0
     @grids = create_grids(board)
   end
 
@@ -103,10 +105,12 @@ class Board
                 'finish'
               elsif (count_pairs(grid, 'pair') / 2) != num_connection_pairs
                 format_pair(grid, 'pair')
-              elsif grid.count('barrier') != num_barriers
-                'barrier'
+              elsif (count_pairs(grid, 'warp') / 2) != num_warps
+                format_pair(grid, 'warp')
               elsif grid.count('bridge') != num_bridges
                 'bridge'
+              elsif grid.count('barrier') != num_barriers
+                'barrier'
               else
                 'normal'
               end
@@ -174,19 +178,25 @@ class Grid
   private
 
   def create_grid(grid)
+    binding.pry
     grid.map do |square|
       if square =~ /start/
         Square.new(:start, :taken)
       elsif square =~ /finish/
         Square.new(:finish, :not_taken)
+      # PAIR AND WARP CAN BE COMBINED
       elsif square =~ /pair/
         group = square.match(/\d/).to_s.to_i
         subgroup = square.match(/(?<=_)[a-z]/).to_s
         Pair.new(:pair, :not_taken, group, subgroup)
-      elsif square == 'barrier'
-        Square.new(:barrier, :taken)
+      elsif square =~ /warp/
+        group = square.match(/\d/).to_s.to_i
+        subgroup = square.match(/(?<=_)[a-z]/).to_s
+        Warp.new(:warp, :not_taken, group, subgroup)
       elsif square == 'bridge'
         Bridge.new(:bridge, :not_taken)
+      elsif square == 'barrier'
+        Square.new(:barrier, :taken)
       else
         Square.new(:normal, :not_taken)
       end
@@ -292,6 +302,16 @@ class Pair < Square
   end
 end
 
+class Warp < Square
+  attr_reader :group, :subgroup
+
+  def initialize(type, status, group, subgroup)
+    super(type, status)
+    @group = group
+    @subgroup = subgroup
+  end
+end
+
 class Bridge < Square
   attr_accessor :horizontal_taken, :vertical_taken
 
@@ -303,7 +323,7 @@ class Bridge < Square
 end
 
 # SIMPLE GRID
-boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
+# boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
 
 # 1 bridge, 1 barrier
 # boards = [{ type: :one_line_bridge, x: 3, y: 2, num_barriers: 1, num_bridges: 1, level: 1 }]
@@ -313,6 +333,13 @@ boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
 
 # # 1 bridge
 # boards = [{ type: :one_line_bridge, x: 3, y: 2, num_bridges: 1, level: 1 }]
+
+
+# # 1 warp
+# boards = [{ type: :one_line_bridge, x: 3, y: 2, num_warps: 1, level: 1 }]
+
+# # 2 warps - 3 x 3
+boards = [{ type: :one_line_bridge, x: 3, y: 3, num_warps: 1, level: 1 }]
 
 # # 2 bridge
 # boards = [{ type: :one_line_bridge, x: 3, y: 2, num_bridges: 2, level: 1 }]
