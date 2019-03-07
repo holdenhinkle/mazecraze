@@ -152,7 +152,7 @@ end
 
 class Grid
   include Navigable
-  include Solvable
+  # include Solvable
 
   attr_reader :type, :level, :x, :y, :squares, :valid, :solutions
 
@@ -205,6 +205,10 @@ class Grid
   def size
     squares.count
   end
+
+  def one_solution?
+    solutions.size == 1
+  end
 end
 
 class OneLine < Grid
@@ -223,9 +227,49 @@ class OneLine < Grid
     return false if connected_to_more_than_one_normal_square?(square)
     true
   end
+
+  def solve(new_attempt)
+    new_attempts = new_attempt
+
+    process_attempt = Proc.new do |current_attempt, next_square|
+      current_attempt = Marshal.load(Marshal.dump(current_attempt))
+      current_grid = current_attempt[:grid]
+      current_path = current_attempt[:path].push(next_square)
+      current_grid.squares[next_square].taken!
+      outcome = check_attempt(current_grid, current_path, next_square)
+      solutions << outcome if outcome.is_a? Array
+      new_attempts << outcome if outcome.is_a? Hash
+    end
+
+    until new_attempts.empty?
+      attempt(new_attempts.shift, process_attempt)
+    end
+  end
+
+  def check_attempt(current_grid, current_path, next_square)
+    if current_grid.squares[next_square].finish_square? &&
+       current_grid.all_squares_taken?
+      current_path
+    elsif current_grid.squares[next_square].normal_square?
+      { path: current_path, grid: current_grid }
+    end
+  end
+
+  def attempt(current_attempt, process_attempt)
+    current_square = current_attempt[:path].last
+    current_grid = current_attempt[:grid]
+    process_attempt.call(current_attempt, square_index_above(current_square)) if
+      not_taken_square_above?(current_square, current_grid)
+    process_attempt.call(current_attempt, square_index_right(current_square)) if
+      not_taken_square_right?(current_square, current_grid)
+    process_attempt.call(current_attempt, square_index_below(current_square)) if
+      not_taken_square_below?(current_square, current_grid)
+    process_attempt.call(current_attempt, square_index_left(current_square)) if
+      not_taken_square_left?(current_square, current_grid)
+  end
 end
 
-class OneLineBridge < OneLine
+class OneLineBridge < Grid
 end
 
 class OneLineWarp < Grid
@@ -262,7 +306,7 @@ class MultiLine < Grid
   end
 end
 
-class MultiLineBridge < MultiLine
+class MultiLineBridge < Grid
 end
 
 class MultiLineWarp < Grid
@@ -336,7 +380,7 @@ class Bridge < Square
 end
 
 # SIMPLE GRID
-# boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
+boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
 
 # 1 bridge, 1 barrier
 # boards = [{ type: :one_line_bridge, x: 3, y: 2, num_barriers: 1, num_bridges: 1, level: 1 }]
@@ -349,7 +393,7 @@ end
 
 
 # # 1 warp
-boards = [{ type: :one_line_warp, x: 3, y: 2, num_warps: 1, level: 1 }]
+# boards = [{ type: :one_line_warp, x: 3, y: 2, num_warps: 1, level: 1 }]
 
 # # 2 warps - 3 x 3
 # boards = [{ type: :one_line_bridge, x: 3, y: 3, num_warps: 1, level: 1 }]
