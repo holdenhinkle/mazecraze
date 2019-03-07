@@ -101,8 +101,8 @@ class Board
                 'start'
               elsif grid.count('finish') != num_starts
                 'finish'
-              elsif (count_connection_pairs(grid) / 2) != num_connection_pairs
-                format_connection_pair_type(grid)
+              elsif (count_pairs(grid, 'pair') / 2) != num_connection_pairs
+                format_pair(grid, 'pair')
               elsif grid.count('barrier') != num_barriers
                 'barrier'
               elsif grid.count('bridge') != num_bridges
@@ -134,15 +134,15 @@ class Board
     end
   end
 
-  def count_connection_pairs(grid)
-    grid.count { |square| square =~ /pair/ }
+  def count_pairs(grid, type)
+    grid.count { |square| square.match(Regexp.new(Regexp.escape(type))) }
   end
 
-  def format_connection_pair_type(grid)
-    count = count_connection_pairs(grid)
+  def format_pair(grid, type)
+    count = count_pairs(grid, type)
     group = count / 2 + 1
     subgroup = count.even? ? 'a' : 'b'
-    "pair_#{group}_#{subgroup}"
+    "#{type}_#{group}_#{subgroup}"
   end
 end
 
@@ -216,7 +216,7 @@ class OneLine < Grid
   end
 end
 
-class OneLineBridge < Oneline
+class OneLineBridge < OneLine
 end
 
 class OneLineWarp < Grid
@@ -303,7 +303,7 @@ class Bridge < Square
 end
 
 # SIMPLE GRID
-# boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
+boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
 
 # 1 bridge, 1 barrier
 # boards = [{ type: :one_line_bridge, x: 3, y: 2, num_barriers: 1, num_bridges: 1, level: 1 }]
@@ -318,7 +318,7 @@ end
 # boards = [{ type: :one_line_bridge, x: 3, y: 2, num_bridges: 2, level: 1 }]
 
 #MULTI
-boards = [{ type: :multi_line_simple, x: 3, y: 2, connection_pairs: 1, num_barriers: 1, level: 1 }]
+# boards = [{ type: :multi_line_simple, x: 3, y: 2, connection_pairs: 1, num_barriers: 1, level: 1 }]
 
 # boards = [{ type: :multi_line_simple, x: 3, y: 3, connection_pairs: 3, num_barriers: 2, level: 1 }]
 
