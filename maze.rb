@@ -4,8 +4,8 @@ require 'fileutils'
 require 'json'
 require 'date'
 
-require_relative 'navigable'
-require_relative 'solvable'
+require_relative 'navigate'
+require_relative 'solve'
 
 class Boards
   attr_reader :all_boards
@@ -40,16 +40,27 @@ class Board
 
   private
 
+  # def create_grids(board)
+  #   counter = starting_file_number(board[:level]) + 1
+  #   permutations_file_path = create_permutations_file_path
+  #   generate_permutations(layout, permutations_file_path)
+  #   File.open(permutations_file_path, "r").each_line do |grid_layout|
+  #     grid = Object.const_get(grid_type(board[:type])).new(board, JSON.parse(grid_layout))
+  #     next unless grid.valid?
+  #     save_grid!(grid, counter)
+  #     counter += 1
+  #   end
+  # end
+
+  # The following is for testing purposes, to see if the program can solve a grid.
   def create_grids(board)
-    counter = starting_file_number(board[:level]) + 1
-    permutations_file_path = create_permutations_file_path
-    generate_permutations(layout, permutations_file_path)
-    File.open(permutations_file_path, "r").each_line do |grid_layout|
-      grid = Object.const_get(grid_type(board[:type])).new(board, JSON.parse(grid_layout))
-      next unless grid.valid?
-      save_grid!(grid, counter)
-      counter += 1
-    end
+    # new_grid_solution = [11, 15, 14, 10, 6, 2, 3, 7, 6, 5, 9, 13, 12, 8, 4, 0]
+    new_grid = ["finish", "barrier", "normal", "normal",
+                "normal", "normal", "bridge", "normal",
+                "normal", "normal", "normal", "start",
+                "normal", "normal", "normal", "normal"]
+
+    grid = OneLineBridge.new(board, new_grid)
   end
 
   def create_permutations_file_path
@@ -151,8 +162,8 @@ class Board
 end
 
 class Grid
-  include Navigable
-  # include Solvable
+  include Navigate
+  include Solve
 
   attr_reader :type, :level, :x, :y, :squares, :valid, :solutions
 
@@ -167,9 +178,9 @@ class Grid
     solve([{ path: [start_square_index], grid: self }]) if @valid
   end
 
-  def valid?
-    valid_grid? && one_solution?
-  end
+  # def valid?
+  #   valid_grid? && one_solution?
+  # end
 
   def all_squares_taken?
     squares.all?(&:taken?)
@@ -206,73 +217,64 @@ class Grid
     squares.count
   end
 
-  def one_solution?
-    solutions.size == 1
-  end
+  # def one_solution?
+  #   solutions.size == 1
+  # end
 end
 
 class OneLine < Grid
+  include NavigateOneline
+  include SolveOneLine
+
   private
 
   def valid_grid?
-    valid_finish_square?(finish_square_index)
+    valid_finish_square?
+  end
+
+  def valid_finish_square?
+    square = finish_square_index
+    return false if connected_to_start_square?(square)
+    return false if connected_to_more_than_one_normal_square?(square)
+    true
+  end
+
+  def finish_square_index
+    squares.each_with_index { |square, idx| return idx if square.finish_square? }
+  end
+end
+
+class OneLineBridge < Grid
+  include NavigateBridge
+  include SolveBridge
+
+  private
+
+  def valid_grid?
+    valid_finish_square? && valid_bridge_squares?
+  end
+
+  def valid_finish_square?
+    square = finish_square_index
+    return false if connected_to_start_square?(square)
+    return false if connected_to_more_than_one_normal_square?(square)
+    true
   end
 
   def finish_square_index
     squares.each_with_index { |square, idx| return idx if square.finish_square? }
   end
 
-  def valid_finish_square?(square)
-    return false if connected_to_start_square?(square)
-    return false if connected_to_more_than_one_normal_square?(square)
-    true
-  end
-
-  def solve(new_attempt)
-    new_attempts = new_attempt
-
-    process_attempt = Proc.new do |current_attempt, next_square|
-      current_attempt = Marshal.load(Marshal.dump(current_attempt))
-      current_grid = current_attempt[:grid]
-      current_path = current_attempt[:path].push(next_square)
-      current_grid.squares[next_square].taken!
-      outcome = check_attempt(current_grid, current_path, next_square)
-      solutions << outcome if outcome.is_a? Array
-      new_attempts << outcome if outcome.is_a? Hash
-    end
-
-    until new_attempts.empty?
-      attempt(new_attempts.shift, process_attempt)
+  def valid_bridge_squares?
+    all_squares_of_type('bridge').all? do |square|
+      !connected_to_barrier_square?(square) && !border_square?(square)
     end
   end
-
-  def check_attempt(current_grid, current_path, next_square)
-    if current_grid.squares[next_square].finish_square? &&
-       current_grid.all_squares_taken?
-      current_path
-    elsif current_grid.squares[next_square].normal_square?
-      { path: current_path, grid: current_grid }
-    end
-  end
-
-  def attempt(current_attempt, process_attempt)
-    current_square = current_attempt[:path].last
-    current_grid = current_attempt[:grid]
-    process_attempt.call(current_attempt, square_index_above(current_square)) if
-      not_taken_square_above?(current_square, current_grid)
-    process_attempt.call(current_attempt, square_index_right(current_square)) if
-      not_taken_square_right?(current_square, current_grid)
-    process_attempt.call(current_attempt, square_index_below(current_square)) if
-      not_taken_square_below?(current_square, current_grid)
-    process_attempt.call(current_attempt, square_index_left(current_square)) if
-      not_taken_square_left?(current_square, current_grid)
-  end
-end
-
-class OneLineBridge < Grid
 end
 
 class OneLineWarp < Grid
+  include NavigateWarp
+
   private
 
   def valid_grid?
@@ -347,6 +349,16 @@ class Square
   def normal_square?
     type == :normal
   end
+
+  def barrier_square?
+    return true if type.match(/barrier/)
+    false
+  end
+
+  def bridge_square?
+    return true if type.match(/bridge/)
+    false
+  end
 end
 
 class Pair < Square
@@ -377,10 +389,34 @@ class Bridge < Square
     @horizontal_taken = false
     @vertical_taken = false
   end
+
+  def vertical_taken?
+    vertical_taken
+  end
+
+  def vertical_not_taken?
+    !vertical_taken
+  end
+
+  def vertical_taken!
+    self.vertical_taken = true
+  end
+
+  def horizontal_taken?
+    horizontal_taken
+  end
+
+  def horizontal_not_taken?
+    !horizontal_taken
+  end
+
+  def horizontal_taken!
+    self.horizontal_taken = true
+  end
 end
 
 # SIMPLE GRID
-boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
+# boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
 
 # 1 bridge, 1 barrier
 # boards = [{ type: :one_line_bridge, x: 3, y: 2, num_barriers: 1, num_bridges: 1, level: 1 }]
@@ -389,8 +425,7 @@ boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
 # boards = [{ type: :one_line_bridge, x: 3, y: 2, num_barriers: 1, num_bridges: 2, level: 1 }]
 
 # # 1 bridge
-# boards = [{ type: :one_line_bridge, x: 3, y: 2, num_bridges: 1, level: 1 }]
-
+boards = [{ type: :one_line_bridge, x: 4, y: 4, num_bridges: 1, num_barriers: 1, level: 1 }]
 
 # # 1 warp
 # boards = [{ type: :one_line_warp, x: 3, y: 2, num_warps: 1, level: 1 }]
@@ -417,6 +452,10 @@ boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
 #           { x: 4, y: 3, num_starts: 1, num_barriers: 2, level: 1 }]
 
 # WARP GRID
+
+# boards = [{ type: :one_line_bridge, x: 5, y: 5, num_bridges: 2, num_barriers: 2, level: 1 }]
+
+# grid = ["finish", "normal", "normal", "normal", "normal", "barrier", "barrier", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "bridge", "normal", "bridge", "normal", "start", "normal", "normal", "normal", "normal"] 
 
 
 Boards.new(boards)
