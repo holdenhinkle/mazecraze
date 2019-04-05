@@ -24,7 +24,7 @@ end
 class Board
   attr_reader :grids, :x, :y, :size,
               :num_starts, :num_connection_pairs, :num_barriers, :num_bridges,
-              :num_warps
+              :num_warps, :num_tunnels
 
   def initialize(board)
     @x = board[:x]
@@ -35,6 +35,7 @@ class Board
     @num_barriers = board[:num_barriers] ? board[:num_barriers] : 0
     @num_bridges = board[:num_bridges] ? board[:num_bridges] : 0
     @num_warps = board[:num_warps] ? board[:num_warps] : 0
+    @num_tunnels = board[:num_tunnels] ? board[:num_tunnels] : 0
     @grids = create_grids(board)
   end
 
@@ -52,15 +53,28 @@ class Board
   #   end
   # end
 
-  # The following is for testing purposes, to see if the program can solve a grid.
-  def create_grids(board)
-    # new_grid_solution = [11, 15, 14, 10, 6, 2, 3, 7, 6, 5, 9, 13, 12, 8, 4, 0]
-    new_grid = ["finish", "barrier", "normal", "normal",
-                "normal", "normal", "bridge", "normal",
-                "normal", "normal", "normal", "start",
-                "normal", "normal", "normal", "normal"]
+  # * *
+  # FOR testing
+  # * *
 
-    grid = OneLineBridge.new(board, new_grid)
+  # ONE LINE BRIDGE
+  # boards = [{ type: :one_line_bridge, x: 4, y: 4, num_barriers: 1, num_bridges: 1, level: 1 }]
+  # def create_grids(board)
+  #   new_grid = ["finish", "barrier", "normal", "normal",
+  #               "normal", "normal", "bridge", "normal",
+  #               "normal", "normal", "normal", "start",
+  #               "normal", "normal", "normal", "normal"]
+
+  #   grid = OneLineBridge.new(board, new_grid)
+  # end
+
+  # ONE LINE TUNNEL
+  def create_grids(board)
+    new_grid = ["start", "barrier", "tunnel_1_b", "normal",
+                "normal", "normal", "normal", "normal",
+                "normal", "normal", "barrier", "barrier",
+                "tunnel_1_a", "normal", "normal", "finish"]
+    grid = OneLineTunnel.new(board, new_grid)
   end
 
   def create_permutations_file_path
@@ -93,7 +107,7 @@ class Board
       File.exist?(permutations_file_path)
 
     each_permutation(layout) do |permutation|
-      next if grid_layout_not_unique?(permutations_file_path, permutation)
+      next if grid_layout_exists?(permutations_file_path, permutation)
       File.open(permutations_file_path, "a") do |f|
         f.write(permutation)
         f.write("\n")
@@ -101,7 +115,7 @@ class Board
     end
   end
 
-  def grid_layout_not_unique?(file_path, permutation)
+  def grid_layout_exists?(file_path, permutation)
     File.foreach(file_path).any? do |line|
       line.include?(permutation.to_s)
     end
@@ -118,6 +132,8 @@ class Board
                 format_pair(grid, 'pair')
               elsif (count_pairs(grid, 'warp') / 2) != num_warps
                 format_pair(grid, 'warp')
+              elsif (count_pairs(grid, 'tunnel') / 2) != num_tunnels
+                format_pair(grid, 'tunnel')
               elsif grid.count('bridge') != num_bridges
                 'bridge'
               elsif grid.count('barrier') != num_barriers
@@ -132,11 +148,12 @@ class Board
   def grid_type(type)
     case type
     when :one_line_simple then 'OneLine'
-    when :one_line_warp then "OneLineWarp"
+    when :one_line_warp then "OneLineWarp" # DO THIS
+    when :one_line_tunnel then "OneLineTunnel" # DO THIS
     when :one_line_bridge then "OneLineBridge"
-    when :multi_line_simple then 'MultiLine'
-    when :multi_line_warp then "MultiLineWarp"
-    when :multi_line_bridge then "MultiLineBridge"
+    when :multi_line_simple then 'MultiLine' # DO THIS
+    when :multi_line_warp then "MultiLineWarp" # DO THIS
+    when :multi_line_bridge then "MultiLineBridge" # DO THIS
     end
   end
 
@@ -178,9 +195,9 @@ class Grid
     solve([{ path: [start_square_index], grid: self }]) if @valid
   end
 
-  # def valid?
-  #   valid_grid? && one_solution?
-  # end
+  def valid?
+    valid_grid? && one_solution?
+  end
 
   def all_squares_taken?
     squares.all?(&:taken?)
@@ -188,13 +205,24 @@ class Grid
 
   private
 
+  def valid_finish_square?
+    square = finish_square_index
+    return false if connected_to_start_square?(square)
+    return false if connected_to_more_than_one_normal_square?(square)
+    true
+  end
+
+  def finish_square_index
+    squares.each_with_index { |square, idx| return idx if square.finish_square? }
+  end
+
   def create_grid(grid)
     grid.map do |square|
       if square =~ /start/
         Square.new(:start, :taken)
       elsif square =~ /finish/
         Square.new(:finish, :not_taken)
-      # PAIR AND WARP CAN BE COMBINED
+      # PAIR AND WARP CAN BE COMBINED -- TUNNEL TOO PROBABLY
       elsif square =~ /pair/
         group = square.match(/\d/).to_s.to_i
         subgroup = square.match(/(?<=_)[a-z]/).to_s
@@ -203,6 +231,9 @@ class Grid
         group = square.match(/\d/).to_s.to_i
         subgroup = square.match(/(?<=_)[a-z]/).to_s
         Warp.new(:warp, :not_taken, group, subgroup)
+      elsif square =~ /tunnel/
+        group = square.match(/\d/).to_s.to_i
+        Tunnel.new(:tunnel, :not_taken, group, subgroup)
       elsif square == 'bridge'
         Bridge.new(:bridge, :not_taken)
       elsif square == 'barrier'
@@ -216,10 +247,6 @@ class Grid
   def size
     squares.count
   end
-
-  # def one_solution?
-  #   solutions.size == 1
-  # end
 end
 
 class OneLine < Grid
@@ -232,16 +259,16 @@ class OneLine < Grid
     valid_finish_square?
   end
 
-  def valid_finish_square?
-    square = finish_square_index
-    return false if connected_to_start_square?(square)
-    return false if connected_to_more_than_one_normal_square?(square)
-    true
-  end
+  # def valid_finish_square?
+  #   square = finish_square_index
+  #   return false if connected_to_start_square?(square)
+  #   return false if connected_to_more_than_one_normal_square?(square)
+  #   true
+  # end
 
-  def finish_square_index
-    squares.each_with_index { |square, idx| return idx if square.finish_square? }
-  end
+  # def finish_square_index
+  #   squares.each_with_index { |square, idx| return idx if square.finish_square? }
+  # end
 end
 
 class OneLineBridge < Grid
@@ -254,16 +281,16 @@ class OneLineBridge < Grid
     valid_finish_square? && valid_bridge_squares?
   end
 
-  def valid_finish_square?
-    square = finish_square_index
-    return false if connected_to_start_square?(square)
-    return false if connected_to_more_than_one_normal_square?(square)
-    true
-  end
+  # def valid_finish_square?
+  #   square = finish_square_index
+  #   return false if connected_to_start_square?(square)
+  #   return false if connected_to_more_than_one_normal_square?(square)
+  #   true
+  # end
 
-  def finish_square_index
-    squares.each_with_index { |square, idx| return idx if square.finish_square? }
-  end
+  # def finish_square_index
+  #   squares.each_with_index { |square, idx| return idx if square.finish_square? }
+  # end
 
   def valid_bridge_squares?
     all_squares_of_type('bridge').all? do |square|
@@ -272,13 +299,25 @@ class OneLineBridge < Grid
   end
 end
 
-class OneLineWarp < Grid
-  include NavigateWarp
+class OneLineTunnel < Grid
+  include NavigateTunnel
+  include SolveTunnel
 
   private
 
   def valid_grid?
-    valid_warp_squares?
+    valid_finish_square?
+  end
+end
+
+class OneLineWarp < Grid
+  include NavigateWarp
+  include SolveWarp
+
+  private
+
+  def valid_grid?
+    valid_finish_square? && valid_warp_squares?
   end
 
   def valid_warp_squares?
@@ -371,15 +410,19 @@ class Pair < Square
   end
 end
 
-class Warp < Square
-  attr_reader :group, :subgroup
+class Tunnel < Pair; end
 
-  def initialize(type, status, group, subgroup)
-    super(type, status)
-    @group = group
-    @subgroup = subgroup
-  end
-end
+class Warp < Pair; end
+
+# class Warp < Square
+#   attr_reader :group, :subgroup
+
+#   def initialize(type, status, group, subgroup)
+#     super(type, status)
+#     @group = group
+#     @subgroup = subgroup
+#   end
+# end
 
 class Bridge < Square
   attr_accessor :horizontal_taken, :vertical_taken
@@ -415,17 +458,23 @@ class Bridge < Square
   end
 end
 
+# DONE
 # SIMPLE GRID
 # boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
 
 # 1 bridge, 1 barrier
-# boards = [{ type: :one_line_bridge, x: 3, y: 2, num_barriers: 1, num_bridges: 1, level: 1 }]
+# boards = [{ type: :one_line_bridge, x: 4, y: 4, num_barriers: 1, num_bridges: 1, level: 1 }]
+
+# IN PROGRESS
+# 1 tunnel, 1 barrier
+boards = [{ type: :one_line_tunnel, x: 4, y: 4, num_barriers: 3, num_tunnels: 1, level: 1 }]
+
 
 # # 2 bridges, 1 barrier
 # boards = [{ type: :one_line_bridge, x: 3, y: 2, num_barriers: 1, num_bridges: 2, level: 1 }]
 
 # # 1 bridge
-boards = [{ type: :one_line_bridge, x: 4, y: 4, num_bridges: 1, num_barriers: 1, level: 1 }]
+# boards = [{ type: :one_line_bridge, x: 4, y: 4, num_bridges: 1, num_barriers: 1, level: 1 }]
 
 # # 1 warp
 # boards = [{ type: :one_line_warp, x: 3, y: 2, num_warps: 1, level: 1 }]
@@ -456,6 +505,5 @@ boards = [{ type: :one_line_bridge, x: 4, y: 4, num_bridges: 1, num_barriers: 1,
 # boards = [{ type: :one_line_bridge, x: 5, y: 5, num_bridges: 2, num_barriers: 2, level: 1 }]
 
 # grid = ["finish", "normal", "normal", "normal", "normal", "barrier", "barrier", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "bridge", "normal", "bridge", "normal", "start", "normal", "normal", "normal", "normal"] 
-
 
 Boards.new(boards)

@@ -180,7 +180,8 @@ module NavigateBridge
       current_square.bridge_square? && current_square.vertical_not_taken? ||
       square_above.type == :normal && square_above.not_taken? ||
       square_above.type == :finish && square_above.not_taken? ||
-      square_above.type == :bridge && square_above.not_taken? && square_above.vertical_not_taken?
+      square_above.type == :bridge && square_above.not_taken? &&
+        square_above.vertical_not_taken?
   end
 
   def valid_not_taken_square_right?(square, current_grid = self)
@@ -192,7 +193,8 @@ module NavigateBridge
       current_square.bridge_square? && current_square.horizontal_not_taken? ||
       square_right.type == :normal && square_right.not_taken? ||
       square_right.type == :finish && square_right.not_taken? ||
-      square_right.type == :bridge && square_right.not_taken? && square_right.horizontal_not_taken?
+      square_right.type == :bridge && square_right.not_taken? &&
+        square_right.horizontal_not_taken?
   end
 
   def valid_not_taken_square_below?(square, current_grid = self)
@@ -204,7 +206,8 @@ module NavigateBridge
       current_square.bridge_square? && current_square.vertical_not_taken? ||
       square_below.type == :normal && square_below.not_taken? ||
       square_below.type == :finish && square_below.not_taken? ||
-      square_below.type == :bridge && square_below.not_taken? && square_below.vertical_not_taken?
+      square_below.type == :bridge && square_below.not_taken? &&
+        square_below.vertical_not_taken?
   end
 
   def valid_not_taken_square_left?(square, current_grid = self)
@@ -216,8 +219,12 @@ module NavigateBridge
       current_square.bridge_square? && current_square.horizontal_not_taken? ||
       square_left.type == :normal && square_left.not_taken? ||
       square_left.type == :finish && square_left.not_taken? ||
-      square_left.type == :bridge && square_left.not_taken? && square_left.horizontal_not_taken?
+      square_left.type == :bridge && square_left.not_taken? &&
+        square_left.horizontal_not_taken?
   end
+end
+
+module NavigateTunnel
 end
 
 module NavigateWarp
