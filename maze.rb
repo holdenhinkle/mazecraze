@@ -24,7 +24,7 @@ end
 class Board
   attr_reader :mazes, :x, :y, :size,
               :num_starts, :num_connection_pairs, :num_barriers, :num_bridges,
-              :num_warps, :num_tunnels
+              :num_portals, :num_tunnels
 
   def initialize(board)
     @x = board[:x]
@@ -34,7 +34,7 @@ class Board
     @num_connection_pairs = board[:connection_pairs] ? board[:connection_pairs] : 0
     @num_barriers = board[:num_barriers] ? board[:num_barriers] : 0
     @num_bridges = board[:num_bridges] ? board[:num_bridges] : 0
-    @num_warps = board[:num_warps] ? board[:num_warps] : 0
+    @num_portals = board[:num_portals] ? board[:num_portals] : 0
     @num_tunnels = board[:num_tunnels] ? board[:num_tunnels] : 0
     @mazes = create_mazes(board)
   end
@@ -130,8 +130,8 @@ class Board
                 'finish'
               elsif (count_pairs(maze, 'pair') / 2) != num_connection_pairs
                 format_pair(maze, 'pair')
-              elsif (count_pairs(maze, 'warp') / 2) != num_warps
-                format_pair(maze, 'warp')
+              elsif (count_pairs(maze, 'portal') / 2) != num_portals
+                format_pair(maze, 'portal')
               elsif (count_pairs(maze, 'tunnel') / 2) != num_tunnels
                 format_pair(maze, 'tunnel')
               elsif maze.count('bridge') != num_bridges
@@ -140,7 +140,7 @@ class Board
                 'barrier'
               else
                 'normal'
-              end
+              end 
     end
     maze
   end
@@ -148,11 +148,11 @@ class Board
   def maze_type(type)
     case type
     when :one_line_simple then 'OneLine'
-    when :one_line_warp then "OneLineWarp" # DO THIS
+    when :one_line_portal then "OneLinePortal" # DO THIS
     when :one_line_tunnel then "OneLineTunnel" # DO THIS
     when :one_line_bridge then "OneLineBridge"
     when :multi_line_simple then 'MultiLine' # DO THIS
-    when :multi_line_warp then "MultiLineWarp" # DO THIS
+    when :multi_line_portal then "MultiLinePortal" # DO THIS
     when :multi_line_bridge then "MultiLineBridge" # DO THIS
     end
   end
@@ -227,10 +227,10 @@ class Maze
         group = square.match(/\d/).to_s.to_i
         subgroup = square.match(/(?<=_)[a-z]/).to_s
         Pair.new(:pair, :not_taken, group, subgroup)
-      elsif square =~ /warp/
+      elsif square =~ /portal/
         group = square.match(/\d/).to_s.to_i
         subgroup = square.match(/(?<=_)[a-z]/).to_s
-        Warp.new(:warp, :not_taken, group, subgroup)
+        Portal.new(:portal, :not_taken, group, subgroup)
       elsif square =~ /tunnel/
         group = square.match(/\d/).to_s.to_i
         Tunnel.new(:tunnel, :not_taken, group, subgroup)
@@ -310,21 +310,21 @@ class OneLineTunnel < Maze
   end
 end
 
-class OneLineWarp < Maze
-  include NavigateWarp
-  include SolveWarp
+class OneLinePortal < Maze
+  include NavigatePortal
+  include SolvePortal
 
   private
 
   def valid_maze?
-    valid_finish_square? && valid_warp_squares?
+    valid_finish_square? && valid_portal_squares?
   end
 
-  def valid_warp_squares?
-    all_squares_of_type('warp').all? { |index| valid_warp_square?(index) }
+  def valid_portal_squares?
+    all_squares_of_type('portal').all? { |index| valid_portal_square?(index) }
   end
 
-  def valid_warp_square?(square)
+  def valid_portal_square?(square)
     return false unless border_square?(square)
     true
   end
@@ -350,7 +350,7 @@ end
 class MultiLineBridge < Maze
 end
 
-class MultiLineWarp < Maze
+class MultiLinePortal < Maze
 end
 
 class Square
@@ -412,9 +412,9 @@ end
 
 class Tunnel < Pair; end
 
-class Warp < Pair; end
+class Portal < Pair; end
 
-# class Warp < Square
+# class Portal < Square
 #   attr_reader :group, :subgroup
 
 #   def initialize(type, status, group, subgroup)
@@ -476,11 +476,11 @@ boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
 # # 1 bridge
 # boards = [{ type: :one_line_bridge, x: 4, y: 4, num_bridges: 1, num_barriers: 1, level: 1 }]
 
-# # 1 warp
-# boards = [{ type: :one_line_warp, x: 3, y: 2, num_warps: 1, level: 1 }]
+# # 1 portal
+# boards = [{ type: :one_line_portal, x: 3, y: 2, num_portals: 1, level: 1 }]
 
-# # 2 warps - 3 x 3
-# boards = [{ type: :one_line_bridge, x: 3, y: 3, num_warps: 1, level: 1 }]
+# # 2 portals - 3 x 3
+# boards = [{ type: :one_line_bridge, x: 3, y: 3, num_portals: 1, level: 1 }]
 
 # # 2 bridge
 # boards = [{ type: :one_line_bridge, x: 3, y: 2, num_bridges: 2, level: 1 }]

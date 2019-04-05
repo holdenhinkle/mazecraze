@@ -32,21 +32,21 @@ module Navigate
     surrounding_squares(square).any? { |sq| squares[sq].barrier_square? }
   end
 
-  # OneLineWarp < Maze, #square_right?(square)
+  # OneLinePortal < Maze, #square_right?(square)
   def right_border_indices
     results = []
     (x - 1..size - 1).step(x) { |index| results << index }
     results
   end
 
-  # OneLineWarp < Maze, #square_left?(square)
+  # OneLinePortal < Maze, #square_left?(square)
   def left_border_indices
     results = []
     (0..size - 1).step(x) { |index| results << index }
     results
   end
 
-  # OneLineWarp < Maze
+  # OneLinePortal < Maze
   # OneLineBridge < Maze
   def border_square?(square)
     return true if top_border_indices.include?(square)
@@ -56,13 +56,13 @@ module Navigate
     false
   end
 
-  # OneLineWarp < Maze
+  # OneLinePortal < Maze
   # OneLineBridge < Maze
   def top_border_indices
     (0..x - 1).map { |n| n }
   end
 
-  # OneLineWarp < Maze
+  # OneLinePortal < Maze
   # OneLineBridge < Maze
   def bottom_border_indices
     (0..size - 1).map { |n| n }.last(x)
@@ -227,5 +227,5 @@ end
 module NavigateTunnel
 end
 
-module NavigateWarp
+module NavigatePortal
 end
