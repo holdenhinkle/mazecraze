@@ -22,7 +22,7 @@ class Boards
 end
 
 class Board
-  attr_reader :grids, :x, :y, :size,
+  attr_reader :mazes, :x, :y, :size,
               :num_starts, :num_connection_pairs, :num_barriers, :num_bridges,
               :num_warps, :num_tunnels
 
@@ -36,49 +36,49 @@ class Board
     @num_bridges = board[:num_bridges] ? board[:num_bridges] : 0
     @num_warps = board[:num_warps] ? board[:num_warps] : 0
     @num_tunnels = board[:num_tunnels] ? board[:num_tunnels] : 0
-    @grids = create_grids(board)
+    @mazes = create_mazes(board)
   end
 
   private
 
-  # def create_grids(board)
-  #   counter = starting_file_number(board[:level]) + 1
-  #   permutations_file_path = create_permutations_file_path
-  #   generate_permutations(layout, permutations_file_path)
-  #   File.open(permutations_file_path, "r").each_line do |grid_layout|
-  #     grid = Object.const_get(grid_type(board[:type])).new(board, JSON.parse(grid_layout))
-  #     next unless grid.valid?
-  #     save_grid!(grid, counter)
-  #     counter += 1
-  #   end
-  # end
+  def create_mazes(board)
+    counter = starting_file_number(board[:level]) + 1
+    permutations_file_path = create_permutations_file_path
+    generate_permutations(layout, permutations_file_path)
+    File.open(permutations_file_path, "r").each_line do |maze_layout|
+      maze = Object.const_get(maze_type(board[:type])).new(board, JSON.parse(maze_layout))
+      next unless maze.valid?
+      save_maze!(maze, counter)
+      counter += 1
+    end
+  end
 
   # * *
   # FOR testing
-  # * *
+  # *
 
   # ONE LINE BRIDGE
   # boards = [{ type: :one_line_bridge, x: 4, y: 4, num_barriers: 1, num_bridges: 1, level: 1 }]
-  # def create_grids(board)
-  #   new_grid = ["finish", "barrier", "normal", "normal",
+  # def create_mazes(board)
+  #   new_maze = ["finish", "barrier", "normal", "normal",
   #               "normal", "normal", "bridge", "normal",
   #               "normal", "normal", "normal", "start",
   #               "normal", "normal", "normal", "normal"]
 
-  #   grid = OneLineBridge.new(board, new_grid)
+  #   maze = OneLineBridge.new(board, new_maze)
   # end
 
   # ONE LINE TUNNEL
-  def create_grids(board)
-    new_grid = ["start", "barrier", "tunnel_1_b", "normal",
-                "normal", "normal", "normal", "normal",
-                "normal", "normal", "barrier", "barrier",
-                "tunnel_1_a", "normal", "normal", "finish"]
-    grid = OneLineTunnel.new(board, new_grid)
-  end
+  # def create_mazes(board)
+  #   new_maze = ["start", "barrier", "tunnel_1_b", "normal",
+  #               "normal", "normal", "normal", "normal",
+  #               "normal", "normal", "barrier", "barrier",
+  #               "tunnel_1_a", "normal", "normal", "finish"]
+  #   maze = OneLineTunnel.new(board, new_maze)
+  # end
 
   def create_permutations_file_path
-    permutations_directory = "/levels/grid_permutations/"
+    permutations_directory = "/levels/maze_permutations/"
     file_name = "#{x}x _by_#{y}y_#{num_barriers}b_#{DateTime.now}.txt"
     File.join(data_path, permutations_directory, file_name)
   end
@@ -107,7 +107,7 @@ class Board
       File.exist?(permutations_file_path)
 
     each_permutation(layout) do |permutation|
-      next if grid_layout_exists?(permutations_file_path, permutation)
+      next if maze_layout_exists?(permutations_file_path, permutation)
       File.open(permutations_file_path, "a") do |f|
         f.write(permutation)
         f.write("\n")
@@ -115,37 +115,37 @@ class Board
     end
   end
 
-  def grid_layout_exists?(file_path, permutation)
+  def maze_layout_exists?(file_path, permutation)
     File.foreach(file_path).any? do |line|
       line.include?(permutation.to_s)
     end
   end
 
   def layout
-    grid = []
+    maze = []
     size.times do
-      grid << if grid.count('start') != num_starts
+      maze << if maze.count('start') != num_starts
                 'start'
-              elsif grid.count('finish') != num_starts
+              elsif maze.count('finish') != num_starts
                 'finish'
-              elsif (count_pairs(grid, 'pair') / 2) != num_connection_pairs
-                format_pair(grid, 'pair')
-              elsif (count_pairs(grid, 'warp') / 2) != num_warps
-                format_pair(grid, 'warp')
-              elsif (count_pairs(grid, 'tunnel') / 2) != num_tunnels
-                format_pair(grid, 'tunnel')
-              elsif grid.count('bridge') != num_bridges
+              elsif (count_pairs(maze, 'pair') / 2) != num_connection_pairs
+                format_pair(maze, 'pair')
+              elsif (count_pairs(maze, 'warp') / 2) != num_warps
+                format_pair(maze, 'warp')
+              elsif (count_pairs(maze, 'tunnel') / 2) != num_tunnels
+                format_pair(maze, 'tunnel')
+              elsif maze.count('bridge') != num_bridges
                 'bridge'
-              elsif grid.count('barrier') != num_barriers
+              elsif maze.count('barrier') != num_barriers
                 'barrier'
               else
                 'normal'
               end
     end
-    grid
+    maze
   end
 
-  def grid_type(type)
+  def maze_type(type)
     case type
     when :one_line_simple then 'OneLine'
     when :one_line_warp then "OneLineWarp" # DO THIS
@@ -157,46 +157,46 @@ class Board
     end
   end
 
-  def save_grid!(grid, index)
-    directory = "/levels/level_#{grid.level}"
+  def save_maze!(maze, index)
+    directory = "/levels/level_#{maze.level}"
     directory_path = File.join(data_path, directory)
     FileUtils.mkdir_p(directory_path) unless File.directory?(directory_path)
     File.open(File.join(directory_path, "#{index}.yml"), "w") do |file|
-      file.write(grid.to_yaml)
+      file.write(maze.to_yaml)
     end
   end
 
-  def count_pairs(grid, type)
-    grid.count { |square| square.match(Regexp.new(Regexp.escape(type))) }
+  def count_pairs(maze, type)
+    maze.count { |square| square.match(Regexp.new(Regexp.escape(type))) }
   end
 
-  def format_pair(grid, type)
-    count = count_pairs(grid, type)
+  def format_pair(maze, type)
+    count = count_pairs(maze, type)
     group = count / 2 + 1
     subgroup = count.even? ? 'a' : 'b'
     "#{type}_#{group}_#{subgroup}"
   end
 end
 
-class Grid
+class Maze
   include Navigate
   include Solve
 
   attr_reader :type, :level, :x, :y, :squares, :valid, :solutions
 
-  def initialize(board, grid_layout)
+  def initialize(board, maze_layout)
     @type = board[:type]
     @level = board[:level]
     @x = board[:x]
     @y = board[:y]
-    @squares = create_grid(grid_layout)
-    @valid = valid_grid?
+    @squares = create_maze(maze_layout)
+    @valid = valid_maze?
     @solutions = []
-    solve([{ path: [start_square_index], grid: self }]) if @valid
+    solve([{ path: [start_square_index], maze: self }]) if @valid
   end
 
   def valid?
-    valid_grid? && one_solution?
+    valid_maze? && one_solution?
   end
 
   def all_squares_taken?
@@ -216,8 +216,8 @@ class Grid
     squares.each_with_index { |square, idx| return idx if square.finish_square? }
   end
 
-  def create_grid(grid)
-    grid.map do |square|
+  def create_maze(maze)
+    maze.map do |square|
       if square =~ /start/
         Square.new(:start, :taken)
       elsif square =~ /finish/
@@ -249,13 +249,13 @@ class Grid
   end
 end
 
-class OneLine < Grid
+class OneLine < Maze
   include NavigateOneline
   include SolveOneLine
 
   private
 
-  def valid_grid?
+  def valid_maze?
     valid_finish_square?
   end
 
@@ -271,13 +271,13 @@ class OneLine < Grid
   # end
 end
 
-class OneLineBridge < Grid
+class OneLineBridge < Maze
   include NavigateBridge
   include SolveBridge
 
   private
 
-  def valid_grid?
+  def valid_maze?
     valid_finish_square? && valid_bridge_squares?
   end
 
@@ -299,24 +299,24 @@ class OneLineBridge < Grid
   end
 end
 
-class OneLineTunnel < Grid
+class OneLineTunnel < Maze
   include NavigateTunnel
   include SolveTunnel
 
   private
 
-  def valid_grid?
+  def valid_maze?
     valid_finish_square?
   end
 end
 
-class OneLineWarp < Grid
+class OneLineWarp < Maze
   include NavigateWarp
   include SolveWarp
 
   private
 
-  def valid_grid?
+  def valid_maze?
     valid_finish_square? && valid_warp_squares?
   end
 
@@ -330,10 +330,10 @@ class OneLineWarp < Grid
   end
 end
 
-class MultiLine < Grid
+class MultiLine < Maze
   private
 
-  def valid_grid?
+  def valid_maze?
     valid_pair_squares?
   end
 
@@ -347,10 +347,10 @@ class MultiLine < Grid
   end
 end
 
-class MultiLineBridge < Grid
+class MultiLineBridge < Maze
 end
 
-class MultiLineWarp < Grid
+class MultiLineWarp < Maze
 end
 
 class Square
@@ -460,14 +460,14 @@ end
 
 # DONE
 # SIMPLE GRID
-# boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
+boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
 
 # 1 bridge, 1 barrier
 # boards = [{ type: :one_line_bridge, x: 4, y: 4, num_barriers: 1, num_bridges: 1, level: 1 }]
 
 # IN PROGRESS
 # 1 tunnel, 1 barrier
-boards = [{ type: :one_line_tunnel, x: 4, y: 4, num_barriers: 3, num_tunnels: 1, level: 1 }]
+# boards = [{ type: :one_line_tunnel, x: 4, y: 4, num_barriers: 3, num_tunnels: 1, level: 1 }]
 
 
 # # 2 bridges, 1 barrier
@@ -504,6 +504,6 @@ boards = [{ type: :one_line_tunnel, x: 4, y: 4, num_barriers: 3, num_tunnels: 1,
 
 # boards = [{ type: :one_line_bridge, x: 5, y: 5, num_bridges: 2, num_barriers: 2, level: 1 }]
 
-# grid = ["finish", "normal", "normal", "normal", "normal", "barrier", "barrier", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "bridge", "normal", "bridge", "normal", "start", "normal", "normal", "normal", "normal"] 
+# maze = ["finish", "normal", "normal", "normal", "normal", "barrier", "barrier", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "bridge", "normal", "bridge", "normal", "start", "normal", "normal", "normal", "normal"] 
 
 Boards.new(boards)

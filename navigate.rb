@@ -1,12 +1,12 @@
 module Navigate
-  # OneLine < Grid
-  # OneLineBridge < Grid
+  # OneLine < Maze
+  # OneLineBridge < Maze
   def connected_to_start_square?(square)
     surrounding_squares(square).any? { |sq| squares[sq].start_square? }
   end
 
-  # OneLine < Grid
-  # MultiLine < Grid
+  # OneLine < Maze
+  # MultiLine < Maze
   def surrounding_squares(square)
     results = []
     results << square_index_above(square) if square_above?(square)
@@ -16,8 +16,8 @@ module Navigate
     results
   end
 
-  # OneLine < Grid
-  # MultiLine < Grid
+  # OneLine < Maze
+  # MultiLine < Maze
   def connected_to_more_than_one_normal_square?(square)
     connections = 0
     connections += 1 if normal_not_taken_square_above?(square)
@@ -27,27 +27,27 @@ module Navigate
     connections > 1
   end
 
-  # OneLineBridge < Grid
+  # OneLineBridge < Maze
   def connected_to_barrier_square?(square)
     surrounding_squares(square).any? { |sq| squares[sq].barrier_square? }
   end
 
-  # OneLineWarp < Grid, #square_right?(square)
+  # OneLineWarp < Maze, #square_right?(square)
   def right_border_indices
     results = []
     (x - 1..size - 1).step(x) { |index| results << index }
     results
   end
 
-  # OneLineWarp < Grid, #square_left?(square)
+  # OneLineWarp < Maze, #square_left?(square)
   def left_border_indices
     results = []
     (0..size - 1).step(x) { |index| results << index }
     results
   end
 
-  # OneLineWarp < Grid
-  # OneLineBridge < Grid
+  # OneLineWarp < Maze
+  # OneLineBridge < Maze
   def border_square?(square)
     return true if top_border_indices.include?(square)
     return true if bottom_border_indices.include?(square)
@@ -56,14 +56,14 @@ module Navigate
     false
   end
 
-  # OneLineWarp < Grid
-  # OneLineBridge < Grid
+  # OneLineWarp < Maze
+  # OneLineBridge < Maze
   def top_border_indices
     (0..x - 1).map { |n| n }
   end
 
-  # OneLineWarp < Grid
-  # OneLineBridge < Grid
+  # OneLineWarp < Maze
+  # OneLineBridge < Maze
   def bottom_border_indices
     (0..size - 1).map { |n| n }.last(x)
   end
@@ -133,24 +133,24 @@ module Navigate
       squares[square_index_left(square)].normal_square?
   end
 
-  def not_taken_square_above?(square, current_grid = self)
+  def not_taken_square_above?(square, current_maze = self)
     return false unless square_above?(square)
-    current_grid.squares[square_index_above(square)].not_taken?
+    current_maze.squares[square_index_above(square)].not_taken?
   end
 
-  def not_taken_square_right?(square, current_grid = self)
+  def not_taken_square_right?(square, current_maze = self)
     return false unless square_right?(square)
-    current_grid.squares[square_index_right(square)].not_taken?
+    current_maze.squares[square_index_right(square)].not_taken?
   end
 
-  def not_taken_square_below?(square, current_grid = self)
+  def not_taken_square_below?(square, current_maze = self)
     return false unless square_below?(square)
-    current_grid.squares[square_index_below(square)].not_taken?
+    current_maze.squares[square_index_below(square)].not_taken?
   end
 
-  def not_taken_square_left?(square, current_grid = self)
+  def not_taken_square_left?(square, current_maze = self)
     return false unless square_left?(square)
-    current_grid.squares[square_index_left(square)].not_taken?
+    current_maze.squares[square_index_left(square)].not_taken?
   end
 end
 
@@ -158,7 +158,7 @@ module NavigateOneline
 end
 
 module NavigateMultiLine
-  # MultiLine < Grid
+  # MultiLine < Maze
   def connected_to_pair_square?(square)
     surrounding_squares(square).any? do |square_index|
       if squares[square_index].type == :pair
@@ -171,10 +171,10 @@ module NavigateMultiLine
 end
 
 module NavigateBridge
-  def valid_not_taken_square_above?(square, current_grid = self)
+  def valid_not_taken_square_above?(square, current_maze = self)
     return false unless square_above?(square)
-    current_square = current_grid.squares[square]
-    square_above = current_grid.squares[square_index_above(square)]
+    current_square = current_maze.squares[square]
+    square_above = current_maze.squares[square_index_above(square)]
 
     square_above.type == :normal && square_above.not_taken? &&
       current_square.bridge_square? && current_square.vertical_not_taken? ||
@@ -184,10 +184,10 @@ module NavigateBridge
         square_above.vertical_not_taken?
   end
 
-  def valid_not_taken_square_right?(square, current_grid = self)
+  def valid_not_taken_square_right?(square, current_maze = self)
     return false unless square_right?(square)
-    current_square = current_grid.squares[square]
-    square_right = current_grid.squares[square_index_right(square)]
+    current_square = current_maze.squares[square]
+    square_right = current_maze.squares[square_index_right(square)]
 
     square_right.type == :normal && square_right.not_taken? &&
       current_square.bridge_square? && current_square.horizontal_not_taken? ||
@@ -197,10 +197,10 @@ module NavigateBridge
         square_right.horizontal_not_taken?
   end
 
-  def valid_not_taken_square_below?(square, current_grid = self)
+  def valid_not_taken_square_below?(square, current_maze = self)
     return false unless square_below?(square)
-    current_square = current_grid.squares[square]
-    square_below = current_grid.squares[square_index_below(square)]
+    current_square = current_maze.squares[square]
+    square_below = current_maze.squares[square_index_below(square)]
 
     square_below.type == :normal && square_below.not_taken? &&
       current_square.bridge_square? && current_square.vertical_not_taken? ||
@@ -210,10 +210,10 @@ module NavigateBridge
         square_below.vertical_not_taken?
   end
 
-  def valid_not_taken_square_left?(square, current_grid = self)
+  def valid_not_taken_square_left?(square, current_maze = self)
     return false unless square_left?(square)
-    current_square = current_grid.squares[square]
-    square_left = current_grid.squares[square_index_left(square)]
+    current_square = current_maze.squares[square]
+    square_left = current_maze.squares[square_index_left(square)]
 
     square_left.type == :normal && square_left.not_taken? &&
       current_square.bridge_square? && current_square.horizontal_not_taken? ||
