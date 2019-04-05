@@ -1,4 +1,8 @@
 module Navigate
+  def number_of_squares_of_type(type)
+    squares.count { |square| square.type == type }
+  end
+
   # OneLine < Maze
   # OneLineBridge < Maze
   def connected_to_start_square?(square)
@@ -154,14 +158,11 @@ module Navigate
   end
 end
 
-module NavigateOneline
-end
-
 module NavigateMultiLine
   # MultiLine < Maze
-  def connected_to_pair_square?(square)
+  def connected_to_endpoint_square?(square)
     surrounding_squares(square).any? do |square_index|
-      if squares[square_index].type == :pair
+      if squares[square_index].type == :endpoint
         squares[square_index].group == squares[square].group ? true : false
       else
         false
@@ -179,7 +180,7 @@ module NavigateBridge
     square_above.type == :normal && square_above.not_taken? &&
       current_square.bridge_square? && current_square.vertical_not_taken? ||
       square_above.type == :normal && square_above.not_taken? ||
-      square_above.type == :finish && square_above.not_taken? ||
+      square_above.type == :endpoint && square_above.not_taken? ||
       square_above.type == :bridge && square_above.not_taken? &&
         square_above.vertical_not_taken?
   end
@@ -192,7 +193,7 @@ module NavigateBridge
     square_right.type == :normal && square_right.not_taken? &&
       current_square.bridge_square? && current_square.horizontal_not_taken? ||
       square_right.type == :normal && square_right.not_taken? ||
-      square_right.type == :finish && square_right.not_taken? ||
+      square_right.type == :endpoint && square_right.not_taken? ||
       square_right.type == :bridge && square_right.not_taken? &&
         square_right.horizontal_not_taken?
   end
@@ -205,7 +206,7 @@ module NavigateBridge
     square_below.type == :normal && square_below.not_taken? &&
       current_square.bridge_square? && current_square.vertical_not_taken? ||
       square_below.type == :normal && square_below.not_taken? ||
-      square_below.type == :finish && square_below.not_taken? ||
+      square_below.type == :endpoint && square_below.not_taken? ||
       square_below.type == :bridge && square_below.not_taken? &&
         square_below.vertical_not_taken?
   end
@@ -218,7 +219,7 @@ module NavigateBridge
     square_left.type == :normal && square_left.not_taken? &&
       current_square.bridge_square? && current_square.horizontal_not_taken? ||
       square_left.type == :normal && square_left.not_taken? ||
-      square_left.type == :finish && square_left.not_taken? ||
+      square_left.type == :endpoint && square_left.not_taken? ||
       square_left.type == :bridge && square_left.not_taken? &&
         square_left.horizontal_not_taken?
   end

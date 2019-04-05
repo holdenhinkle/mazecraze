@@ -23,35 +23,34 @@ end
 
 class Board
   attr_reader :mazes, :x, :y, :size,
-              :num_starts, :num_path_endpoints, :num_barriers, :num_bridges,
+              :num_endpoints, :num_barriers, :num_bridges,
               :num_portals, :num_tunnels
 
   def initialize(board)
     @x = board[:x]
     @y = board[:y]
     @size = board[:x] * board[:y]
-    @num_starts = board[:endpoints] ? 0 : 1
-    @num_path_endpoints = board[:endpoints] ? board[:endpoints] : 0
-    @num_barriers = board[:num_barriers] ? board[:num_barriers] : 0
-    @num_bridges = board[:num_bridges] ? board[:num_bridges] : 0
-    @num_portals = board[:num_portals] ? board[:num_portals] : 0
-    @num_tunnels = board[:num_tunnels] ? board[:num_tunnels] : 0
+    @num_endpoints = board[:endpoints]
+    @num_barriers = board[:barriers] ? board[:barriers] : 0
+    @num_bridges = board[:bridges] ? board[:bridges] : 0
+    @num_portals = board[:portals] ? board[:portals] : 0
+    @num_tunnels = board[:tunnels] ? board[:tunnels] : 0
     @mazes = create_mazes(board)
   end
 
   private
 
-  def create_mazes(board)
-    counter = starting_file_number(board[:level]) + 1
-    permutations_file_path = create_permutations_file_path
-    generate_permutations(layout, permutations_file_path)
-    File.open(permutations_file_path, "r").each_line do |maze_layout|
-      maze = Object.const_get(maze_type(board[:type])).new(board, JSON.parse(maze_layout))
-      next unless maze.valid?
-      save_maze!(maze, counter)
-      counter += 1
-    end
-  end
+  # def create_mazes(board)
+  #   counter = starting_file_number(board[:level]) + 1
+  #   permutations_file_path = create_permutations_file_path
+  #   generate_permutations(layout, permutations_file_path)
+  #   File.open(permutations_file_path, "r").each_line do |maze_layout|
+  #     maze = Object.const_get(maze_type(board[:type])).new(board, JSON.parse(maze_layout))
+  #     next unless maze.valid?
+  #     save_maze!(maze, counter)
+  #     counter += 1
+  #   end
+  # end
 
   # * *
   # FOR testing
@@ -59,14 +58,15 @@ class Board
 
   # ONE LINE BRIDGE
   # boards = [{ type: :one_line_bridge, x: 4, y: 4, num_barriers: 1, num_bridges: 1, level: 1 }]
-  # def create_mazes(board)
-  #   new_maze = ["finish", "barrier", "normal", "normal",
-  #               "normal", "normal", "bridge", "normal",
-  #               "normal", "normal", "normal", "start",
-  #               "normal", "normal", "normal", "normal"]
+  def create_mazes(board)
+    new_maze = ["endpoint_1_b", "barrier", "normal", "normal",
+                "normal", "normal", "bridge", "normal",
+                "normal", "normal", "normal", "endpoint_1_a",
+                "normal", "normal", "normal", "normal"]
 
-  #   maze = OneLineBridge.new(board, new_maze)
-  # end
+    maze = BridgeMaze.new(board, new_maze)
+    binding.pry
+  end
 
   # ONE LINE TUNNEL
   # def create_mazes(board)
@@ -74,7 +74,7 @@ class Board
   #               "normal", "normal", "normal", "normal",
   #               "normal", "normal", "barrier", "barrier",
   #               "tunnel_1_a", "normal", "normal", "finish"]
-  #   maze = OneLineTunnel.new(board, new_maze)
+  #   maze = Tunnel.new(board, new_maze)
   # end
 
   def create_permutations_file_path
@@ -124,12 +124,8 @@ class Board
   def layout
     maze = []
     size.times do
-      maze << if maze.count('start') != num_starts
-                'start'
-              elsif maze.count('finish') != num_starts
-                'finish'
-              elsif (count_pairs(maze, 'pair') / 2) != num_path_endpoints
-                format_pair(maze, 'pair')
+      maze << if (count_pairs(maze, 'endpoint') / 2) != num_endpoints
+                format_pair(maze, 'endpoint')
               elsif (count_pairs(maze, 'portal') / 2) != num_portals
                 format_pair(maze, 'portal')
               elsif (count_pairs(maze, 'tunnel') / 2) != num_tunnels
@@ -147,13 +143,10 @@ class Board
 
   def maze_type(type)
     case type
-    when :one_line_simple then 'OneLine'
-    when :one_line_portal then "OneLinePortal" # DO THIS
-    when :one_line_tunnel then "OneLineTunnel" # DO THIS
-    when :one_line_bridge then "OneLineBridge"
-    when :multi_line_simple then 'MultiLine' # DO THIS
-    when :multi_line_portal then "MultiLinePortal" # DO THIS
-    when :multi_line_bridge then "MultiLineBridge" # DO THIS
+    when :simple then 'Maze'
+    when :portal then "PortalMaze" # DO THIS
+    when :tunnel then "TunnelMaze" # DO THIS
+    when :bridge then "BridgeMaze"
     end
   end
 
@@ -189,7 +182,7 @@ class Maze
     @level = board[:level]
     @x = board[:x]
     @y = board[:y]
-    @squares = create_maze(maze_layout)
+    @squares = create_maze(maze_layout, board[:endpoints])
     @valid = valid_maze?
     @solutions = []
     solve([{ path: [start_square_index], maze: self }]) if @valid
@@ -205,6 +198,19 @@ class Maze
 
   private
 
+  def valid_maze?
+    if number_of_endpoints == 2 # write #number_of_endpoints
+      valid_finish_square?
+    else
+      valid_endpoint_squares?
+    end
+  end
+
+  def number_of_endpoints
+    number_of_squares_of_type(:endpoint)
+  end
+
+  # if single-endpoint maze
   def valid_finish_square?
     square = finish_square_index
     return false if connected_to_start_square?(square)
@@ -216,26 +222,35 @@ class Maze
     squares.each_with_index { |square, idx| return idx if square.finish_square? }
   end
 
-  def create_maze(maze)
+  # if multi-endpoint maze
+  def valid_endpoint_squares?
+    all_squares_of_type('endpoint').all? { |index| valid_endpoint_square?(index) }
+  end
+
+  def valid_endpoint_square?(square)
+    return false if connected_to_endpoint_square?(square)
+    true
+  end
+
+  def create_maze(maze, number_of_endpoints)
     maze.map do |square|
-      if square =~ /start/
-        Square.new(:start, :taken)
-      elsif square =~ /finish/
-        Square.new(:finish, :not_taken)
-      # PAIR AND WARP CAN BE COMBINED -- TUNNEL TOO PROBABLY
-      elsif square =~ /pair/
+      if square =~ /endpoint/
         group = square.match(/\d/).to_s.to_i
         subgroup = square.match(/(?<=_)[a-z]/).to_s
-        Pair.new(:pair, :not_taken, group, subgroup)
+        if subgroup == 'a' && number_of_endpoints == 1
+          EndpointSquare.new(:endpoint, :taken, group, subgroup)
+        else
+          EndpointSquare.new(:endpoint, :not_taken, group, subgroup)
+        end
       elsif square =~ /portal/
         group = square.match(/\d/).to_s.to_i
         subgroup = square.match(/(?<=_)[a-z]/).to_s
-        Portal.new(:portal, :not_taken, group, subgroup)
+        PortalSquare.new(:portal, :not_taken, group, subgroup)
       elsif square =~ /tunnel/
         group = square.match(/\d/).to_s.to_i
-        Tunnel.new(:tunnel, :not_taken, group, subgroup)
+        TunnelSquare.new(:tunnel, :not_taken, group, subgroup)
       elsif square == 'bridge'
-        Bridge.new(:bridge, :not_taken)
+        BridgeSquare.new(:bridge, :not_taken)
       elsif square == 'barrier'
         Square.new(:barrier, :taken)
       else
@@ -249,29 +264,7 @@ class Maze
   end
 end
 
-class OneLine < Maze
-  include NavigateOneline
-  include SolveOneLine
-
-  private
-
-  def valid_maze?
-    valid_finish_square?
-  end
-
-  # def valid_finish_square?
-  #   square = finish_square_index
-  #   return false if connected_to_start_square?(square)
-  #   return false if connected_to_more_than_one_normal_square?(square)
-  #   true
-  # end
-
-  # def finish_square_index
-  #   squares.each_with_index { |square, idx| return idx if square.finish_square? }
-  # end
-end
-
-class OneLineBridge < Maze
+class BridgeMaze < Maze
   include NavigateBridge
   include SolveBridge
 
@@ -281,17 +274,6 @@ class OneLineBridge < Maze
     valid_finish_square? && valid_bridge_squares?
   end
 
-  # def valid_finish_square?
-  #   square = finish_square_index
-  #   return false if connected_to_start_square?(square)
-  #   return false if connected_to_more_than_one_normal_square?(square)
-  #   true
-  # end
-
-  # def finish_square_index
-  #   squares.each_with_index { |square, idx| return idx if square.finish_square? }
-  # end
-
   def valid_bridge_squares?
     all_squares_of_type('bridge').all? do |square|
       !connected_to_barrier_square?(square) && !border_square?(square)
@@ -299,7 +281,7 @@ class OneLineBridge < Maze
   end
 end
 
-class OneLineTunnel < Maze
+class TunnelMaze < Maze
   include NavigateTunnel
   include SolveTunnel
 
@@ -310,7 +292,7 @@ class OneLineTunnel < Maze
   end
 end
 
-class OneLinePortal < Maze
+class PortalMaze < Maze
   include NavigatePortal
   include SolvePortal
 
@@ -328,29 +310,6 @@ class OneLinePortal < Maze
     return false unless border_square?(square)
     true
   end
-end
-
-class MultiLine < Maze
-  private
-
-  def valid_maze?
-    valid_pair_squares?
-  end
-
-  def valid_pair_squares?
-    all_squares_of_type('pair').all? { |index| valid_pair_square?(index) }
-  end
-
-  def valid_pair_square?(square)
-    return false if connected_to_pair_square?(square)
-    true
-  end
-end
-
-class MultiLineBridge < Maze
-end
-
-class MultiLinePortal < Maze
 end
 
 class Square
@@ -376,13 +335,11 @@ class Square
   end
 
   def start_square?
-    return true if type.match(/start/)
-    false
+    type == :endpoint && subgroup == 'a'
   end
 
   def finish_square?
-    return true if type.match(/finish/)
-    false
+    type == :endpoint && subgroup == 'b'
   end
 
   def normal_square?
@@ -390,17 +347,15 @@ class Square
   end
 
   def barrier_square?
-    return true if type.match(/barrier/)
-    false
+    type == :barrier
   end
 
   def bridge_square?
-    return true if type.match(/bridge/)
-    false
+    type == :bridge
   end
 end
 
-class Pair < Square
+class PairSquare < Square
   attr_reader :group, :subgroup
 
   def initialize(type, status, group, subgroup)
@@ -410,21 +365,13 @@ class Pair < Square
   end
 end
 
-class Tunnel < Pair; end
+class EndpointSquare < PairSquare; end
 
-class Portal < Pair; end
+class TunnelSquare < PairSquare; end
 
-# class Portal < Square
-#   attr_reader :group, :subgroup
+class PortalSquare < PairSquare; end
 
-#   def initialize(type, status, group, subgroup)
-#     super(type, status)
-#     @group = group
-#     @subgroup = subgroup
-#   end
-# end
-
-class Bridge < Square
+class BridgeSquare < Square
   attr_accessor :horizontal_taken, :vertical_taken
 
   def initialize(type, status)
@@ -460,50 +407,13 @@ end
 
 # DONE
 # SIMPLE GRID
-boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
+# boards = [{ type: :simple, x: 3, y: 2, endpoints: 1, barriers: 1, level: 1 }]
 
 # 1 bridge, 1 barrier
-# boards = [{ type: :one_line_bridge, x: 4, y: 4, num_barriers: 1, num_bridges: 1, level: 1 }]
+boards = [{ type: :bridge, x: 4, y: 4, endpoints: 1, barriers: 1, bridges: 1, level: 1 }]
 
 # IN PROGRESS
 # 1 tunnel, 1 barrier
-# boards = [{ type: :one_line_tunnel, x: 4, y: 4, num_barriers: 3, num_tunnels: 1, level: 1 }]
-
-
-# # 2 bridges, 1 barrier
-# boards = [{ type: :one_line_bridge, x: 3, y: 2, num_barriers: 1, num_bridges: 2, level: 1 }]
-
-# # 1 bridge
-# boards = [{ type: :one_line_bridge, x: 4, y: 4, num_bridges: 1, num_barriers: 1, level: 1 }]
-
-# # 1 portal
-# boards = [{ type: :one_line_portal, x: 3, y: 2, num_portals: 1, level: 1 }]
-
-# # 2 portals - 3 x 3
-# boards = [{ type: :one_line_bridge, x: 3, y: 3, num_portals: 1, level: 1 }]
-
-# # 2 bridge
-# boards = [{ type: :one_line_bridge, x: 3, y: 2, num_bridges: 2, level: 1 }]
-
-#MULTI
-# boards = [{ type: :multi_line_simple, x: 3, y: 2, endpoints: 1, num_barriers: 1, level: 1 }]
-
-# boards = [{ type: :multi_line_simple, x: 3, y: 3, endpoints: 3, num_barriers: 2, level: 1 }]
-
-
-# boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 },
-#           { x: 3, y: 3, num_starts: 1, num_barriers: 2, level: 1 }]
-
-# boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 },
-#           { x: 3, y: 3, num_starts: 1, num_barriers: 1, level: 1 },
-#           { x: 3, y: 3, num_starts: 1, num_barriers: 2, level: 1 },
-#           { x: 4, y: 3, num_starts: 1, num_barriers: 1, level: 1 },
-#           { x: 4, y: 3, num_starts: 1, num_barriers: 2, level: 1 }]
-
-# WARP GRID
-
-# boards = [{ type: :one_line_bridge, x: 5, y: 5, num_bridges: 2, num_barriers: 2, level: 1 }]
-
-# maze = ["finish", "normal", "normal", "normal", "normal", "barrier", "barrier", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "normal", "bridge", "normal", "bridge", "normal", "start", "normal", "normal", "normal", "normal"] 
+# boards = [{ type: :one_line_tunnel, x: 4, y: 4, barriers: 3, tunnels: 1, level: 1 }]
 
 Boards.new(boards)

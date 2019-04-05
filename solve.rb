@@ -1,8 +1,8 @@
 # The solve module solves OneLine mazes and OneLineBridge mazes
 module Solve
   def one_solution?
-    # solutions.size == 1
-    true
+    solutions.size == 1
+    # true
   end
 
   def solve(new_attempt)
@@ -12,21 +12,6 @@ module Solve
       current_maze = current_attempt[:maze]
       current_path = current_attempt[:path].push(next_square)
       mark_square_taken(current_path, current_maze.squares[next_square])
-
-
-
-
-
-
-      # binding.pry
-      # travel_through_tunnel if current_maze.type == :one_line_tunnel &&
-      #                          current_maze.squares[next_square].type == :tunnel
-
-
-
-
-
-
       outcome = check_attempt(current_maze, current_path, next_square)
       solutions << outcome if outcome.is_a? Array # solved
       new_attempts << outcome if outcome.is_a? Hash # continue
@@ -52,21 +37,6 @@ module Solve
   def mark_square_taken(_, square)
     square.taken!
   end
-end
-
-module SolveOneLine
-  # def attempt(current_attempt, process_attempt)
-  #   current_square = current_attempt[:path].last
-  #   current_maze = current_attempt[:maze]
-  #   process_attempt.call(current_attempt, square_index_above(current_square)) if
-  #     not_taken_square_above?(current_square, current_maze)
-  #   process_attempt.call(current_attempt, square_index_right(current_square)) if
-  #     not_taken_square_right?(current_square, current_maze)
-  #   process_attempt.call(current_attempt, square_index_below(current_square)) if
-  #     not_taken_square_below?(current_square, current_maze)
-  #   process_attempt.call(current_attempt, square_index_left(current_square)) if
-  #     not_taken_square_left?(current_square, current_maze)
-  # end
 
   def check_attempt(current_maze, current_path, next_square)
     if current_maze.squares[next_square].finish_square? &&
