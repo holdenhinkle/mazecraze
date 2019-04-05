@@ -23,15 +23,15 @@ end
 
 class Board
   attr_reader :mazes, :x, :y, :size,
-              :num_starts, :num_connection_pairs, :num_barriers, :num_bridges,
+              :num_starts, :num_path_endpoints, :num_barriers, :num_bridges,
               :num_portals, :num_tunnels
 
   def initialize(board)
     @x = board[:x]
     @y = board[:y]
     @size = board[:x] * board[:y]
-    @num_starts = board[:connection_pairs] ? 0 : 1
-    @num_connection_pairs = board[:connection_pairs] ? board[:connection_pairs] : 0
+    @num_starts = board[:endpoints] ? 0 : 1
+    @num_path_endpoints = board[:endpoints] ? board[:endpoints] : 0
     @num_barriers = board[:num_barriers] ? board[:num_barriers] : 0
     @num_bridges = board[:num_bridges] ? board[:num_bridges] : 0
     @num_portals = board[:num_portals] ? board[:num_portals] : 0
@@ -128,7 +128,7 @@ class Board
                 'start'
               elsif maze.count('finish') != num_starts
                 'finish'
-              elsif (count_pairs(maze, 'pair') / 2) != num_connection_pairs
+              elsif (count_pairs(maze, 'pair') / 2) != num_path_endpoints
                 format_pair(maze, 'pair')
               elsif (count_pairs(maze, 'portal') / 2) != num_portals
                 format_pair(maze, 'portal')
@@ -486,9 +486,9 @@ boards = [{ type: :one_line_simple, x: 3, y: 2, num_barriers: 1, level: 1 }]
 # boards = [{ type: :one_line_bridge, x: 3, y: 2, num_bridges: 2, level: 1 }]
 
 #MULTI
-# boards = [{ type: :multi_line_simple, x: 3, y: 2, connection_pairs: 1, num_barriers: 1, level: 1 }]
+# boards = [{ type: :multi_line_simple, x: 3, y: 2, endpoints: 1, num_barriers: 1, level: 1 }]
 
-# boards = [{ type: :multi_line_simple, x: 3, y: 3, connection_pairs: 3, num_barriers: 2, level: 1 }]
+# boards = [{ type: :multi_line_simple, x: 3, y: 3, endpoints: 3, num_barriers: 2, level: 1 }]
 
 
 # boards = [{ x: 3, y: 2, num_starts: 1, num_barriers: 1, level: 1 },
