@@ -151,25 +151,9 @@ module Navigate
       current_maze.squares[square_index_left(square_index)].type == type
   end
 
-  # FIX THIS  - MAKE ONE METHOD USING SEND
-  def valid_move_above?(square_index, current_maze = self)
-    square_above_exists?(square_index) &&
-      square_above_not_taken?(square_index, current_maze)
-  end
-
-  def valid_move_right?(square_index, current_maze = self)
-    square_right_exists?(square_index) &&
-      square_right_not_taken?(square_index, current_maze)
-  end
-
-  def valid_move_below?(square_index, current_maze = self)
-    square_below_exists?(square_index) &&
-      square_below_not_taken?(square_index, current_maze)
-  end
-
-  def valid_move_left?(square_index, current_maze = self)
-    square_left_exists?(square_index) &&
-      square_left_not_taken?(square_index, current_maze)
+  def valid_move?(direction, square_index, current_maze = self)
+    send("square_#{direction}_exists?", square_index) &&
+      send("square_#{direction}_not_taken?", square_index, current_maze)
   end
 
   # MultiLine
@@ -187,20 +171,16 @@ end
 
 module NavigateBridge
   def valid_move?(direction, square_index, current_maze = self)
-    square_direction_exists_method_name = "square_#{direction}_exists?"
-    return false unless send(square_direction_exists_method_name, square_index)
-
+    return false unless send("square_#{direction}_exists?", square_index)
     bridge_direction = determine_bridge_direction(direction)
     current_square = current_maze.squares[square_index]
+    other_square = current_maze.squares[send("square_index_#{direction}", square_index)]
 
-    quare_index_direction_method_name = "square_index_#{direction}"
-    other_square = current_maze.squares[send(quare_index_direction_method_name, square_index)]
-
-    square_not_taken_and_of_type(direction, square_index, :normal, current_maze) &&
+    square_not_taken_and_is_of_type(direction, square_index, :normal, current_maze) &&
       square_is_type_bridge_and_bridge_direction_not_taken?(current_square, bridge_direction) ||
-      square_not_taken_and_of_type(direction, square_index, :normal, current_maze) ||
-      square_not_taken_and_of_type(direction, square_index, :endpoint, current_maze) ||
-      square_not_taken_and_of_type(direction, square_index, :bridge, current_maze) &&
+      square_not_taken_and_is_of_type(direction, square_index, :normal, current_maze) ||
+      square_not_taken_and_is_of_type(direction, square_index, :endpoint, current_maze) ||
+      square_not_taken_and_is_of_type(direction, square_index, :bridge, current_maze) &&
         bridge_direction_not_taken?(other_square, bridge_direction)
   end
 
@@ -222,44 +202,20 @@ module NavigateBridge
     square.send(method_name)
   end
 
-  def square_not_taken_and_of_type(direction, square_index, type, current_maze)
+  def square_not_taken_and_is_of_type(direction, square_index, type, current_maze)
     method_name = "square_#{direction}_not_taken_and_of_type"
     send(method_name, square_index, type, current_maze)
   end
 end
 
 module NavigateTunnel
-  def valid_move_above?(square_index, current_maze = self)
+  def valid_move?(direction, square_index, current_maze = self)
     return false unless square_above_exists?(square_index)
-  end
-
-  def valid_move_right?(square_index, current_maze = self)
-    return false unless square_right_exists?(square_index)
-  end
-
-  def valid_move_below?(square_index, current_maze = self)
-    return false unless square_below_exists?(square_index)
-  end
-
-  def valid_move_left?(square_index, current_maze = self)
-    return false unless square_left_exists?(square_index)
   end
 end
 
 module NavigatePortal
-  def valid_move_above?(square_index, current_maze = self)
+  def valid_move?(direction, square_index, current_maze = self)
     return false unless square_above_exists?(square_index)
-  end
-
-  def valid_move_right?(square_index, current_maze = self)
-    return false unless square_right_exists?(square_index)
-  end
-
-  def valid_move_below?(square_index, current_maze = self)
-    return false unless square_below_exists?(square_index)
-  end
-
-  def valid_move_left?(square_index, current_maze = self)
-    return false unless square_left_exists?(square_index)
   end
 end
