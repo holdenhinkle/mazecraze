@@ -25,13 +25,13 @@ module Solve
     current_square = current_attempt[:path].last
     current_maze = current_attempt[:maze]
     process_attempt.call(current_attempt, square_index_above(current_square)) if
-      not_taken_square_above?(current_square, current_maze)
+      valid_move_above?(current_square, current_maze)
     process_attempt.call(current_attempt, square_index_right(current_square)) if
-      not_taken_square_right?(current_square, current_maze)
+      valid_move_right?(current_square, current_maze)
     process_attempt.call(current_attempt, square_index_below(current_square)) if
-      not_taken_square_below?(current_square, current_maze)
+      valid_move_below?(current_square, current_maze)
     process_attempt.call(current_attempt, square_index_left(current_square)) if
-      not_taken_square_left?(current_square, current_maze)
+      valid_move_left?(current_square, current_maze)
   end
 
   def mark_square_taken(_, square)
@@ -49,19 +49,6 @@ module Solve
 end
 
 module SolveBridge
-  def attempt(current_attempt, process_attempt)
-    current_square = current_attempt[:path].last
-    current_maze = current_attempt[:maze]
-    process_attempt.call(current_attempt, square_index_above(current_square)) if
-      valid_not_taken_square_above?(current_square, current_maze)
-    process_attempt.call(current_attempt, square_index_right(current_square)) if
-      valid_not_taken_square_right?(current_square, current_maze)
-    process_attempt.call(current_attempt, square_index_below(current_square)) if
-      valid_not_taken_square_below?(current_square, current_maze)
-    process_attempt.call(current_attempt, square_index_left(current_square)) if
-      valid_not_taken_square_left?(current_square, current_maze)
-  end
-
   def check_attempt(current_maze, current_path, next_square)
     if current_maze.squares[next_square].finish_square? &&
        current_maze.all_squares_taken?
