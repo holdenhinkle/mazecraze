@@ -25,13 +25,13 @@ module Solve
     current_square = current_attempt[:path].last
     current_maze = current_attempt[:maze]
     process_attempt.call(current_attempt, square_index_above(current_square)) if
-      valid_move_above?(current_square, current_maze)
+      valid_move?('above', current_square, current_maze)
     process_attempt.call(current_attempt, square_index_right(current_square)) if
-      valid_move_right?(current_square, current_maze)
+      valid_move?('right', current_square, current_maze)
     process_attempt.call(current_attempt, square_index_below(current_square)) if
-      valid_move_below?(current_square, current_maze)
+      valid_move?('below', current_square, current_maze)
     process_attempt.call(current_attempt, square_index_left(current_square)) if
-      valid_move_left?(current_square, current_maze)
+      valid_move?('left', current_square, current_maze)
   end
 
   def mark_square_taken(_, square)

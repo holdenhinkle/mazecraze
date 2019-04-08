@@ -151,6 +151,7 @@ module Navigate
       current_maze.squares[square_index_left(square_index)].type == type
   end
 
+  # FIX THIS  - MAKE ONE METHOD USING SEND
   def valid_move_above?(square_index, current_maze = self)
     square_above_exists?(square_index) &&
       square_above_not_taken?(square_index, current_maze)
@@ -185,56 +186,45 @@ module Navigate
 end
 
 module NavigateBridge
-  def valid_move_above?(square_index, current_maze = self)
-    return false unless square_above_exists?(square_index)
-    current_square = current_maze.squares[square_index]
-    square_above = current_maze.squares[square_index_above(square_index)]
+  def valid_move?(direction, square_index, current_maze = self)
+    square_direction_exists_method_name = "square_#{direction}_exists?"
+    return false unless send(square_direction_exists_method_name, square_index)
 
-    square_above_not_taken_and_of_type(square_index, :normal, current_maze) &&
-      current_square.bridge_square? && current_square.vertical_not_taken? ||
-      square_above_not_taken_and_of_type(square_index, :normal, current_maze) ||
-      square_above_not_taken_and_of_type(square_index, :endpoint, current_maze) ||
-      square_above_not_taken_and_of_type(square_index, :bridge, current_maze) &&
-        square_above.vertical_not_taken?
+    bridge_direction = determine_bridge_direction(direction)
+    current_square = current_maze.squares[square_index]
+
+    quare_index_direction_method_name = "square_index_#{direction}"
+    other_square = current_maze.squares[send(quare_index_direction_method_name, square_index)]
+
+    square_not_taken_and_of_type(direction, square_index, :normal, current_maze) &&
+      square_is_type_bridge_and_bridge_direction_not_taken?(current_square, bridge_direction) ||
+      square_not_taken_and_of_type(direction, square_index, :normal, current_maze) ||
+      square_not_taken_and_of_type(direction, square_index, :endpoint, current_maze) ||
+      square_not_taken_and_of_type(direction, square_index, :bridge, current_maze) &&
+        bridge_direction_not_taken?(other_square, bridge_direction)
   end
 
-  def valid_move_right?(square_index, current_maze = self)
-    return false unless square_right_exists?(square_index)
-    current_square = current_maze.squares[square_index]
-    square_right = current_maze.squares[square_index_right(square_index)]
-
-    square_right_not_taken_and_of_type(square_index, :normal, current_maze) &&
-      current_square.bridge_square? && current_square.horizontal_not_taken? ||
-      square_right_not_taken_and_of_type(square_index, :normal, current_maze) ||
-      square_right_not_taken_and_of_type(square_index, :endpoint, current_maze) ||
-      square_right_not_taken_and_of_type(square_index, :bridge, current_maze) &&
-        square_right.horizontal_not_taken?
+  def determine_bridge_direction(direction)
+    if %w(above below).include?(direction)
+      'vertical'
+    else
+      'horizontal'
+    end
   end
 
-  def valid_move_below?(square_index, current_maze = self)
-    return false unless square_below_exists?(square_index)
-    current_square = current_maze.squares[square_index]
-    square_below = current_maze.squares[square_index_below(square_index)]
-
-    square_below_not_taken_and_of_type(square_index, :normal, current_maze) &&
-      current_square.bridge_square? && current_square.horizontal_not_taken? ||
-      square_below_not_taken_and_of_type(square_index, :normal, current_maze) ||
-      square_below_not_taken_and_of_type(square_index, :endpoint, current_maze) ||
-      square_below_not_taken_and_of_type(square_index, :bridge, current_maze) &&
-        square_below.horizontal_not_taken?
+  def square_is_type_bridge_and_bridge_direction_not_taken?(square, direction)
+    return false unless square.bridge_square?
+    bridge_direction_not_taken?(square, direction)
   end
 
-  def valid_move_left?(square_index, current_maze = self)
-    return false unless square_left_exists?(square_index)
-    current_square = current_maze.squares[square_index]
-    square_left = current_maze.squares[square_index_left(square_index)]
+  def bridge_direction_not_taken?(square, direction)
+    method_name = "#{direction}_not_taken?"
+    square.send(method_name)
+  end
 
-    square_left_not_taken_and_of_type(square_index, :normal, current_maze) &&
-      current_square.bridge_square? && current_square.horizontal_not_taken? ||
-      square_left_not_taken_and_of_type(square_index, :normal, current_maze) ||
-      square_left_not_taken_and_of_type(square_index, :endpoint, current_maze) ||
-      square_left_not_taken_and_of_type(square_index, :bridge, current_maze) &&
-        square_left.horizontal_not_taken?
+  def square_not_taken_and_of_type(direction, square_index, type, current_maze)
+    method_name = "square_#{direction}_not_taken_and_of_type"
+    send(method_name, square_index, type, current_maze)
   end
 end
 

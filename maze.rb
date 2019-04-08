@@ -40,17 +40,17 @@ class Board
 
   private
 
-  def create_mazes(board)
-    counter = starting_file_number(board[:level]) + 1
-    permutations_file_path = create_permutations_file_path
-    generate_permutations(layout, permutations_file_path)
-    File.open(permutations_file_path, "r").each_line do |maze_layout|
-      maze = Object.const_get(maze_type(board[:type])).new(board, JSON.parse(maze_layout))
-      next unless maze.valid?
-      save_maze!(maze, counter)
-      counter += 1
-    end
-  end
+  # def create_mazes(board)
+  #   counter = starting_file_number(board[:level]) + 1
+  #   permutations_file_path = create_permutations_file_path
+  #   generate_permutations(layout, permutations_file_path)
+  #   File.open(permutations_file_path, "r").each_line do |maze_layout|
+  #     maze = Object.const_get(maze_type(board[:type])).new(board, JSON.parse(maze_layout))
+  #     next unless maze.valid?
+  #     save_maze!(maze, counter)
+  #     counter += 1
+  #   end
+  # end
 
   # * *
   # FOR testing
@@ -58,15 +58,15 @@ class Board
 
   # ONE LINE BRIDGE
   # boards = [{ type: :one_line_bridge, x: 4, y: 4, num_barriers: 1, num_bridges: 1, level: 1 }]
-  # def create_mazes(board)
-  #   new_maze = ["endpoint_1_b", "barrier", "normal", "normal",
-  #               "normal", "normal", "bridge", "normal",
-  #               "normal", "normal", "normal", "endpoint_1_a",
-  #               "normal", "normal", "normal", "normal"]
+  def create_mazes(board)
+    new_maze = ["endpoint_1_b", "barrier", "normal", "normal",
+                "normal", "normal", "bridge", "normal",
+                "normal", "normal", "normal", "endpoint_1_a",
+                "normal", "normal", "normal", "normal"]
 
-  #   maze = BridgeMaze.new(board, new_maze)
-  #   binding.pry
-  # end
+    maze = BridgeMaze.new(board, new_maze)
+    binding.pry
+  end
 
   # ONE LINE TUNNEL
   # def create_mazes(board)
@@ -413,10 +413,10 @@ end
 
 # DONE
 # SIMPLE GRID
-boards = [{ type: :simple, x: 3, y: 2, endpoints: 1, barriers: 1, level: 1 }]
+# boards = [{ type: :simple, x: 3, y: 2, endpoints: 1, barriers: 1, level: 1 }]
 
 # 1 bridge, 1 barrier
-# boards = [{ type: :bridge, x: 4, y: 4, endpoints: 1, barriers: 1, bridges: 1, level: 1 }]
+boards = [{ type: :bridge, x: 4, y: 4, endpoints: 1, barriers: 1, bridges: 1, level: 1 }]
 
 # IN PROGRESS
 # 1 tunnel, 1 barrier
