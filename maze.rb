@@ -322,21 +322,20 @@ class PortalMaze < Maze
   end
 
   def all_portal_squares_on_border_of_maze?
-    all_square_indexes_of_type('portal').all? do |index|
-      portal_square_on_border_of_maze?(index)
+    all_square_indexes_of_type('portal').all? do |square_index|
+      portal_square_on_border_of_maze?(square_index)
     end
   end
 
-  def portal_square_on_border_of_maze?(square)
-    return false unless border_square?(square)
+  def portal_square_on_border_of_maze?(square_index)
+    return false unless border_square?(square_index)
     true
   end
 
   def all_portal_pairs_in_same_row_or_column?
-    all_portal_pair_indexes.all? do |square_indexes|
-      binding.pry
-      portal_pair_in_same_row?(square_indexes) ||
-        portal_pair_in_same_column?(square_indexes)
+    portal_pair_indexes.all? do |square_indexes|
+      portal_pair_on_opposite_sides_of_same_row?(square_indexes) ||
+        portal_pair_on_opposite_sides_of_same_column?(square_indexes)
     end
   end
 end

@@ -188,7 +188,7 @@ module NavigateTunnel
 end
 
 module NavigatePortal
-  def all_portal_pair_indexes
+  def portal_pair_indexes
     all_portal_square_indexes = all_square_indexes_of_type(:portal)
     results = []
     1.upto(all_portal_square_indexes.size / 2) do |portal_group|
@@ -201,12 +201,12 @@ module NavigatePortal
     results
   end
 
-  def portal_pair_in_same_row?(square_indexes)
+  def portal_pair_on_opposite_sides_of_same_row?(square_indexes)
     return false unless left_border_indices.include?(square_indexes.first)
     square_indexes.last - square_indexes.first == x - 1
   end
 
-  def portal_pair_in_same_column?(square_indexes)
+  def portal_pair_on_opposite_sides_of_same_column?(square_indexes))
     return false unless top_border_indices.include?(square_indexes.first)
     square_indexes.last - square_indexes.first == x * y - [x, y].min
   end
