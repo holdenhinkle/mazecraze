@@ -19,13 +19,13 @@ module Navigate
   def connected_to_more_than_one_normal_square?(square_index)
     connections = 0
     connections += 1 if square_above_exists?(square_index) &&
-                        square_above_not_taken_and_of_type(square_index, :normal)
+                        square_not_taken_and_of_type('above', square_index, :normal)
     connections += 1 if square_right_exists?(square_index) &&
-                        square_right_not_taken_and_of_type(square_index, :normal)
+                        square_not_taken_and_of_type('right', square_index, :normal)
     connections += 1 if square_below_exists?(square_index) &&
-                        square_below_not_taken_and_of_type(square_index, :normal)
+                        square_not_taken_and_of_type('below', square_index, :normal)
     connections += 1 if square_left_exists?(square_index) &&
-                        square_left_not_taken_and_of_type(square_index, :normal)
+                        square_not_taken_and_of_type('left', square_index, :normal)
     connections > 1
   end
 
@@ -115,6 +115,10 @@ module Navigate
     !left_border_indices.include?(square_index)
   end
 
+
+
+
+
   def square_above_not_taken?(square_index, current_maze = self)
     current_maze.squares[square_index_above(square_index)].not_taken?
   end
@@ -131,24 +135,12 @@ module Navigate
     current_maze.squares[square_index_left(square_index)].not_taken?
   end
 
-  def square_above_not_taken_and_of_type(square_index, type, current_maze = self)
-    square_above_not_taken?(square_index, current_maze) &&
-      current_maze.squares[square_index_above(square_index)].type == type
-  end
 
-  def square_right_not_taken_and_of_type(square_index, type, current_maze = self)
-    square_right_not_taken?(square_index, current_maze) &&
-      current_maze.squares[square_index_right(square_index)].type == type
-  end
 
-  def square_below_not_taken_and_of_type(square_index, type, current_maze = self)
-    square_below_not_taken?(square_index, current_maze) &&
-      current_maze.squares[square_index_below(square_index)].type == type
-  end
 
-  def square_left_not_taken_and_of_type(square_index, type, current_maze = self)
-    square_left_not_taken?(square_index, current_maze) &&
-      current_maze.squares[square_index_left(square_index)].type == type
+  def square_not_taken_and_of_type(direction, square_index, type, current_maze = self)
+    send("square_#{direction}_not_taken?", square_index, current_maze) &&
+      current_maze.squares[send("square_index_#{direction}", square_index)].type == type
   end
 
   def valid_move?(direction, square_index, current_maze = self)
@@ -210,12 +202,12 @@ end
 
 module NavigateTunnel
   def valid_move?(direction, square_index, current_maze = self)
-    return false unless square_above_exists?(square_index)
+    return false unless send("square_#{direction}_exists?", square_index)
   end
 end
 
 module NavigatePortal
   def valid_move?(direction, square_index, current_maze = self)
-    return false unless square_above_exists?(square_index)
+    return false unless send("square_#{direction}_exists?", square_index)
   end
 end
