@@ -139,8 +139,6 @@ module Navigate
   def valid_move?(direction, square_index, current_maze = self)
     return false unless send("square_#{direction}_exists?", square_index)
     square_not_taken?(direction, square_index, current_maze)
-    # send("square_#{direction}_exists?", square_index) &&
-    #   square_not_taken?(direction, square_index, current_maze)
   end
 end
 
