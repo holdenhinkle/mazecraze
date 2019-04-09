@@ -40,17 +40,17 @@ class Board
 
   private
 
-  def create_mazes(board)
-    counter = starting_file_number(board[:level]) + 1
-    permutations_file_path = create_permutations_file_path
-    generate_permutations(layout, permutations_file_path)
-    File.open(permutations_file_path, "r").each_line do |maze_layout|
-      maze = Object.const_get(maze_type(board[:type])).new(board, JSON.parse(maze_layout))
-      next unless maze.valid?
-      save_maze!(maze, counter)
-      counter += 1
-    end
-  end
+  # def create_mazes(board)
+  #   counter = starting_file_number(board[:level]) + 1
+  #   permutations_file_path = create_permutations_file_path
+  #   generate_permutations(layout, permutations_file_path)
+  #   File.open(permutations_file_path, "r").each_line do |maze_layout|
+  #     maze = Object.const_get(maze_type(board[:type])).new(board, JSON.parse(maze_layout))
+  #     next unless maze.valid?
+  #     save_maze!(maze, counter)
+  #     counter += 1
+  #   end
+  # end
 
   # * *
   # FOR testing

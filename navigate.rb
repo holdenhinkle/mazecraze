@@ -206,12 +206,8 @@ module NavigatePortal
     square_indexes.last - square_indexes.first == x - 1
   end
 
-  def portal_pair_on_opposite_sides_of_same_column?(square_indexes))
+  def portal_pair_on_opposite_sides_of_same_column?(square_indexes)
     return false unless top_border_indices.include?(square_indexes.first)
     square_indexes.last - square_indexes.first == x * y - [x, y].min
-  end
-
-  def valid_move?(direction, square_index, current_maze = self)
-    return false unless send("square_#{direction}_exists?", square_index)
   end
 end

@@ -100,4 +100,28 @@ module SolveTunnel
 end
 
 module SolvePortal
+  def mark_square_taken(current_maze, current_path, square)
+    square.taken!
+    return unless square.portal_square?
+    other_end_of_portal_square = if top_border_indices.include?(square.index) ||
+                                    bottom_border_indices.include?(square.index)
+                                   current_maze.squares[size - square.index - 2]
+                                 elsif left_border_indices.include?(square.index)
+                                   current_maze.squares[square.index + x - 1]
+                                 else
+                                   current_maze.squares[x - square.index - 1]
+                                 end
+    current_path.push(other_end_of_portal_square.index)
+    other_end_of_portal_square.taken!
+  end
+
+  def check_attempt(current_maze, current_path, next_square)
+    if current_maze.squares[next_square].finish_square? && # if solved
+       current_maze.all_squares_taken?
+      current_path
+    elsif current_maze.squares[next_square].normal_square? || # continue
+          current_maze.squares[next_square].portal_square?
+      { path: current_path, maze: current_maze }
+    end
+  end
 end
