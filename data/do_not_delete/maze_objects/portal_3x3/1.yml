@@ -1,0 +1,61 @@
+--- !ruby/object:PortalMaze
+type: :portal
+level: 1
+x: 3
+y: 3
+squares:
+- !ruby/object:EndpointSquare
+  status: :taken
+  type: :endpoint
+  index: 0
+  group: 1
+  subgroup: a
+- !ruby/object:PortalSquare
+  status: :not_taken
+  type: :portal
+  index: 1
+  group: 1
+  subgroup: a
+- !ruby/object:EndpointSquare
+  status: :not_taken
+  type: :endpoint
+  index: 2
+  group: 1
+  subgroup: b
+- !ruby/object:Square
+  status: :not_taken
+  type: :normal
+  index: 3
+- !ruby/object:Square
+  status: :not_taken
+  type: :normal
+  index: 4
+- !ruby/object:Square
+  status: :not_taken
+  type: :normal
+  index: 5
+- !ruby/object:Square
+  status: :not_taken
+  type: :normal
+  index: 6
+- !ruby/object:PortalSquare
+  status: :not_taken
+  type: :portal
+  index: 7
+  group: 1
+  subgroup: b
+- !ruby/object:Square
+  status: :taken
+  type: :barrier
+  index: 8
+valid: true
+solutions:
+- - 0
+  - 1
+  - 6
+  - 7
+  - 0
+  - 3
+  - 4
+  - 5
+  - 2

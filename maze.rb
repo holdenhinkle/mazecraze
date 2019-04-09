@@ -81,13 +81,14 @@ class Board
 
   # ONE LINE PORTAL
   # def create_mazes(board)
-  #   new_maze = ["endpoint_1_a", "portal_1_a", "normal", "normal",
-  #               "normal", "normal", "normal", "normal",
-  #               "normal", "normal", "normal", "barrier",
-  #               "normal", "portal_1_b", "normal", "endpoint_1_b"]
-
-  #   maze = PortalMaze.new(board, new_maze)
-  #   binding.pry
+  #   counter = starting_file_number(board[:level]) + 1
+  #   permutations_file_path = "/Users/hamedahinkle/Documents/LaunchSchool/17x_projects/maze/data/do_not_delete/maze_permutations/portal_3x3.txt""
+  #   File.open(permutations_file_path, "r").each_line do |maze_layout|
+  #     maze = Object.const_get(maze_type(board[:type])).new(board, JSON.parse(maze_layout))
+  #     next unless maze.valid?
+  #     save_maze!(maze, counter)
+  #     counter += 1
+  #   end
   # end
 
   def create_permutations_file_path
@@ -447,7 +448,7 @@ class BridgeSquare < Square
 end
 
 # SIMPLE MAZE - DONE
-boards = [{ type: :simple, x: 3, y: 2, endpoints: 1, barriers: 1, level: 1 }]
+# boards = [{ type: :simple, x: 3, y: 2, endpoints: 1, barriers: 1, level: 1 }]
 
 # BRIDGE - DONE
 # boards = [{ type: :bridge, x: 4, y: 4, endpoints: 1, barriers: 1, bridges: 1, level: 1 }]
@@ -458,6 +459,6 @@ boards = [{ type: :simple, x: 3, y: 2, endpoints: 1, barriers: 1, level: 1 }]
 
 # WARP - DONE
 # 1 warp, 1 barrier
-# boards = [{ type: :portal, x: 3, y: 3, endpoints: 1, barriers: 1, portals: 1, level: 1 }]
+boards = [{ type: :portal, x: 3, y: 3, endpoints: 1, barriers: 1, portals: 1, level: 1 }]
 
 Boards.new(boards)
