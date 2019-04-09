@@ -318,7 +318,7 @@ class PortalMaze < Maze
 
   def valid_portal_squares?
     all_portal_squares_on_border_of_maze? &&
-      all_portal_pairs_in_same_row_or_column?
+      all_portal_pairs_on_opposite_sides_of_same_row_or_column?
   end
 
   def all_portal_squares_on_border_of_maze?
@@ -332,7 +332,7 @@ class PortalMaze < Maze
     true
   end
 
-  def all_portal_pairs_in_same_row_or_column?
+  def all_portal_pairs_on_opposite_sides_of_same_row_or_column?
     portal_pair_indexes.all? do |square_indexes|
       portal_pair_on_opposite_sides_of_same_row?(square_indexes) ||
         portal_pair_on_opposite_sides_of_same_column?(square_indexes)
