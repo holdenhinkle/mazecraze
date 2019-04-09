@@ -34,6 +34,16 @@ module Navigate
     surrounding_squares(square_index).any? { |square| squares[square].barrier_square? }
   end
 
+  # OneLinePortal < Maze
+  # OneLineBridge < Maze
+  def border_square?(square_index)
+    return true if top_border_indices.include?(square_index)
+    return true if bottom_border_indices.include?(square_index)
+    return true if right_border_indices.include?(square_index)
+    return true if left_border_indices.include?(square_index)
+    false
+  end
+
   # OneLinePortal < Maze, #square_right_exists?(square)
   def right_border_indices
     results = []
@@ -46,16 +56,6 @@ module Navigate
     results = []
     (0..size - 1).step(x) { |index| results << index }
     results
-  end
-
-  # OneLinePortal < Maze
-  # OneLineBridge < Maze
-  def border_square?(square_index)
-    return true if top_border_indices.include?(square_index)
-    return true if bottom_border_indices.include?(square_index)
-    return true if right_border_indices.include?(square_index)
-    return true if left_border_indices.include?(square_index)
-    false
   end
 
   # OneLinePortal < Maze
@@ -188,6 +188,29 @@ module NavigateTunnel
 end
 
 module NavigatePortal
+  def all_portal_pair_indexes
+    all_portal_square_indexes = all_square_indexes_of_type(:portal)
+    results = []
+    1.upto(all_portal_square_indexes.size / 2) do |portal_group|
+      pair = []
+      all_portal_square_indexes.each do |index|
+        pair << index if squares[index].group == portal_group
+      end
+      results << pair.sort
+    end
+    results
+  end
+
+  def portal_pair_in_same_row?(square_indexes)
+    return false unless left_border_indices.include?(square_indexes.first)
+    square_indexes.last - square_indexes.first == x - 1
+  end
+
+  def portal_pair_in_same_column?(square_indexes)
+    return false unless top_border_indices.include?(square_indexes.first)
+    square_indexes.last - square_indexes.first == x * y - [x, y].min
+  end
+
   def valid_move?(direction, square_index, current_maze = self)
     return false unless send("square_#{direction}_exists?", square_index)
   end

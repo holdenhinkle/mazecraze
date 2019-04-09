@@ -57,7 +57,6 @@ class Board
   # *
 
   # ONE LINE BRIDGE
-  # boards = [{ type: :one_line_bridge, x: 4, y: 4, num_barriers: 1, num_bridges: 1, level: 1 }]
   # def create_mazes(board)
   #   new_maze = ["endpoint_1_b", "barrier", "normal", "normal",
   #               "normal", "normal", "bridge", "normal",
@@ -79,6 +78,17 @@ class Board
   #     counter += 1
   #   end
   # end
+
+  # ONE LINE PORTAL
+  def create_mazes(board)
+    new_maze = ["endpoint_1_a", "portal_1_a", "normal", "normal",
+                "normal", "normal", "normal", "normal",
+                "normal", "normal", "normal", "barrier",
+                "normal", "portal_1_b", "normal", "endpoint_1_b"]
+
+    maze = PortalMaze.new(board, new_maze)
+    binding.pry
+  end
 
   def create_permutations_file_path
     permutations_directory = "/levels/maze_permutations/"
@@ -307,12 +317,27 @@ class PortalMaze < Maze
   end
 
   def valid_portal_squares?
-    all_square_indexes_of_type('portal').all? { |index| valid_portal_square?(index) }
+    all_portal_squares_on_border_of_maze? &&
+      all_portal_pairs_in_same_row_or_column?
   end
 
-  def valid_portal_square?(square)
+  def all_portal_squares_on_border_of_maze?
+    all_square_indexes_of_type('portal').all? do |index|
+      portal_square_on_border_of_maze?(index)
+    end
+  end
+
+  def portal_square_on_border_of_maze?(square)
     return false unless border_square?(square)
     true
+  end
+
+  def all_portal_pairs_in_same_row_or_column?
+    all_portal_pair_indexes.all? do |square_indexes|
+      binding.pry
+      portal_pair_in_same_row?(square_indexes) ||
+        portal_pair_in_same_column?(square_indexes)
+    end
   end
 end
 
@@ -365,6 +390,10 @@ class Square
 
   def tunnel_square?
     type == :tunnel
+  end
+
+  def portal_square?
+    type == :portal
   end
 end
 
@@ -422,11 +451,16 @@ end
 # SIMPLE GRID
 # boards = [{ type: :simple, x: 3, y: 2, endpoints: 1, barriers: 1, level: 1 }]
 
-# 1 bridge, 1 barrier
+# BRIDGE - DONE
 # boards = [{ type: :bridge, x: 4, y: 4, endpoints: 1, barriers: 1, bridges: 1, level: 1 }]
 
-# IN PROGRESS
+# TUNNEL - DONE
 # 1 tunnel, 1 barrier
-boards = [{ type: :tunnel, x: 3, y: 3, endpoints: 1, barriers: 1, tunnels: 1, level: 1 }]
+# boards = [{ type: :tunnel, x: 3, y: 3, endpoints: 1, barriers: 1, tunnels: 1, level: 1 }]
+
+# WARP - IN PROGRESS
+# 1 warp, 1 barrier
+boards = [{ type: :portal, x: 4, y: 4, endpoints: 1, barriers: 1, portals: 1, level: 1 }]
+
 
 Boards.new(boards)
