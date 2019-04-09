@@ -40,17 +40,17 @@ class Board
 
   private
 
-  # def create_mazes(board)
-  #   counter = starting_file_number(board[:level]) + 1
-  #   permutations_file_path = create_permutations_file_path
-  #   generate_permutations(layout, permutations_file_path)
-  #   File.open(permutations_file_path, "r").each_line do |maze_layout|
-  #     maze = Object.const_get(maze_type(board[:type])).new(board, JSON.parse(maze_layout))
-  #     next unless maze.valid?
-  #     save_maze!(maze, counter)
-  #     counter += 1
-  #   end
-  # end
+  def create_mazes(board)
+    counter = starting_file_number(board[:level]) + 1
+    permutations_file_path = create_permutations_file_path
+    generate_permutations(layout, permutations_file_path)
+    File.open(permutations_file_path, "r").each_line do |maze_layout|
+      maze = Object.const_get(maze_type(board[:type])).new(board, JSON.parse(maze_layout))
+      next unless maze.valid?
+      save_maze!(maze, counter)
+      counter += 1
+    end
+  end
 
   # * *
   # FOR testing
@@ -69,14 +69,16 @@ class Board
   # end
 
   # ONE LINE TUNNEL
-  def create_mazes(board)
-    new_maze = ["endpoint_1_a", "barrier", "tunnel_1_b", "normal",
-                "normal", "normal", "normal", "normal",
-                "normal", "normal", "barrier", "barrier",
-                "tunnel_1_a", "normal", "normal", "endpoint_1_b"]
-    maze = TunnelMaze.new(board, new_maze)
-    binding.pry
-  end
+  # def create_mazes(board)
+  #   counter = starting_file_number(board[:level]) + 1
+  #   permutations_file_path = "/Users/hamedahinkle/Documents/LaunchSchool/17x_projects/maze/data/do_not_delete/maze_permutations/tunnel_3x3.txt"
+  #   File.open(permutations_file_path, "r").each_line do |maze_layout|
+  #     maze = Object.const_get(maze_type(board[:type])).new(board, JSON.parse(maze_layout))
+  #     next unless maze.valid?
+  #     save_maze!(maze, counter)
+  #     counter += 1
+  #   end
+  # end
 
   def create_permutations_file_path
     permutations_directory = "/levels/maze_permutations/"
@@ -425,6 +427,6 @@ end
 
 # IN PROGRESS
 # 1 tunnel, 1 barrier
-boards = [{ type: :tunnel, x: 4, y: 4, endpoints: 1, barriers: 3, tunnels: 1, level: 1 }]
+boards = [{ type: :tunnel, x: 3, y: 3, endpoints: 1, barriers: 1, tunnels: 1, level: 1 }]
 
 Boards.new(boards)
