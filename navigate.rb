@@ -19,13 +19,13 @@ module Navigate
   def connected_to_more_than_one_normal_square?(square_index)
     connections = 0
     connections += 1 if square_above_exists?(square_index) &&
-                        square_not_taken_and_of_type('above', square_index, :normal)
+                        square_not_taken_and_is_of_type('above', square_index, :normal)
     connections += 1 if square_right_exists?(square_index) &&
-                        square_not_taken_and_of_type('right', square_index, :normal)
+                        square_not_taken_and_is_of_type('right', square_index, :normal)
     connections += 1 if square_below_exists?(square_index) &&
-                        square_not_taken_and_of_type('below', square_index, :normal)
+                        square_not_taken_and_is_of_type('below', square_index, :normal)
     connections += 1 if square_left_exists?(square_index) &&
-                        square_not_taken_and_of_type('left', square_index, :normal)
+                        square_not_taken_and_is_of_type('left', square_index, :normal)
     connections > 1
   end
 
@@ -115,37 +115,18 @@ module Navigate
     !left_border_indices.include?(square_index)
   end
 
-
-
-
-
-  def square_above_not_taken?(square_index, current_maze = self)
-    current_maze.squares[square_index_above(square_index)].not_taken?
+  def square_not_taken?(direction, square_index, current_maze = self)
+    current_maze.squares[send("square_index_#{direction}", square_index)].not_taken?
   end
 
-  def square_right_not_taken?(square_index, current_maze = self)
-    current_maze.squares[square_index_right(square_index)].not_taken?
-  end
-
-  def square_below_not_taken?(square_index, current_maze = self)
-    current_maze.squares[square_index_below(square_index)].not_taken?
-  end
-
-  def square_left_not_taken?(square_index, current_maze = self)
-    current_maze.squares[square_index_left(square_index)].not_taken?
-  end
-
-
-
-
-  def square_not_taken_and_of_type(direction, square_index, type, current_maze = self)
-    send("square_#{direction}_not_taken?", square_index, current_maze) &&
+  def square_not_taken_and_is_of_type(direction, square_index, type, current_maze = self)
+    square_not_taken?(direction, square_index, current_maze) &&
       current_maze.squares[send("square_index_#{direction}", square_index)].type == type
   end
 
   def valid_move?(direction, square_index, current_maze = self)
     send("square_#{direction}_exists?", square_index) &&
-      send("square_#{direction}_not_taken?", square_index, current_maze)
+      square_not_taken?(direction, square_index, current_maze)
   end
 
   # MultiLine
@@ -192,11 +173,6 @@ module NavigateBridge
   def bridge_direction_not_taken?(square, direction)
     method_name = "#{direction}_not_taken?"
     square.send(method_name)
-  end
-
-  def square_not_taken_and_is_of_type(direction, square_index, type, current_maze)
-    method_name = "square_#{direction}_not_taken_and_of_type"
-    send(method_name, square_index, type, current_maze)
   end
 end
 
