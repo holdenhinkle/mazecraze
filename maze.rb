@@ -447,18 +447,18 @@ class BridgeSquare < Square
   end
 end
 
-# SIMPLE MAZE - DONE
+# MAZE - DONE
 # boards = [{ type: :simple, x: 3, y: 2, endpoints: 1, barriers: 1, level: 1 }]
 
-# BRIDGE - DONE
+# BRIDGE MAZE - DONE
 # boards = [{ type: :bridge, x: 4, y: 4, endpoints: 1, barriers: 1, bridges: 1, level: 1 }]
 
-# TUNNEL - DONE
+# TUNNEL MAZE - DONE
 # 1 tunnel, 1 barrier
 # boards = [{ type: :tunnel, x: 3, y: 3, endpoints: 1, barriers: 1, tunnels: 1, level: 1 }]
 
-# WARP - DONE
-# 1 warp, 1 barrier
+# PORTAL MAZE - DONE
+# 1 portal, 1 barrier
 boards = [{ type: :portal, x: 3, y: 3, endpoints: 1, barriers: 1, portals: 1, level: 1 }]
 
 Boards.new(boards)
