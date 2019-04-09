@@ -76,7 +76,7 @@ module Navigate
     end
   end
 
-  def all_squares_of_type(type)
+  def all_square_indexes_of_type(type)
     squares.each_with_object([]) do |square, results|
       results << square.index if
         square.type.match(Regexp.new(Regexp.escape(type)))
@@ -124,11 +124,6 @@ module Navigate
       current_maze.squares[send("square_index_#{direction}", square_index)].type == type
   end
 
-  def valid_move?(direction, square_index, current_maze = self)
-    send("square_#{direction}_exists?", square_index) &&
-      square_not_taken?(direction, square_index, current_maze)
-  end
-
   # MultiLine
   def connected_to_endpoint_square?(square)
     binding.pry
@@ -140,6 +135,13 @@ module Navigate
       end
     end
   end
+
+  def valid_move?(direction, square_index, current_maze = self)
+    return false unless send("square_#{direction}_exists?", square_index)
+    square_not_taken?(direction, square_index, current_maze)
+    # send("square_#{direction}_exists?", square_index) &&
+    #   square_not_taken?(direction, square_index, current_maze)
+  end
 end
 
 module NavigateBridge
@@ -149,8 +151,8 @@ module NavigateBridge
     current_square = current_maze.squares[square_index]
     other_square = current_maze.squares[send("square_index_#{direction}", square_index)]
 
-    square_not_taken_and_is_of_type(direction, square_index, :normal, current_maze) &&
-      square_is_type_bridge_and_bridge_direction_not_taken?(current_square, bridge_direction) ||
+    square_not_taken_and_is_of_type(direction, square_index, :normal, current_maze) && #REVIEW THIS LINE
+      square_is_type_bridge_and_bridge_direction_not_taken?(current_square, bridge_direction) || #REVIEW THIS LINE
       square_not_taken_and_is_of_type(direction, square_index, :normal, current_maze) ||
       square_not_taken_and_is_of_type(direction, square_index, :endpoint, current_maze) ||
       square_not_taken_and_is_of_type(direction, square_index, :bridge, current_maze) &&
@@ -177,8 +179,11 @@ module NavigateBridge
 end
 
 module NavigateTunnel
-  def valid_move?(direction, square_index, current_maze = self)
-    return false unless send("square_#{direction}_exists?", square_index)
+  def other_end_of_tunnel_index(current_maze, current_square)
+    all_square_indexes_of_type(:tunnel).each do |square_index|
+      square = current_maze.squares[square_index]
+      return square.index if square.subgroup != current_square.subgroup
+    end
   end
 end
 

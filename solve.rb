@@ -7,15 +7,17 @@ module Solve
 
   def solve(new_attempt)
     new_attempts = new_attempt
+
     process_attempt = Proc.new do |current_attempt, next_square|
       current_attempt = Marshal.load(Marshal.dump(current_attempt))
       current_maze = current_attempt[:maze]
       current_path = current_attempt[:path].push(next_square)
-      mark_square_taken(current_path, current_maze.squares[next_square])
+      mark_square_taken(current_maze, current_path, current_maze.squares[next_square])
       outcome = check_attempt(current_maze, current_path, next_square)
       solutions << outcome if outcome.is_a? Array # solved
       new_attempts << outcome if outcome.is_a? Hash # continue
     end
+
     until new_attempts.empty?
       attempt(new_attempts.shift, process_attempt)
     end
@@ -34,7 +36,7 @@ module Solve
       valid_move?('left', current_square, current_maze)
   end
 
-  def mark_square_taken(_, square)
+  def mark_square_taken(_, _, square)
     square.taken!
   end
 
@@ -59,7 +61,7 @@ module SolveBridge
     end
   end
 
-  def mark_square_taken(current_path, square)
+  def mark_square_taken(_, current_path, square)
     square.type != :bridge ? square.taken! : update_bridge_square(current_path, square)
   end
 
@@ -77,18 +79,23 @@ module SolveBridge
 end
 
 module SolveTunnel
+  def mark_square_taken(current_maze, current_path, square)
+    square.taken!
+    return unless square.tunnel_square?
+    other_end_of_tunnel_square =
+      current_maze.squares[other_end_of_tunnel_index(current_maze, square)]
+    current_path.push(other_end_of_tunnel_square.index)
+    other_end_of_tunnel_square.taken!
+  end
+
   def check_attempt(current_maze, current_path, next_square)
-    if current_maze.squares[next_square].finish_square? && # if soloved
+    if current_maze.squares[next_square].finish_square? && # if solved
        current_maze.all_squares_taken?
       current_path
     elsif current_maze.squares[next_square].normal_square? || # continue
-          current_maze.squares[next_square].bridge_square?
+          current_maze.squares[next_square].tunnel_square?
       { path: current_path, maze: current_maze }
     end
-  end
-
-  def mark_square_taken(_, square)
-    square.taken!
   end
 end
 
