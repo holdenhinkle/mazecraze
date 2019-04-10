@@ -4,6 +4,9 @@ require 'fileutils'
 require 'json'
 require 'date'
 
+require_relative 'rotator'
+require_relative 'inverter'
+require_relative "database_persistence"
 require_relative 'navigate'
 require_relative 'solve'
 
@@ -24,7 +27,7 @@ end
 class Board
   attr_reader :mazes, :x, :y, :size,
               :num_endpoints, :num_barriers, :num_bridges,
-              :num_portals, :num_tunnels
+              :num_portals, :num_tunnels, :rotator
 
   def initialize(board)
     @x = board[:x]
@@ -36,6 +39,8 @@ class Board
     @num_portals = board[:portals] ? board[:portals] : 0
     @num_tunnels = board[:tunnels] ? board[:tunnels] : 0
     @mazes = create_mazes(board)
+    @rotate = Rotator.new(@x, @y)
+    @invert = Inverter.new(@x, @y)
   end
 
   private
