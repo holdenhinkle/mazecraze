@@ -1,13 +1,14 @@
 class Rotator
-  attr_reader :x
+  attr_reader :x, :y
 
-  def initialize(x)
+  def initialize(x, y)
     @x = x
+    @y = y
   end
 
   def all_rotations(maze)
-    { original: maze,
-      right_90_degrees: right_90_degrees(maze.clone),
+    return { right_180_degrees: right_180_degrees(maze.clone) } if x != y
+    { right_90_degrees: right_90_degrees(maze.clone),
       right_180_degrees: right_180_degrees(maze.clone),
       right_270_degrees: right_270_degrees(maze.clone) }
   end
@@ -15,7 +16,7 @@ class Rotator
   private
 
   # if any of the following methods are made public, the maze local
-  # variable must be cloned.
+  # variable in the methods must be cloned.
 
   def right_90_degrees(maze, shifted_maze = [])
     shifted_maze.unshift(maze.shift(x))

@@ -39,9 +39,10 @@ class Board
     @num_bridges = board[:bridges] ? board[:bridges] : 0
     @num_portals = board[:portals] ? board[:portals] : 0
     @num_tunnels = board[:tunnels] ? board[:tunnels] : 0
-    @rotate = Rotator.new(@x)
+    @rotate = Rotator.new(@x, @y)
     @invert = Inverter.new(@x, @y)
-    @mazes = create_mazes(board)
+    @storage = DatabasePersistence.new(logger)
+    create_mazes(board)
   end
 
   private
@@ -136,12 +137,16 @@ class Board
   end
 
   def maze_layout_exists?(file_path, permutation)
+    permutation_variations = [permutation] + 
+      permutation_rotations_and_inversions(permutation)
     File.foreach(file_path).any? do |line|
-      # line.include?(permutation.to_s)
-      rotate.all_rotations(permutation).values.any? do |rotation|
-        line.include?(rotation.to_s)
-      end
+      permutation_variations.any? { |rotation| line.include?(rotation.to_s) }
     end
+  end
+
+  def permutation_rotations_and_inversions(permutation)
+    rotate.all_rotations(permutation).values +
+      invert.all_inversions(permutation).values
   end
 
   def layout

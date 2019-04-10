@@ -1,0 +1,3 @@
+class DatabasePersistence
+
+end
