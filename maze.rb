@@ -27,7 +27,8 @@ end
 class Board
   attr_reader :mazes, :x, :y, :size,
               :num_endpoints, :num_barriers, :num_bridges,
-              :num_portals, :num_tunnels, :rotator
+              :num_portals, :num_tunnels,
+              :rotate, :invert
 
   def initialize(board)
     @x = board[:x]
@@ -38,9 +39,9 @@ class Board
     @num_bridges = board[:bridges] ? board[:bridges] : 0
     @num_portals = board[:portals] ? board[:portals] : 0
     @num_tunnels = board[:tunnels] ? board[:tunnels] : 0
-    @mazes = create_mazes(board)
-    @rotate = Rotator.new(@x, @y)
+    @rotate = Rotator.new(@x)
     @invert = Inverter.new(@x, @y)
+    @mazes = create_mazes(board)
   end
 
   private
@@ -136,7 +137,10 @@ class Board
 
   def maze_layout_exists?(file_path, permutation)
     File.foreach(file_path).any? do |line|
-      line.include?(permutation.to_s)
+      # line.include?(permutation.to_s)
+      rotate.all_rotations(permutation).values.any? do |rotation|
+        line.include?(rotation.to_s)
+      end
     end
   end
 
@@ -453,7 +457,7 @@ class BridgeSquare < Square
 end
 
 # MAZE - DONE
-# boards = [{ type: :simple, x: 3, y: 2, endpoints: 1, barriers: 1, level: 1 }]
+boards = [{ type: :simple, x: 3, y: 2, endpoints: 1, barriers: 1, level: 1 }]
 
 # BRIDGE MAZE - DONE
 # boards = [{ type: :bridge, x: 4, y: 4, endpoints: 1, barriers: 1, bridges: 1, level: 1 }]
@@ -464,6 +468,6 @@ end
 
 # PORTAL MAZE - DONE
 # 1 portal, 1 barrier
-boards = [{ type: :portal, x: 3, y: 3, endpoints: 1, barriers: 1, portals: 1, level: 1 }]
+# boards = [{ type: :portal, x: 3, y: 3, endpoints: 1, barriers: 1, portals: 1, level: 1 }]
 
 Boards.new(boards)
