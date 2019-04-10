@@ -12,6 +12,11 @@ class Rotator
       right_270_degrees: right_270_degrees(maze.clone) }
   end
 
+  private
+
+  # if any of the following methods are made public, the maze local
+  # variable must be cloned.
+
   def right_90_degrees(maze, shifted_maze = [])
     shifted_maze.unshift(maze.shift(x))
     right_90_degrees(maze, shifted_maze) unless maze.empty?
