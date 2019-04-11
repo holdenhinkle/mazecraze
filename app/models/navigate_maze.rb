@@ -1,4 +1,4 @@
-module Navigate
+module NavigateMaze
   def number_of_squares_by_type(type)
     squares.count { |square| square.type == type }
   end
@@ -142,7 +142,7 @@ module Navigate
   end
 end
 
-module NavigateBridge
+module NavigateBridgeMaze
   def valid_move?(direction, square_index, current_maze = self)
     return false unless send("square_#{direction}_exists?", square_index)
     bridge_direction = determine_bridge_direction(direction)
@@ -176,7 +176,7 @@ module NavigateBridge
   end
 end
 
-module NavigateTunnel
+module NavigateTunnelMaze
   def other_end_of_tunnel_index(current_maze, current_square)
     all_square_indexes_of_type(:tunnel).each do |square_index|
       square = current_maze.squares[square_index]
@@ -185,7 +185,7 @@ module NavigateTunnel
   end
 end
 
-module NavigatePortal
+module NavigatePortalMaze
   def portal_pair_indexes
     all_portal_square_indexes = all_square_indexes_of_type(:portal)
     results = []

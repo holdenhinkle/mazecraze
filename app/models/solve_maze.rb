@@ -1,5 +1,5 @@
 # The solve module solves OneLine mazes and OneLineBridge mazes
-module Solve
+module SolveMaze
   def one_solution?
     solutions.size == 1
     # true
@@ -50,7 +50,7 @@ module Solve
   end
 end
 
-module SolveBridge
+module SolveBridgeMaze
   def check_attempt(current_maze, current_path, next_square)
     if current_maze.squares[next_square].finish_square? &&
        current_maze.all_squares_taken?
@@ -78,7 +78,7 @@ module SolveBridge
   end
 end
 
-module SolveTunnel
+module SolveTunnelMaze
   def mark_square_taken(current_maze, current_path, square)
     square.taken!
     return unless square.tunnel_square?
@@ -99,7 +99,7 @@ module SolveTunnel
   end
 end
 
-module SolvePortal
+module SolvePortalMaze
   def mark_square_taken(current_maze, current_path, square)
     square.taken!
     return unless square.portal_square?
