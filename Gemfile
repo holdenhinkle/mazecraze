@@ -2,8 +2,12 @@ source 'https://rubygems.org'
 
 ruby '2.5.1'
 
-require 'pry'
-require 'yaml'
-require 'fileutils'
-require 'json'
-require 'date'
+gem "sinatra", "2.0.5"
+gem "sinatra-contrib", "2.0.5"
+gem "erubis"
+# gem "pg"
+gem 'pry'
+
+group :production do
+  gem "puma"
+end
