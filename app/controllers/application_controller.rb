@@ -1,7 +1,8 @@
-require './config/environment'
+require './config/environments'
 require "sinatra/base"
 require "sinatra/reloader"
 require "sinatra/content_for"
+require 'sinatra/activerecord'
 require "tilt/erubis"
 require 'yaml'
 require 'fileutils'
@@ -15,14 +16,8 @@ class ApplicationController < Sinatra::Base
 
   configure do
     enable :sessions
-
-    # set folder for templates to ../views, but make the path absolute
     set :views, File.expand_path('../../views', __FILE__)
-  
-    # rename public folder to 'assets'
     set :public_folder, File.expand_path('../../../assets', __FILE__)
-  
-    # static public folder doesn't exist it must be enabled manually
     set :static, true
     set :session_secret, "secret"
     set :erb, escape_html: true
@@ -32,15 +27,20 @@ class ApplicationController < Sinatra::Base
     require "sinatra/reloader"
   end
 
+  # don't enable logging when running tests
+  configure(:production,:development) do
+    enable :logging
+  end
+
   # used to display 404 error pages
   not_found do
     title '404 -- Page Not Found'
     erb :not_found, layout: :layout
   end
 
-  # don't enable logging when running tests
-  configure(:production,:development) do
-    enable :logging
+  # execute sql statements via activerecord
+  def execute(sql)
+    ActiveRecord::Base.connection.execute(sql)
   end
 
   # $0 is the executed file
