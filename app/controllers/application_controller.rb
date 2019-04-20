@@ -40,7 +40,7 @@ class ApplicationController < Sinatra::Base
 
   # execute sql statements via activerecord
   def execute(sql)
-    ActiveRecord::Base.connection.execute(sql)
+    ActiveRecord::Base.connection.exec_query(sql)
   end
 
   # $0 is the executed file
