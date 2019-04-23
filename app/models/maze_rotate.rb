@@ -1,4 +1,4 @@
-class RotateMaze
+class MazeRotate
   attr_reader :x, :y
 
   def initialize(x, y)

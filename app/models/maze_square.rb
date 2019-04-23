@@ -1,4 +1,4 @@
-class Square
+class MazeSquare
   attr_reader :type, :index
   attr_accessor :status
 
@@ -54,7 +54,7 @@ class Square
   end
 end
 
-class PairSquare < Square
+class PairSquare < MazeSquare
   attr_reader :group, :subgroup
 
   def initialize(type, status, group, subgroup, index)
@@ -70,7 +70,7 @@ class TunnelSquare < PairSquare; end
 
 class PortalSquare < PairSquare; end
 
-class BridgeSquare < Square
+class BridgeSquare < MazeSquare
   attr_accessor :horizontal_taken, :vertical_taken
 
   def initialize(type, status, index)

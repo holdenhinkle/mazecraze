@@ -1,0 +1,87 @@
+<nav aria-label="breadcrumb" class="mt-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/admin">Home</a></li>
+    <li class="breadcrumb-item"><a href="/admin/mazes">Mazes</a></li>
+    <li class="breadcrumb-item"><a href="/admin/mazes/formulas">Formulas</a></li>
+    <li class="breadcrumb-item active" aria-current="page">New</li>
+  </ol>
+</nav>
+<div class="alert alert-success" role="alert">
+  Your maze formula was successfully submitted. <a href="/admin/mazes/approve">Approve the mazes</a> generated from this formula once they have been generated.
+</div>
+<div class="alert alert-danger" role="alert">
+  The maze formula you submitted already exists.
+</div>
+<header>
+  <h1>New Maze Formula</h1>
+</header>
+<section>
+  <article>
+    <p>Create a new Maze Formula.</p>
+    <form action="/admin/mazes/formulas/new" method="post">
+      <div class="form-group">
+        <div class="row">
+          <div class="form-group col-md-8">
+            <label for="maze_type" >Maze <strong>Type</strong></label>
+            <select class="form-control form-control" name="maze_type" id="maze_type">
+              <% @maze_types.each do |type| %>
+                <% type_string = type.to_s.capitalize %>
+                <% type_string = array_to_string(replace_underscores_with_space(type_string).split) if type_string.include?('_') %>
+                <option value="<%= type %>"><%= type_string %></option>
+              <% end %>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="form-group col-md-4">
+            <label for="x_value">Grid <strong>Width</strong> (x-value)</label>
+            <input type="number" class="form-control" name="x_value" id="x_value" aria-describedby="x-help" placeholder="0" min="<%= @maze_constraints[:x][:min] %>" max="<%= @maze_constraints[:x][:max] %>">
+            <small id="x-help" class="form-text text-muted">Width is in squares. Must be between <%= @maze_constraints[:x][:min] %> and <%= @maze_constraints[:x][:max] %>.</small>
+          </div>
+          <div class="form-group col-md-4">
+            <label for="y_value">Grid <strong>Height</strong> (y-value)</label>
+            <input type="number" class="form-control" name="y_value" id="y_value" aria-describedby="y-help" placeholder="0" min="<%= @maze_constraints[:y][:min] %>" max="<%= @maze_constraints[:y][:max] %>">
+            <small id="y-help" class="form-text text-muted">Height is in squares. Must be between <%= @maze_constraints[:y][:min] %> and <%= @maze_constraints[:y][:max] %>.</small>
+          </div>
+        </div>
+        <div class="row">
+          <div class="form-group col-md-4">
+            <label for="endpoints">Number of <strong>Endpoints</strong></label>
+            <input type="number" class="form-control" name="endpoints" id="endpoints" placeholder="0" min="<%= @maze_constraints[:endpoints][:min] %>" max="<%= @maze_constraints[:endpoints][:max] %>">
+          </div>
+        </div>
+        <div class="row">
+          <div class="form-group col-md-4">
+            <label for="barriers">Number of <strong>Barriers</strong></label>
+            <input type="number" class="form-control" name="barriers" id="barriers" placeholder="0" min="<%= @maze_constraints[:barriers][:min] %>" max="<%= @maze_constraints[:barriers][:max] %>">
+          </div>
+        </div>
+        <div class="row">
+          <div class="form-group col-md-4">
+            <label for="bridges">Number of <strong>Bridges</strong></label>
+            <input type="number" class="form-control" name="bridges" id="bridges" placeholder="0">
+          </div>
+        </div>
+        <div class="row">
+          <div class="form-group col-md-4">
+            <label for="tunnels">Number of <strong>Tunnels</strong></label>
+            <input type="number" class="form-control" name="tunnels" id="tunnels" placeholder="0">
+          </div>
+        </div>
+        <div class="row">
+          <div class="form-group col-md-4">
+            <label for="portals">Number of <strong>Portals</strong></label>
+            <input type="number" class="form-control" name="portals" id="portals" placeholder="0">
+          </div>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="expirimental" id="expirimental" value="true">
+          <label class="form-check-label" for="expirimental">
+            This is an expirimental formula. Override validation. 
+          </label>
+        </div>
+        <button type="submit" class="btn btn-primary mt-4">Submit Form</button>
+      </div>
+    </form>
+  </article>
+</section>

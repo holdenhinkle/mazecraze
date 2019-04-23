@@ -1,18 +1,33 @@
 class Maze
-  include NavigateMaze
-  include SolveMaze
+  include MazeNavigate
+  include MazeSolve
 
   attr_reader :type, :level, :x, :y, :squares, :valid, :solutions
 
-  def initialize(board, maze_layout)
-    @type = board[:type]
-    @level = board[:level]
-    @x = board[:x]
-    @y = board[:y]
-    @squares = create_maze(maze_layout, board[:endpoints])
+  def initialize(maze_formula, maze_layout)
+    @type = maze_formula[:type]
+    @level = maze_formula[:level]
+    @x = maze_formula[:x]
+    @y = maze_formula[:y]
+    @squares = create_maze(maze_layout, maze_formula[:endpoints])
     @valid = valid_maze?
     @solutions = []
     solve([{ path: [start_square_index], maze: self }]) if @valid
+  end
+
+  def self.types
+    self.descendants.map { |type| type.symbol }
+  end
+
+  def self.basic_contraints
+    { x: { min: 3, max: 10 },
+      y: { min: 2, max: 10 },
+      endpoints: { min: 1, max: 5 },
+      barriers: { min: 1, max: 3 } }
+  end
+
+  def self.symbol_to_class(type)
+    self.descendants.each { |class_name| return class_name if class_name.symbol == type }
   end
 
   def valid?
@@ -92,9 +107,32 @@ class Maze
   end
 end
 
+class SimpleMaze < Maze
+  def self.symbol
+    :simple
+  end
+
+  def self.contraints
+  end
+
+  def self.valid?
+  end
+end
+
 class BridgeMaze < Maze
   include NavigateBridgeMaze
   include SolveBridgeMaze
+
+  def self.symbol
+    :bridge
+  end
+
+  def self.contraints
+    { bridges: { min: 1, max: 3 } }
+  end
+
+  def self.valid?
+  end
 
   private
 
@@ -113,6 +151,17 @@ class TunnelMaze < Maze
   include NavigateTunnelMaze
   include SolveTunnelMaze
 
+  def self.symbol
+    :tunnel
+  end
+
+  def self.contraints
+    { tunnels: { min: 1, max: 3 } }
+  end
+
+  def self.valid?
+  end
+
   private
 
   # def valid_maze?
@@ -123,6 +172,14 @@ end
 class PortalMaze < Maze
   include NavigatePortalMaze
   include SolvePortalMaze
+
+  def self.symbol
+    :portal
+  end
+
+  def self.contraints
+    { portal: { min: 1, max: 3 } }
+  end
 
   private
 

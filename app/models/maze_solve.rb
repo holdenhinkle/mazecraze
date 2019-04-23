@@ -1,5 +1,4 @@
-# The solve module solves OneLine mazes and OneLineBridge mazes
-module SolveMaze
+module MazeSolve
   def one_solution?
     solutions.size == 1
     # true

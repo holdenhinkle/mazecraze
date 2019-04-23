@@ -1,32 +1,35 @@
-class Board
-  attr_reader :mazes, :x, :y, :size,
+class MazeFormula < ActiveRecord::Base
+  attr_reader :x, :y, :size,
               :num_endpoints, :num_barriers, :num_bridges,
               :num_portals, :num_tunnels,
               :rotate, :invert
 
-  def initialize(board)
-    @x = board[:x]
-    @y = board[:y]
-    @size = board[:x] * board[:y]
-    @num_endpoints = board[:endpoints]
-    @num_barriers = board[:barriers] ? board[:barriers] : 0
-    @num_bridges = board[:bridges] ? board[:bridges] : 0
-    @num_portals = board[:portals] ? board[:portals] : 0
-    @num_tunnels = board[:tunnels] ? board[:tunnels] : 0
-    @rotate = RotateMaze.new(@x, @y)
-    @flip = FlipMaze.new(@x, @y)
-    @storage = DatabasePersistence.new(logger)
-    create_mazes(board)
+  def initialize(formula)
+    @x = formula[:x]
+    @y = formula[:y]
+    @size = @x * @y
+    @num_endpoints = formula[:endpoints]
+    @num_barriers = formula[:barriers] ? formula[:barriers] : 0
+    @num_bridges = formula[:bridges] ? formula[:bridges] : 0
+    @num_portals = formula[:portals] ? formula[:portals] : 0
+    @num_tunnels = formula[:tunnels] ? formula[:tunnels] : 0
+    @rotate = MazeRotate.new(@x, @y)
+    @flip = MazeFlip.new(@x, @y)
+    create_mazes(formula)
+  end
+
+  def self.formula_exists?
+    
   end
 
   private
 
-  def create_mazes(board)
-    counter = starting_file_number(board[:level]) + 1
+  def create_mazes(formula)
+    counter = starting_file_number(formula[:level]) + 1
     permutations_file_path = create_permutations_file_path
     generate_permutations(layout, permutations_file_path)
     File.open(permutations_file_path, "r").each_line do |maze_layout|
-      maze = Object.const_get(maze_type(board[:type])).new(board, JSON.parse(maze_layout))
+      maze = Object.const_get(maze_type(formula[:type])).new(formula, JSON.parse(maze_layout))
       next unless maze.valid?
       save_maze!(maze, counter)
       counter += 1
@@ -38,22 +41,22 @@ class Board
   # *
 
   # ONE LINE BRIDGE
-  # def create_mazes(board)
+  # def create_mazes(formula)
   #   new_maze = ["endpoint_1_b", "barrier", "normal", "normal",
   #               "normal", "normal", "bridge", "normal",
   #               "normal", "normal", "normal", "endpoint_1_a",
   #               "normal", "normal", "normal", "normal"]
 
-  #   maze = BridgeMaze.new(board, new_maze)
+  #   maze = BridgeMaze.new(formula, new_maze)
   #   binding.pry
   # end
 
   # ONE LINE TUNNEL
-  # def create_mazes(board)
-  #   counter = starting_file_number(board[:level]) + 1
+  # def create_mazes(formula)
+  #   counter = starting_file_number(formula[:level]) + 1
   #   permutations_file_path = "/Users/hamedahinkle/Documents/LaunchSchool/17x_projects/maze/data/do_not_delete/maze_permutations/tunnel_3x3.txt"
   #   File.open(permutations_file_path, "r").each_line do |maze_layout|
-  #     maze = Object.const_get(maze_type(board[:type])).new(board, JSON.parse(maze_layout))
+  #     maze = Object.const_get(maze_type(formula[:type])).new(formula, JSON.parse(maze_layout))
   #     next unless maze.valid?
   #     save_maze!(maze, counter)
   #     counter += 1
@@ -61,11 +64,11 @@ class Board
   # end
 
   # ONE LINE PORTAL
-  # def create_mazes(board)
-  #   counter = starting_file_number(board[:level]) + 1
+  # def create_mazes(formula)
+  #   counter = starting_file_number(formula[:level]) + 1
   #   permutations_file_path = "/Users/hamedahinkle/Documents/LaunchSchool/17x_projects/maze/data/do_not_delete/maze_permutations/portal_3x3.txt""
   #   File.open(permutations_file_path, "r").each_line do |maze_layout|
-  #     maze = Object.const_get(maze_type(board[:type])).new(board, JSON.parse(maze_layout))
+  #     maze = Object.const_get(maze_type(formula[:type])).new(formula, JSON.parse(maze_layout))
   #     next unless maze.valid?
   #     save_maze!(maze, counter)
   #     counter += 1
@@ -145,9 +148,9 @@ class Board
 
   def maze_type(type)
     case type
-    when :simple then 'Maze'
-    when :portal then "PortalMaze" # DO THIS
-    when :tunnel then "TunnelMaze" # DO THIS
+    when :simple then 'SimpleMaze'
+    when :portal then "PortalMaze"
+    when :tunnel then "TunnelMaze"
     when :bridge then "BridgeMaze"
     end
   end

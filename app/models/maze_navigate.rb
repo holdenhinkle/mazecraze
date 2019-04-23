@@ -1,4 +1,4 @@
-module NavigateMaze
+module MazeNavigate
   def number_of_squares_by_type(type)
     squares.count { |square| square.type == type }
   end
