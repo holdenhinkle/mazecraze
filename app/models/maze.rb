@@ -16,18 +16,17 @@ class Maze
   end
 
   def self.types
-    self.descendants.map { |type| type.symbol }
+    self.descendants.map { |type| type.to_s }
   end
 
   def self.basic_contraints
     { x: { min: 3, max: 10 },
       y: { min: 2, max: 10 },
-      endpoints: { min: 1, max: 5 },
-      barriers: { min: 1, max: 3 } }
+      endpoints: { min: 1, max: 5 } }
   end
 
-  def self.symbol_to_class(type)
-    self.descendants.each { |class_name| return class_name if class_name.symbol == type }
+  def self.to_class(type)
+    self.descendants.each { |class_name| return class_name if class_name.to_s == type }
   end
 
   def valid?
@@ -108,8 +107,8 @@ class Maze
 end
 
 class SimpleMaze < Maze
-  def self.symbol
-    :simple
+  def self.to_s
+    'simple'
   end
 
   def self.contraints
@@ -123,8 +122,8 @@ class BridgeMaze < Maze
   include NavigateBridgeMaze
   include SolveBridgeMaze
 
-  def self.symbol
-    :bridge
+  def self.to_s
+    'bridge'
   end
 
   def self.contraints
@@ -151,8 +150,8 @@ class TunnelMaze < Maze
   include NavigateTunnelMaze
   include SolveTunnelMaze
 
-  def self.symbol
-    :tunnel
+  def self.to_s
+    'tunnel'
   end
 
   def self.contraints
@@ -173,8 +172,8 @@ class PortalMaze < Maze
   include NavigatePortalMaze
   include SolvePortalMaze
 
-  def self.symbol
-    :portal
+  def self.to_s
+    'portal'
   end
 
   def self.contraints

@@ -30,3 +30,5 @@ configure :production, :development do
 			:encoding => 'utf8'
 	)
 end
+
+require "./lib/active_record_extension"

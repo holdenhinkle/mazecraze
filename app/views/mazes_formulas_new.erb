@@ -6,12 +6,6 @@
     <li class="breadcrumb-item active" aria-current="page">New</li>
   </ol>
 </nav>
-<div class="alert alert-success" role="alert">
-  Your maze formula was successfully submitted. <a href="/admin/mazes/approve">Approve the mazes</a> generated from this formula once they have been generated.
-</div>
-<div class="alert alert-danger" role="alert">
-  The maze formula you submitted already exists.
-</div>
 <header>
   <h1>New Maze Formula</h1>
 </header>
@@ -53,7 +47,7 @@
         <div class="row">
           <div class="form-group col-md-4">
             <label for="barriers">Number of <strong>Barriers</strong></label>
-            <input type="number" class="form-control" name="barriers" id="barriers" placeholder="0" min="<%= @maze_constraints[:barriers][:min] %>" max="<%= @maze_constraints[:barriers][:max] %>">
+            <input type="number" class="form-control" name="barriers" id="barriers" placeholder="0">
           </div>
         </div>
         <div class="row">

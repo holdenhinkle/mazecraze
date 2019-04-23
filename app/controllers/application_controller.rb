@@ -38,11 +38,6 @@ class ApplicationController < Sinatra::Base
     erb :not_found, layout: :layout
   end
 
-  # execute sql statements via activerecord
-  def execute(sql)
-    ActiveRecord::Base.connection.exec_query(sql)
-  end
-
   # $0 is the executed file
   # __FILE__ == $0
   run! if __FILE__ == $0

@@ -22,4 +22,10 @@ module ApplicationHelper
       end
     end
   end
+
+  def convert_empty_quotes_to_zero(params)
+    params.each do |key, value| 
+      value.empty? ? params[key] = '0' : params[key] = value
+    end
+  end
 end

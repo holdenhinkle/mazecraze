@@ -18,8 +18,28 @@ class MazeFormula < ActiveRecord::Base
     create_mazes(formula)
   end
 
-  def self.formula_exists?
-    
+  def self.exists?(formula)
+    sql = <<~SQL
+      SELECT * 
+      FROM maze_formulas 
+      WHERE 
+      maze_type = ? AND 
+      width = ? AND 
+      height = ? AND 
+      endpoints = ? AND 
+      barriers = ? AND 
+      bridges = ? AND 
+      tunnels = ? AND 
+      portals = ?;
+    SQL
+
+    results = execute(sql.gsub!("\n", ""), formula[:type],
+                      formula[:x], formula[:y], formula[:endpoints],
+                      formula[:barriers], formula[:bridges],
+                      formula[:tunnels], formula[:portals])
+
+    return false if results.empty?
+    true
   end
 
   private
