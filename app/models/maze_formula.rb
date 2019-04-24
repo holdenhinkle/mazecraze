@@ -42,6 +42,14 @@ class MazeFormula < ActiveRecord::Base
     true
   end
 
+  def self.valid?(formula)
+    Maze.to_class(formula[:type]).valid?(formula)
+  end
+
+  def self.validation(formula)
+    Maze.to_class(formula[:type]).validation(formula)
+  end
+
   def self.save!(formula)
     sql = <<~SQL
       INSERT INTO maze_formulas 

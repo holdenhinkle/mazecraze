@@ -3,6 +3,10 @@ class Maze
   X_MAX = 10
   Y_MIN = 2
   Y_MAX = 10
+  ENDPOINTS_MIN = 1
+  ENDPOINTS_MAX = 4
+  BARRIER_MIN = 1
+  BARRIER_MAX = 3
 
   include MazeNavigate
   include MazeSolve
@@ -148,11 +152,60 @@ class SimpleMaze < Maze
     { title: "Simple Mazes", body: "Here's a description of a simple maze."}
   end
 
-  def self.contraints
+  def self.valid?(formula)
+    # add ratio of x * y and number of barriers?
+    (X_MIN..X_MAX).cover?(formula[:x]) &&
+    (Y_MIN..Y_MAX).cover?(formula[:y]) &&
+    (ENDPOINTS_MIN..ENDPOINTS_MAX).cover?(formula[:endpoints]) &&
+    (BARRIER_MIN..BARRIER_MAX).cover?(formula[:barriers]) &&
+    [formula[:bridges], formula[:tunnels], formula[:portals]].all? do |value|
+      value == 0
+    end
   end
 
-  def self.valid?
+  def self.validation(formula)
+    validation = {}
+    if (X_MIN..X_MAX).cover?(formula[:x])
+      validation[:x_validation_css] = 'is-valid'
+      validation[:x_validation_feedback_css] = 'valid-feedback'
+      validation[:x_validation_feedback] = 'Looks good!'
+    else
+      validation[:x_validation_css] = 'is-invalid'
+      validation[:x_validation_feedback_css] = 'invalid-feedback'
+      validation[:x_validation_feedback] = 'Wdith (x-axis) feedback goes here'
+    end
+    if (Y_MIN..Y_MAX).cover?(formula[:y])
+      validation[:y_validation_css] = 'is-valid'
+      validation[:y_validation_feedback_css] = 'valid-feedback'
+      validation[:y_validation_feedback] = 'Looks good!'
+    else
+      validation[:y_validation_css] = 'is-invalid'
+      validation[:y_validation_feedback_css] = 'invalid-feedback'
+      validation[:y_validation_feedback] = 'Height (y-axis) feedback goes here'
+    end
+    if (ENDPOINTS_MIN..ENDPOINTS_MAX).cover?(formula[:endpoints])
+      validation[:endpoint_validation_css] = 'is-valid'
+      validation[:endpoint_validation_feedback_css] = 'valid-feedback'
+      validation[:endpoint_validation_feedback] = 'Looks good!'
+    else
+      validation[:endpoint_validation_css] = 'is-invalid'
+      validation[:endpoint_validation_feedback_css] = 'invalid-feedback'
+      validation[:endpoint_validation_feedback] = 'Endpoint feedback goes here'
+    end
+    if (BARRIER_MIN..BARRIER_MAX).cover?(formula[:barriers])
+      validation[:barrier_validation_css] = 'is-valid'
+      validation[:barrier_validation_feedback_css] = 'valid-feedback'
+      validation[:barrier_validation_feedback] = 'Looks good!'
+    else
+      validation[:barrier_validation_css] = 'is-invalid'
+      validation[:barrier_validation_feedback_css] = 'invalid-feedback'
+      validation[:barrier_validation_feedback] = 'Barrier feedback goes here'
+    end
+    validation
   end
+
+  private
+  
 end
 
 class BridgeMaze < Maze

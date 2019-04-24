@@ -27,6 +27,7 @@ class AdminController < ApplicationController
 
   post '/admin/mazes/formulas/new' do
     @params[:experiment] ? @params[:experiment] = true : @params[:experiment] = false
+    # MOVE THE FOLLOWING VAR CREATION TO MAZEFORMULA
     params = convert_empty_quotes_to_zero(@params)
     new_formula = { type: params[:maze_type],
                     x: params[:x_value].to_i,
@@ -41,12 +42,15 @@ class AdminController < ApplicationController
 
     if MazeFormula.exists?(new_formula)
       session[:error] = "That maze formula already exists."
-      redirect "/admin/mazes/formulas/new"
+      erb :mazes_formulas_new
     elsif params[:experiment] || MazeFormula.valid?(new_formula)
       MazeFormula.save!(new_formula)
       session[:success] = "Your maze formula was saved."
-      redirect "/admin/mazes/formulas/new"
+      erb :mazes_formulas_new
     else
+      add_hashes_to_session_hash(MazeFormula.validation(new_formula))
+      session[:error] = "That maze formula is invalid."
+      redirect "/admin/mazes/formulas/new"
     end
   end
 end

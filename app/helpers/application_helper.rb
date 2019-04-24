@@ -30,4 +30,8 @@ module ApplicationHelper
       value == '' ? params[key] = '0' : params[key] = value
     end
   end
+
+  def add_hashes_to_session_hash(validation)
+    validation.each { |key, value| session[key] = value }
+  end
 end
