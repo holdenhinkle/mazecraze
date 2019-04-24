@@ -1,4 +1,9 @@
 class Maze
+  X_MIN = 3
+  X_MAX = 10
+  Y_MIN = 2
+  Y_MAX = 10
+
   include MazeNavigate
   include MazeSolve
 
@@ -20,13 +25,37 @@ class Maze
   end
 
   def self.basic_contraints
-    { x: { min: 3, max: 10 },
-      y: { min: 2, max: 10 },
+    { x: { min: X_MIN, max: X_MAX },
+      y: { min: Y_MIN, max: Y_MAX },
       endpoints: { min: 1, max: 5 } }
   end
 
   def self.to_class(type)
     self.descendants.each { |class_name| return class_name if class_name.to_s == type }
+  end
+
+  def self.types_popover
+    popover_content = ""
+    types_popovers.values.each do |content|
+      popover_content << "<h6>#{content[:title]}</h6>"
+      popover_content << "<p>#{content[:body]}</p>"
+    end
+    { title: "Maze Types", body: popover_content }
+  end
+
+  def self.types_popovers
+    popover_content = {}
+    self.descendants.each do |class_name| 
+      popover_content[class_name.to_sym] = class_name.popover
+    end
+    popover_content
+  end
+
+  def self.dimensions_popover
+    { x: { title: "Valid Widths",
+           body: "The maze width should be between #{X_MIN} and #{X_MAX} squares wide." },
+      y: { title: "Valid Heights",
+          body: "The maze width should be between #{Y_MIN} and #{Y_MAX} squares height." } }
   end
 
   def valid?
@@ -111,6 +140,14 @@ class SimpleMaze < Maze
     'simple'
   end
 
+  def self.to_sym
+    :simple
+  end
+
+  def self.popover
+    { title: "Simple Mazes", body: "Here's a description of a simple maze."}
+  end
+
   def self.contraints
   end
 
@@ -124,6 +161,14 @@ class BridgeMaze < Maze
 
   def self.to_s
     'bridge'
+  end
+
+  def self.to_sym
+    :bridge
+  end
+
+  def self.popover
+    { title: "Bridge Mazes", body: "Here's a description of a bridge maze."}
   end
 
   def self.contraints
@@ -154,6 +199,14 @@ class TunnelMaze < Maze
     'tunnel'
   end
 
+  def self.to_sym
+    :tunnel
+  end
+
+  def self.popover
+    { title: "Tunnel Mazes", body: "Here's a description of a tunnel maze."}
+  end
+
   def self.contraints
     { tunnels: { min: 1, max: 3 } }
   end
@@ -174,6 +227,14 @@ class PortalMaze < Maze
 
   def self.to_s
     'portal'
+  end
+
+  def self.to_sym
+    :portal
+  end
+
+  def self.popover
+    { title: "Portal Mazes", body: "Here's a description of a portal maze."}
   end
 
   def self.contraints

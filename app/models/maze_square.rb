@@ -8,6 +8,15 @@ class MazeSquare
     @index = index
   end
 
+  def self.types_popovers
+    popover_content = {}
+    MazeSquare.descendants.each do |square_name|
+      next if square_name.to_s == 'PairSquare'
+      popover_content[square_name.to_sym] = square_name.popover
+    end
+    popover_content
+  end
+
   def taken?
     return true if status == :taken
     false
@@ -54,21 +63,15 @@ class MazeSquare
   end
 end
 
-class PairSquare < MazeSquare
-  attr_reader :group, :subgroup
+class BarrierSquare < MazeSquare
+  def self.to_sym
+    :barrier
+  end
 
-  def initialize(type, status, group, subgroup, index)
-    super(type, status, index)
-    @group = group
-    @subgroup = subgroup
+  def self.popover
+    { title: "About Barrier Squares", body: "Here's a description of barrier squares."}
   end
 end
-
-class EndpointSquare < PairSquare; end
-
-class TunnelSquare < PairSquare; end
-
-class PortalSquare < PairSquare; end
 
 class BridgeSquare < MazeSquare
   attr_accessor :horizontal_taken, :vertical_taken
@@ -77,6 +80,14 @@ class BridgeSquare < MazeSquare
     super(type, status, index)
     @horizontal_taken = false
     @vertical_taken = false
+  end
+
+  def self.to_sym
+    :bridge
+  end
+
+  def self.popover
+    { title: "About Bridge Squares", body: "Here's a description of bridge squares."}
   end
 
   def vertical_taken?
@@ -103,3 +114,44 @@ class BridgeSquare < MazeSquare
     self.horizontal_taken = true
   end
 end
+
+class PairSquare < MazeSquare
+  attr_reader :group, :subgroup
+
+  def initialize(type, status, group, subgroup, index)
+    super(type, status, index)
+    @group = group
+    @subgroup = subgroup
+  end
+end
+
+class EndpointSquare < PairSquare
+  def self.to_sym
+    :endpoint
+  end
+
+  def self.popover
+    { title: "About Endpoint Squares", body: "Here's a description of endpoint squares."}
+  end
+end
+
+class TunnelSquare < PairSquare
+  def self.to_sym
+    :tunnel
+  end
+
+  def self.popover
+    { title: "About Tunnel Squares", body: "Here's a description of tunnel squares."}
+  end
+end
+
+class PortalSquare < PairSquare
+  def self.to_sym
+    :portal
+  end
+
+  def self.popover
+    { title: "About Portal Squares", body: "Here's a description of portal squares."}
+  end
+end
+

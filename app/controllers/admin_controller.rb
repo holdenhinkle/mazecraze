@@ -19,6 +19,10 @@ class AdminController < ApplicationController
   get '/admin/mazes/formulas/new' do
     @title = "New Maze Formula - Maze Craze Admin"
     @maze_types = Maze.types
+    @maze_types_popover = Maze.types_popover
+    @maze_dimensions_popover = Maze.dimensions_popover
+    @square_type_popovers = MazeSquare.types_popovers
+
     @maze_constraints = Maze.basic_contraints
     erb :mazes_formulas_new
   end
