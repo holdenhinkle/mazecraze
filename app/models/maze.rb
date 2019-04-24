@@ -55,7 +55,7 @@ class Maze
     { x: { title: "Valid Widths",
            body: "The maze width should be between #{X_MIN} and #{X_MAX} squares wide." },
       y: { title: "Valid Heights",
-          body: "The maze width should be between #{Y_MIN} and #{Y_MAX} squares height." } }
+          body: "The maze width should be between #{Y_MIN} and #{Y_MAX} squares high." } }
   end
 
   def valid?
