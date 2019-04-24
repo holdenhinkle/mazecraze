@@ -1,4 +1,5 @@
 module ApplicationHelper
+  # REDO THIS
   def title(value = nil)
     @title = value if value
     @title ? "#{@title} :: Maze Craze" : 'Maze Craze'
@@ -9,6 +10,7 @@ module ApplicationHelper
     str.gsub!('_', ' ')
   end
 
+  # REDO THIS
   def array_to_string(array)
     result = ""
     array.each_with_index do |element, index|
