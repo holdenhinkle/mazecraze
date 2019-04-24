@@ -28,11 +28,11 @@
         </div>
         <div class="row">
           <div class="form-group col-md-4">
-            <label for="x_value">Grid <strong>Width</strong> (x-value)</label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" title="<%= @maze_dimensions_popover[:x][:title]%>" data-content="<%= @maze_dimensions_popover[:x][:body]%>"><i class="fas fa-question-circle"></i></a>
+            <label for="x_value">Maze <strong>Width</strong> (x-value)</label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" title="<%= @maze_dimensions_popover[:x][:title]%>" data-content="<%= @maze_dimensions_popover[:x][:body]%>"><i class="fas fa-question-circle"></i></a>
             <input type="number" class="form-control" name="x_value" id="x_value" aria-describedby="x-help" placeholder="0">
           </div>
           <div class="form-group col-md-4">
-            <label for="y_value">Grid <strong>Height</strong> (y-value)</label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" title="<%= @maze_dimensions_popover[:y][:title]%>" data-content="<%= @maze_dimensions_popover[:y][:body]%>"><i class="fas fa-question-circle"></i></a>
+            <label for="y_value">Maze <strong>Height</strong> (y-value)</label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" title="<%= @maze_dimensions_popover[:y][:title]%>" data-content="<%= @maze_dimensions_popover[:y][:body]%>"><i class="fas fa-question-circle"></i></a>
             <input type="number" class="form-control" name="y_value" id="y_value" aria-describedby="y-help" placeholder="0">
           </div>
         </div>
@@ -66,10 +66,22 @@
             <input type="number" class="form-control" name="portals" id="portals" placeholder="0">
           </div>
         </div>
+        <%# <div class="form-check">
+          <input class="form-check-input" type="radio" name="experiment" id="experiment_false" value="false" checked>
+          <label class="form-check-label" for="experiment_false">
+            Normal formula
+          </label>
+        </div>
         <div class="form-check">
-          <input class="form-check-input" type="checkbox" name="expirimental" id="expirimental" value="true">
-          <label class="form-check-label" for="expirimental">
-            This is an expirimental formula. Override validation. 
+          <input class="form-check-input" type="radio" name="experiment" id="experiment_true" value="true">
+          <label class="form-check-label" for="experiment_true">
+            Experimental formula. Override validation.
+          </label>
+        </div> %>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="experiment" id="experiment" value="true">
+          <label class="form-check-label" for="experiment">
+            This is an experimental formula. Override validation. 
           </label>
         </div>
         <button type="submit" class="btn btn-primary mt-4">Submit Form</button>

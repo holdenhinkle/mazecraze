@@ -42,6 +42,19 @@ class MazeFormula < ActiveRecord::Base
     true
   end
 
+  def self.save!(formula)
+    sql = <<~SQL
+      INSERT INTO maze_formulas 
+      (maze_type, width, height, endpoints, barriers, bridges, tunnels, portals, experiment) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+    SQL
+
+    execute(sql.gsub!("\n", ""), formula[:type],
+            formula[:x], formula[:y], formula[:endpoints],
+            formula[:barriers], formula[:bridges],
+            formula[:tunnels], formula[:portals], formula[:experiment])
+  end
+
   private
 
   def create_mazes(formula)
