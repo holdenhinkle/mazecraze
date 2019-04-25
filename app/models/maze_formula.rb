@@ -25,6 +25,18 @@ class MazeFormula < ActiveRecord::Base
     maze_types.merge(maze_dimensions).merge(maze_square_types)
   end
 
+  def self.new_formula_hash(params)
+    formula = { type: params[:maze_type],
+                x: to_integer(params[:x_value]),
+                y: to_integer(params[:y_value]),
+                endpoints: to_integer(params[:endpoints]),
+                barriers: to_integer(params[:barriers]),
+                bridges: to_integer(params[:bridges]),
+                tunnels: to_integer(params[:tunnels]),
+                portals: to_integer(params[:portals]) }
+    params[:experiment] ? formula[:experiment] = true : formula[:experiment] = false
+  end
+
   def self.exists?(formula)
     sql = <<~SQL
       SELECT * 
@@ -71,6 +83,10 @@ class MazeFormula < ActiveRecord::Base
   end
 
   private
+
+  def self.to_integer(value)
+      value == '' ? 0 : value.to_i
+  end
 
   def create_mazes(formula)
     counter = starting_file_number(formula[:level]) + 1

@@ -25,12 +25,6 @@ module ApplicationHelper
     end
   end
 
-  def convert_empty_quotes_to_zero(params)
-    params.each do |key, value| 
-      value == '' ? params[key] = '0' : params[key] = value
-    end
-  end
-
   def add_hashes_to_session_hash(validation)
     validation.each { |key, value| session[key] = value }
   end
