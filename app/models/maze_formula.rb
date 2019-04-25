@@ -18,6 +18,13 @@ class MazeFormula < ActiveRecord::Base
     create_mazes(formula)
   end
 
+  def self.new_formula_form_popovers
+    maze_types = Maze.types_popover
+    maze_dimensions = Maze.dimensions_popover
+    maze_square_types = MazeSquare.types_popovers
+    maze_types.merge(maze_dimensions).merge(maze_square_types)
+  end
+
   def self.exists?(formula)
     sql = <<~SQL
       SELECT * 

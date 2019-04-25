@@ -19,9 +19,8 @@ class AdminController < ApplicationController
   get '/admin/mazes/formulas/new' do
     @title = "New Maze Formula - Maze Craze Admin"
     @maze_types = Maze.types
-    @maze_types_popover = Maze.types_popover
-    @maze_dimensions_popover = Maze.dimensions_popover
-    @square_type_popovers = MazeSquare.types_popovers
+    @popovers = MazeFormula.new_formula_form_popovers
+    binding.pry
     erb :mazes_formulas_new
   end
 
@@ -39,6 +38,11 @@ class AdminController < ApplicationController
                     portals: params[:portals].to_i,
                     experiment: params[:experiment]                  
                   }
+
+    @maze_types = Maze.types
+    @maze_types_popover = Maze.types_popover
+    @maze_dimensions_popover = Maze.dimensions_popover
+    @square_type_popovers = MazeSquare.types_popovers
 
     if MazeFormula.exists?(new_formula)
       session[:error] = "That maze formula already exists."
