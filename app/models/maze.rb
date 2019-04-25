@@ -203,9 +203,6 @@ class SimpleMaze < Maze
     end
     validation
   end
-
-  private
-  
 end
 
 class BridgeMaze < Maze

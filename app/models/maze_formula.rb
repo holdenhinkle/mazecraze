@@ -35,6 +35,7 @@ class MazeFormula < ActiveRecord::Base
                 tunnels: to_integer(params[:tunnels]),
                 portals: to_integer(params[:portals]) }
     params[:experiment] ? formula[:experiment] = true : formula[:experiment] = false
+    formula
   end
 
   def self.exists?(formula)

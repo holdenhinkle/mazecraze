@@ -24,6 +24,7 @@ class AdminController < ApplicationController
   end
 
   post '/admin/mazes/formulas/new' do
+    # REFACTOR THIS BLOCK
     @formula = MazeFormula.new_formula_hash(params)
     if MazeFormula.exists?(@formula)
       session[:error] = "That maze formula already exists."
@@ -33,13 +34,13 @@ class AdminController < ApplicationController
     elsif params[:experiment] || MazeFormula.valid?(@formula)
       MazeFormula.save!(@formula)
       session[:success] = "Your maze formula was saved."
-      erb :mazes_formulas_new
+      redirect "/admin/mazes/formulas/new"
     else
       add_hashes_to_session_hash(MazeFormula.validation(@formula))
       session[:error] = "That maze formula is invalid."
       @maze_types = Maze.types
-      @popovers = MazeFormula.new_formula_form_popovers  
-      redirect "/admin/mazes/formulas/new"
+      @popovers = MazeFormula.new_formula_form_popovers
+      erb :mazes_formulas_new
     end
   end
 end
