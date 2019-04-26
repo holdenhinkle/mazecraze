@@ -62,18 +62,6 @@ class Maze
           body: "The maze width should be between #{Y_MIN} and #{Y_MAX} squares high." } }
   end
 
-  def self.validation(formula)
-    validation = { validation: true }
-    Maze.to_class(formula[:type]).x_validation(validation, formula)
-    Maze.to_class(formula[:type]).y_validation(validation, formula)
-    Maze.to_class(formula[:type]).endpoints_validation(validation, formula)
-    Maze.to_class(formula[:type]).barrier_validation(validation, formula)
-    Maze.to_class(formula[:type]).bridge_validation(validation, formula)
-    Maze.to_class(formula[:type]).tunnel_validation(validation, formula)
-    Maze.to_class(formula[:type]).portal_validation(validation, formula)
-    validation
-  end
-
   def valid?
     valid_maze? && one_solution?
   end
@@ -83,78 +71,6 @@ class Maze
   end
 
   private
-
-  def self.x_validation(validation, formula)
-    if (X_MIN..X_MAX).cover?(formula[:x])
-      validation[:x_validation_css] = 'is-valid'
-      validation[:x_validation_feedback_css] = 'valid-feedback'
-      validation[:x_validation_feedback] = 'Looks good!'
-    else
-      validation[:x_validation_css] = 'is-invalid'
-      validation[:x_validation_feedback_css] = 'invalid-feedback'
-      validation[:x_validation_feedback] = "Width must be between #{X_MIN} and #{X_MAX}."
-    end
-  end
-
-  def self.y_validation(validation, formula)
-    if (Y_MIN..Y_MAX).cover?(formula[:y])
-      validation[:y_validation_css] = 'is-valid'
-      validation[:y_validation_feedback_css] = 'valid-feedback'
-      validation[:y_validation_feedback] = 'Looks good!'
-    else
-      validation[:y_validation_css] = 'is-invalid'
-      validation[:y_validation_feedback_css] = 'invalid-feedback'
-      validation[:y_validation_feedback] = "Height must be between #{Y_MIN} and #{Y_MAX}."
-    end
-  end
-
-  def self.endpoints_validation(validation, formula)
-    if (ENDPOINT_MIN..ENDPOINT_MAX).cover?(formula[:endpoints])
-      validation[:endpoint_validation_css] = 'is-valid'
-      validation[:endpoint_validation_feedback_css] = 'valid-feedback'
-      validation[:endpoint_validation_feedback] = 'Looks good!'
-    else
-      validation[:endpoint_validation_css] = 'is-invalid'
-      validation[:endpoint_validation_feedback_css] = 'invalid-feedback'
-      validation[:endpoint_validation_feedback] = "Number of endpoints must be between #{ENDPOINT_MIN} and #{ENDPOINT_MAX}."
-    end
-  end
-
-  def self.barrier_validation(validation, formula)
-    if (BARRIER_MIN..BARRIER_MAX).cover?(formula[:barriers])
-      validation[:barrier_validation_css] = 'is-valid'
-      validation[:barrier_validation_feedback_css] = 'valid-feedback'
-      validation[:barrier_validation_feedback] = 'Looks good!'
-    else
-      validation[:barrier_validation_css] = 'is-invalid'
-      validation[:barrier_validation_feedback_css] = 'invalid-feedback'
-      validation[:barrier_validation_feedback] = "Number of barriers must be between #{BARRIER_MIN} and #{BARRIER_MAX}."
-    end
-  end
-
-  def self.bridge_validation(validation, formula)
-    if formula[:bridges] > 0
-      validation[:bridge_validation_css] = 'is-invalid'
-      validation[:bridge_validation_feedback_css] = 'invalid-feedback'
-      validation[:bridge_validation_feedback] = 'Bridge squares are not allowed in Simple mazes.'
-    end
-  end
-
-  def self.tunnel_validation(validation, formula)
-    if formula[:tunnels] > 0
-      validation[:tunnel_validation_css] = 'is-invalid'
-      validation[:tunnel_validation_feedback_css] = 'invalid-feedback'
-      validation[:tunnel_validation_feedback] = 'Tunnel squares are not allowed in Simple mazes.'
-    end
-  end
-
-  def self.portal_validation(validation, formula)
-    if formula[:portals] > 0
-      validation[:portal_validation_css] = 'is-invalid'
-      validation[:portal_validation_feedback_css] = 'invalid-feedback'
-      validation[:portal_validation_feedback] = 'Portal squares are not allowed in Simple mazes.'
-    end
-  end
 
   def valid_maze?
     if number_of_endpoints == 2 # write #number_of_endpoints
@@ -317,9 +233,6 @@ class BridgeMaze < Maze
     { bridges: { min: 1, max: 3 } }
   end
 
-  def self.valid?
-  end
-
   private
 
   def valid_maze?
@@ -351,9 +264,6 @@ class TunnelMaze < Maze
 
   def self.contraints
     { tunnels: { min: 1, max: 3 } }
-  end
-
-  def self.valid?
   end
 
   private

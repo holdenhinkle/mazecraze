@@ -1,4 +1,13 @@
 class MazeFormula < ActiveRecord::Base
+  X_MIN = 3
+  X_MAX = 10
+  Y_MIN = 2
+  Y_MAX = 10
+  ENDPOINT_MIN = 1
+  ENDPOINT_MAX = 4
+  BARRIER_MIN = 1
+  BARRIER_MAX = 3
+
   attr_reader :x, :y, :size,
               :num_endpoints, :num_barriers, :num_bridges,
               :num_portals, :num_tunnels,
@@ -27,7 +36,7 @@ class MazeFormula < ActiveRecord::Base
 
   def self.new_formula_hash(params)
     formula = { type: params[:maze_type],
-                x: to_integer(params[:x_value]),
+                x: to_integer(params[:x_value]), #rename empty_string_to_zero_string ????
                 y: to_integer(params[:y_value]),
                 endpoints: to_integer(params[:endpoints]),
                 barriers: to_integer(params[:barriers]),
@@ -67,7 +76,16 @@ class MazeFormula < ActiveRecord::Base
   end
 
   def self.validation(formula)
-    Maze.validation(formula)
+    formula_class = maze_type_formula_class(formula[:type])
+    validation = { validation: true }
+    formula_class.x_validation(validation, formula)
+    formula_class.y_validation(validation, formula)
+    formula_class.endpoints_validation(validation, formula)
+    formula_class.barrier_validation(validation, formula)
+    formula_class.bridge_validation(validation, formula)
+    formula_class.tunnel_validation(validation, formula)
+    formula_class.portal_validation(validation, formula)
+    validation
   end
 
   def self.save!(formula)
@@ -87,6 +105,85 @@ class MazeFormula < ActiveRecord::Base
 
   def self.to_integer(value)
       value == '' ? 0 : value.to_i
+  end
+
+  def self.maze_type_formula_class(type)
+    class_name_string = type.to_s.split('_').map(&:capitalize).join << 'MazeFormula'
+    self.descendants.each do |class_name|
+      return class_name if class_name.to_s == class_name_string
+    end
+  end
+
+  def self.x_validation(validation, formula)
+    if (X_MIN..X_MAX).cover?(formula[:x])
+      validation[:x_validation_css] = 'is-valid'
+      validation[:x_validation_feedback_css] = 'valid-feedback'
+      validation[:x_validation_feedback] = 'Looks good!'
+    else
+      validation[:x_validation_css] = 'is-invalid'
+      validation[:x_validation_feedback_css] = 'invalid-feedback'
+      validation[:x_validation_feedback] = "Width must be between #{X_MIN} and #{X_MAX}."
+    end
+  end
+
+  def self.y_validation(validation, formula)
+    if (Y_MIN..Y_MAX).cover?(formula[:y])
+      validation[:y_validation_css] = 'is-valid'
+      validation[:y_validation_feedback_css] = 'valid-feedback'
+      validation[:y_validation_feedback] = 'Looks good!'
+    else
+      validation[:y_validation_css] = 'is-invalid'
+      validation[:y_validation_feedback_css] = 'invalid-feedback'
+      validation[:y_validation_feedback] = "Height must be between #{Y_MIN} and #{Y_MAX}."
+    end
+  end
+
+  def self.endpoints_validation(validation, formula)
+    if (ENDPOINT_MIN..ENDPOINT_MAX).cover?(formula[:endpoints])
+      validation[:endpoint_validation_css] = 'is-valid'
+      validation[:endpoint_validation_feedback_css] = 'valid-feedback'
+      validation[:endpoint_validation_feedback] = 'Looks good!'
+    else
+      validation[:endpoint_validation_css] = 'is-invalid'
+      validation[:endpoint_validation_feedback_css] = 'invalid-feedback'
+      validation[:endpoint_validation_feedback] = "Number of endpoints must be between #{ENDPOINT_MIN} and #{ENDPOINT_MAX}."
+    end
+  end
+
+  def self.barrier_validation(validation, formula)
+    if (BARRIER_MIN..BARRIER_MAX).cover?(formula[:barriers])
+      validation[:barrier_validation_css] = 'is-valid'
+      validation[:barrier_validation_feedback_css] = 'valid-feedback'
+      validation[:barrier_validation_feedback] = 'Looks good!'
+    else
+      validation[:barrier_validation_css] = 'is-invalid'
+      validation[:barrier_validation_feedback_css] = 'invalid-feedback'
+      validation[:barrier_validation_feedback] = "Number of barriers must be between #{BARRIER_MIN} and #{BARRIER_MAX}."
+    end
+  end
+
+  def self.bridge_validation(validation, formula)
+    if formula[:bridges] > 0
+      validation[:bridge_validation_css] = 'is-invalid'
+      validation[:bridge_validation_feedback_css] = 'invalid-feedback'
+      validation[:bridge_validation_feedback] = 'Bridge squares are not allowed in Simple mazes.'
+    end
+  end
+
+  def self.tunnel_validation(validation, formula)
+    if formula[:tunnels] > 0
+      validation[:tunnel_validation_css] = 'is-invalid'
+      validation[:tunnel_validation_feedback_css] = 'invalid-feedback'
+      validation[:tunnel_validation_feedback] = 'Tunnel squares are not allowed in Simple mazes.'
+    end
+  end
+
+  def self.portal_validation(validation, formula)
+    if formula[:portals] > 0
+      validation[:portal_validation_css] = 'is-invalid'
+      validation[:portal_validation_feedback_css] = 'invalid-feedback'
+      validation[:portal_validation_feedback] = 'Portal squares are not allowed in Simple mazes.'
+    end
   end
 
   def create_mazes(formula)
@@ -240,3 +337,51 @@ class MazeFormula < ActiveRecord::Base
     "#{type}_#{group}_#{subgroup}"
   end
 end
+
+class SimpleMazeFormula < MazeFormula
+
+end
+
+class BridgeMazeFormula < MazeFormula
+  BRIDGE_MIN = 1
+  BRIDGE_MAX = 3
+
+  def self.bridge_validation(validation, formula)
+    if (BRIDGE_MIN..BRIDGE_MAX).cover?(formula[:bridges])
+      validation[:bridge_validation_css] = 'is-invalid'
+      validation[:bridge_validation_feedback_css] = 'invalid-feedback'
+      validation[:bridge_validation_feedback] = "Number of bridges must be between #{BRIDGE_MIN} and #{BRIDGE_MAX}."
+    end
+  end
+end
+
+class TunnelMazeFormula < MazeFormula
+  X_MIN = 5
+  X_MAX = 15
+  Y_MIN = 5
+  Y_MAX = 15
+  TUNNEL_MIN = 1
+  TUNNEL_MAX = 3
+
+  def self.tunnel_validation(validation, formula)
+    if (TUNNEL_MIN..TUNNEL_MAX).cover?(formula[:tunnels])
+      validation[:tunnel_validation_css] = 'is-invalid'
+      validation[:tunnel_validation_feedback_css] = 'invalid-feedback'
+      validation[:tunnel_validation_feedback] = "Number of tunnels must be between #{TUNNEL_MIN} and #{TUNNEL_MAX}."
+    end
+  end
+end
+
+class PortalMazeFormula < MazeFormula
+  PORTAL_MIN = 1
+  PORTAL_MAX = 3
+
+  def self.portal_validation(validation, formula)
+    if (PORTAL_MIN..PORTAL_MAX).cover?(formula[:portals])
+      validation[:portal_validation_css] = 'is-invalid'
+      validation[:portal_validation_feedback_css] = 'invalid-feedback'
+      validation[:portal_validation_feedback] = "Number of portals must be between #{PORTAL_MIN} and #{PORTAL_MAX}."
+    end
+  end
+end
+
