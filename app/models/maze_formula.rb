@@ -85,13 +85,13 @@ class MazeFormula < ActiveRecord::Base
   def self.validation(formula)
     formula_class = maze_type_formula_class(formula[:type])
     validation = { validation: true }
-    formula_class.x_validation(validation, formula)
-    formula_class.y_validation(validation, formula)
-    formula_class.endpoints_validation(validation, formula)
-    formula_class.barrier_validation(validation, formula)
-    formula_class.bridge_validation(validation, formula)
-    formula_class.tunnel_validation(validation, formula)
-    formula_class.portal_validation(validation, formula)
+    formula_class.x_validation(validation, formula[:x])
+    formula_class.y_validation(validation, formula[:y])
+    formula_class.endpoints_validation(validation, formula[:endpoints])
+    formula_class.barrier_validation(validation, formula[:barriers])
+    formula_class.bridge_validation(validation, formula[:bridges])
+    formula_class.tunnel_validation(validation, formula[:tunnels])
+    formula_class.portal_validation(validation, formula[:portals])
     validation
   end
 
@@ -149,8 +149,8 @@ class MazeFormula < ActiveRecord::Base
     portals == 0
   end
 
-  def self.x_validation(validation, formula)
-    if (X_MIN..X_MAX).cover?(formula[:x])
+  def self.x_validation(validation, x)
+    if (X_MIN..X_MAX).cover?(x)
       validation[:x_validation_css] = 'is-valid'
       validation[:x_validation_feedback_css] = 'valid-feedback'
       validation[:x_validation_feedback] = 'Looks good!'
@@ -161,8 +161,8 @@ class MazeFormula < ActiveRecord::Base
     end
   end
 
-  def self.y_validation(validation, formula)
-    if (Y_MIN..Y_MAX).cover?(formula[:y])
+  def self.y_validation(validation, y)
+    if (Y_MIN..Y_MAX).cover?(y)
       validation[:y_validation_css] = 'is-valid'
       validation[:y_validation_feedback_css] = 'valid-feedback'
       validation[:y_validation_feedback] = 'Looks good!'
@@ -173,8 +173,8 @@ class MazeFormula < ActiveRecord::Base
     end
   end
 
-  def self.endpoints_validation(validation, formula)
-    if (ENDPOINT_MIN..ENDPOINT_MAX).cover?(formula[:endpoints])
+  def self.endpoints_validation(validation, endpoints)
+    if (ENDPOINT_MIN..ENDPOINT_MAX).cover?(endpoints)
       validation[:endpoint_validation_css] = 'is-valid'
       validation[:endpoint_validation_feedback_css] = 'valid-feedback'
       validation[:endpoint_validation_feedback] = 'Looks good!'
@@ -185,8 +185,8 @@ class MazeFormula < ActiveRecord::Base
     end
   end
 
-  def self.barrier_validation(validation, formula)
-    if (BARRIER_MIN..BARRIER_MAX).cover?(formula[:barriers])
+  def self.barrier_validation(validation, barriers)
+    if (BARRIER_MIN..BARRIER_MAX).cover?(barriers)
       validation[:barrier_validation_css] = 'is-valid'
       validation[:barrier_validation_feedback_css] = 'valid-feedback'
       validation[:barrier_validation_feedback] = 'Looks good!'
@@ -197,24 +197,24 @@ class MazeFormula < ActiveRecord::Base
     end
   end
 
-  def self.bridge_validation(validation, formula)
-    if formula[:bridges] > 0
+  def self.bridge_validation(validation, bridges)
+    if bridges > 0
       validation[:bridge_validation_css] = 'is-invalid'
       validation[:bridge_validation_feedback_css] = 'invalid-feedback'
       validation[:bridge_validation_feedback] = 'Bridge squares are not allowed in Simple mazes.'
     end
   end
 
-  def self.tunnel_validation(validation, formula)
-    if formula[:tunnels] > 0
+  def self.tunnel_validation(validation, tunnels)
+    if tunnels > 0
       validation[:tunnel_validation_css] = 'is-invalid'
       validation[:tunnel_validation_feedback_css] = 'invalid-feedback'
       validation[:tunnel_validation_feedback] = 'Tunnel squares are not allowed in Simple mazes.'
     end
   end
 
-  def self.portal_validation(validation, formula)
-    if formula[:portals] > 0
+  def self.portal_validation(validation, portals)
+    if portals > 0
       validation[:portal_validation_css] = 'is-invalid'
       validation[:portal_validation_feedback_css] = 'invalid-feedback'
       validation[:portal_validation_feedback] = 'Portal squares are not allowed in Simple mazes.'
