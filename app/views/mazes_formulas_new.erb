@@ -19,7 +19,6 @@
             <select class="form-control form-control" name="maze_type" id="maze_type">
               <% @maze_types.each do |type| %>
                 <% type_string = type.to_s.capitalize %>
-                <% type_string = array_to_string(replace_underscores_with_space(type_string).split) if type_string.include?('_') %>
                 <% if session["validation"] %>
                   <% if @formula[:type] == type %>
                     <option value="<%= type %>" selected="selected"><%= type_string %></option>
@@ -30,6 +29,7 @@
                   <option value="<%= type %>"><%= type_string %></option>
                 <% end %>
               <% end %>
+            <% session.delete("validation") if session["validation"] %>
             </select>
           </div>
         </div>
