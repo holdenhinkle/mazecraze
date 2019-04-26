@@ -72,7 +72,14 @@ class MazeFormula < ActiveRecord::Base
   end
 
   def self.valid?(formula)
-    Maze.to_class(formula[:type]).valid?(formula)
+    formula_class = maze_type_formula_class(formula[:type])
+    [formula_class.x_valid_input?(formula[:x]),
+     formula_class.y_valid_input?(formula[:y]),
+     formula_class.endpoints_valid_input?(formula[:endpoints]),
+     formula_class.barriers_valid_input?(formula[:barriers]),
+     formula_class.bridges_valid_input?(formula[:bridges]),
+     formula_class.tunnels_valid_input?(formula[:tunnels]),
+     formula_class.portals_valid_input?(formula[:portals])].all?
   end
 
   def self.validation(formula)
@@ -112,6 +119,34 @@ class MazeFormula < ActiveRecord::Base
     self.descendants.each do |class_name|
       return class_name if class_name.to_s == class_name_string
     end
+  end
+
+  def self.x_valid_input?(x)
+    (X_MIN..X_MAX).cover?(x)
+  end
+
+  def self.y_valid_input?(y)
+    (Y_MIN..Y_MAX).cover?(y)
+  end
+
+  def self.endpoints_valid_input?(endpoints)
+    (ENDPOINT_MIN..ENDPOINT_MAX).cover?(endpoints)
+  end
+
+  def self.barriers_valid_input?(barriers)
+    (BARRIER_MIN..BARRIER_MAX).cover?(barriers)
+  end
+
+  def self.bridges_valid_input?(bridges)
+    bridges == 0
+  end
+
+  def self.tunnels_valid_input?(tunnels)
+    tunnels == 0
+  end
+
+  def self.portals_valid_input?(portals)
+    portals == 0
   end
 
   def self.x_validation(validation, formula)

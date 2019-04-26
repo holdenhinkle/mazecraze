@@ -268,9 +268,9 @@ class TunnelMaze < Maze
 
   private
 
-  # def valid_maze?
-  #   valid_finish_square?
-  # end
+  def valid_maze?
+    valid_finish_square?
+  end
 end
 
 class PortalMaze < Maze
