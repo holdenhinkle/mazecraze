@@ -223,7 +223,7 @@ class MazeFormula < ActiveRecord::Base
     if !bridges_valid_input?(bridges)
       validation[:bridge_validation_css] = 'is-invalid'
       validation[:bridge_validation_feedback_css] = 'invalid-feedback'
-      validation[:bridge_validation_feedback] = 'Bridge squares are not allowed in Simple mazes.'
+      validation[:bridge_validation_feedback] = 'Bridge squares are only allowed on bridge mazes.'
     end
   end
 
@@ -231,7 +231,7 @@ class MazeFormula < ActiveRecord::Base
     if !tunnels_valid_input?(tunnels)
       validation[:tunnel_validation_css] = 'is-invalid'
       validation[:tunnel_validation_feedback_css] = 'invalid-feedback'
-      validation[:tunnel_validation_feedback] = 'Tunnel squares are not allowed in Simple mazes.'
+      validation[:tunnel_validation_feedback] = 'Tunnel squares are only allowed on tunnel mazes.'
     end
   end
 
@@ -239,7 +239,7 @@ class MazeFormula < ActiveRecord::Base
     if !portals_valid_input?(portals)
       validation[:portal_validation_css] = 'is-invalid'
       validation[:portal_validation_feedback_css] = 'invalid-feedback'
-      validation[:portal_validation_feedback] = 'Portal squares are not allowed in Simple mazes.'
+      validation[:portal_validation_feedback] = 'Portal squares are only allowed on portal mazes.'
     end
   end
 
