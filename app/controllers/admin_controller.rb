@@ -31,7 +31,8 @@ class AdminController < ApplicationController
       @maze_types = Maze.types
       @popovers = MazeFormula.new_formula_form_popovers  
       erb :mazes_formulas_new
-    elsif params[:experiment] || MazeFormula.valid?(@formula)
+    elsif params[:experiment] && MazeFormula.expiriment_valid?(@formula) ||
+            MazeFormula.valid?(@formula)
       MazeFormula.save!(@formula)
       session[:success] = "Your maze formula was saved."
       redirect "/admin/mazes/formulas/new"
