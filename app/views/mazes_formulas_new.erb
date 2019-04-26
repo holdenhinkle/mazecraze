@@ -20,7 +20,15 @@
               <% @maze_types.each do |type| %>
                 <% type_string = type.to_s.capitalize %>
                 <% type_string = array_to_string(replace_underscores_with_space(type_string).split) if type_string.include?('_') %>
-                <option value="<%= type %>"><%= type_string %></option>
+                <% if session["validation"] %>
+                  <% if @formula[:type] == type %>
+                    <option value="<%= type %>" selected="selected"><%= type_string %></option>
+                  <% else %>
+                    <option value="<%= type %>"><%= type_string %></option>
+                  <% end %>
+                <% else %>
+                  <option value="<%= type %>"><%= type_string %></option>
+                <% end %>
               <% end %>
             </select>
           </div>
@@ -86,19 +94,46 @@
         <div class="row">
           <div class="form-group col-md-4">
             <label for="bridges">Number of <strong>Bridges</strong></label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" title="<%= @popovers[:bridge][:title]%>" data-content="<%= @popovers[:bridge][:body]%>"><i class="fas fa-question-circle"></i></a>
-            <input type="number" class="form-control" name="bridges" id="bridges" placeholder="0">
+            <% if session["bridge_validation_css"] %>
+              <input type="number" class="form-control <%= session.delete("bridge_validation_css") %>" name="bridges" id="bridges" aria-describedby="bridges-help" value="<%= @formula[:bridges] %>">
+            <% else %>
+              <input type="number" class="form-control" name="bridges" id="bridges" aria-describedby="bridges-help" placeholder="0">
+            <% end %>
+            <% if session["bridge_validation_feedback"] %>
+              <div class="<%= session.delete("bridge_validation_feedback_css") %>">
+                <%= session.delete("bridge_validation_feedback") %>
+              </div>
+            <% end %>
           </div>
         </div>
         <div class="row">
           <div class="form-group col-md-4">
             <label for="tunnels">Number of <strong>Tunnels</strong></label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" title="<%= @popovers[:tunnel][:title]%>" data-content="<%= @popovers[:tunnel][:body]%>"><i class="fas fa-question-circle"></i></a>
-            <input type="number" class="form-control" name="tunnels" id="tunnels" placeholder="0">
+            <% if session["tunnel_validation_css"] %>
+              <input type="number" class="form-control <%= session.delete("tunnel_validation_css") %>" name="tunnels" id="tunnels" aria-describedby="tunnels-help" value="<%= @formula[:tunnels] %>">
+            <% else %>
+              <input type="number" class="form-control" name="tunnels" id="tunnels" aria-describedby="tunnels-help" placeholder="0">
+            <% end %>
+            <% if session["tunnel_validation_feedback"] %>
+              <div class="<%= session.delete("tunnel_validation_feedback_css") %>">
+                <%= session.delete("tunnel_validation_feedback") %>
+              </div>
+            <% end %>
           </div>
         </div>
         <div class="row">
           <div class="form-group col-md-4">
             <label for="portals">Number of <strong>Portals</strong></label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" title="<%= @popovers[:portal][:title]%>" data-content="<%= @popovers[:portal][:body]%>"><i class="fas fa-question-circle"></i></a>
-            <input type="number" class="form-control" name="portals" id="portals" placeholder="0">
+            <% if session["portal_validation_css"] %>
+              <input type="number" class="form-control <%= session.delete("portal_validation_css") %>" name="portals" id="portals" aria-describedby="portals-help" value="<%= @formula[:portals] %>">
+            <% else %>
+              <input type="number" class="form-control" name="portals" id="portals" aria-describedby="portals-help" placeholder="0">
+            <% end %>
+            <% if session["portal_validation_feedback"] %>
+              <div class="<%= session.delete("portal_validation_feedback_css") %>">
+                <%= session.delete("portal_validation_feedback") %>
+              </div>
+            <% end %>
           </div>
         </div>
         <div class="form-check">

@@ -67,7 +67,7 @@ class MazeFormula < ActiveRecord::Base
   end
 
   def self.validation(formula)
-    Maze.to_class(formula[:type]).validation(formula)
+    Maze.validation(formula)
   end
 
   def self.save!(formula)
