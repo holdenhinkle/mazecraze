@@ -12,7 +12,7 @@ class MazeSquare
     popover_content = {}
     MazeSquare.descendants.each do |square_name|
       next if square_name.to_s == 'PairSquare'
-      popover_content[square_name.to_sym] = square_name.popover
+      popover_content[square_name.to_symbol] = square_name.popover
     end
     popover_content
   end
@@ -64,12 +64,12 @@ class MazeSquare
 end
 
 class BarrierSquare < MazeSquare
-  def self.to_sym
+  def self.to_symbol
     :barrier
   end
 
   def self.popover
-    { title: "About Barrier Squares", body: "Here's a description of barrier squares."}
+    { title: "The Barrier Square", body: "Here's a description of barrier squares."}
   end
 end
 
@@ -82,12 +82,12 @@ class BridgeSquare < MazeSquare
     @vertical_taken = false
   end
 
-  def self.to_sym
+  def self.to_symbol
     :bridge
   end
 
   def self.popover
-    { title: "About Bridge Squares", body: "Here's a description of bridge squares."}
+    { title: "The Bridge Square", body: "Here's a description of bridge squares."}
   end
 
   def vertical_taken?
@@ -126,32 +126,32 @@ class PairSquare < MazeSquare
 end
 
 class EndpointSquare < PairSquare
-  def self.to_sym
+  def self.to_symbol
     :endpoint
   end
 
   def self.popover
-    { title: "About Endpoint Squares", body: "Here's a description of endpoint squares."}
+    { title: "The Endpoint Square", body: "Here's a description of endpoint squares."}
   end
 end
 
 class TunnelSquare < PairSquare
-  def self.to_sym
+  def self.to_symbol
     :tunnel
   end
 
   def self.popover
-    { title: "About Tunnel Squares", body: "Here's a description of tunnel squares."}
+    { title: "The Tunnel Square", body: "Here's a description of tunnel squares."}
   end
 end
 
 class PortalSquare < PairSquare
-  def self.to_sym
+  def self.to_symbol
     :portal
   end
 
   def self.popover
-    { title: "About Portal Squares", body: "Here's a description of portal squares."}
+    { title: "The Portal Square", body: "Here's a description of portal squares."}
   end
 end
 

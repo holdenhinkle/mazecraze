@@ -1,13 +1,4 @@
 class Maze
-  X_MIN = 3
-  X_MAX = 10
-  Y_MIN = 2
-  Y_MAX = 10
-  ENDPOINT_MIN = 1
-  ENDPOINT_MAX = 4
-  BARRIER_MIN = 1
-  BARRIER_MAX = 3
-
   include MazeNavigate
   include MazeSolve
 
@@ -25,37 +16,23 @@ class Maze
   end
 
   def self.types
-    self.descendants.map { |type| type.to_s }
-  end
-
-  def self.to_class(type)
-    self.descendants.each { |class_name| return class_name if class_name.to_s == type }
+    self.descendants.map { |type| type.to_string }
   end
 
   def self.types_popover
     popover_content = ""
     types_popovers.values.each do |content|
-      popover_content << "<h6>#{content[:title]}</h6>"
-      popover_content << "<p>#{content[:body]}</p>"
+      popover_content << "<p><strong>#{content[:title]}</strong><br>#{content[:body]}</p>"
     end
-    popover_content << "<hr>"
-    popover_content << "<p>This is a test</p>"
     { title: "Maze Types", body: popover_content }
   end
 
   def self.types_popovers
     popover_content = {}
     self.descendants.each do |class_name| 
-      popover_content[class_name.to_sym] = class_name.popover
+      popover_content[class_name.to_symbol] = class_name.popover
     end
     popover_content
-  end
-
-  def self.dimensions_popover
-    { x: { title: "Valid Widths",
-           body: "The maze width should be between #{X_MIN} and #{X_MAX} squares wide." },
-      y: { title: "Valid Heights",
-          body: "The maze width should be between #{Y_MIN} and #{Y_MAX} squares high." } }
   end
 
   def valid?
@@ -136,27 +113,18 @@ class Maze
 end
 
 class SimpleMaze < Maze
-  def self.to_s
+  def self.to_string
     'simple'
   end
 
-  def self.to_sym
-    :simple
+  def self.to_symbol
+    name = to_string
+    name.gsub!(' ', '_') if name.include?(' ')
+    name.to_sym
   end
 
   def self.popover
     { title: "Simple Mazes", body: "Here's a description of a simple maze."}
-  end
-
-  def self.valid?(formula)
-    # add ratio of x * y and number of barriers?
-    (X_MIN..X_MAX).cover?(formula[:x]) &&
-    (Y_MIN..Y_MAX).cover?(formula[:y]) &&
-    (ENDPOINT_MIN..ENDPOINT_MAX).cover?(formula[:endpoints]) &&
-    (BARRIER_MIN..BARRIER_MAX).cover?(formula[:barriers]) &&
-    [formula[:bridges], formula[:tunnels], formula[:portals]].all? do |value|
-      value == 0
-    end
   end
 end
 
@@ -164,20 +132,18 @@ class BridgeMaze < Maze
   include NavigateBridgeMaze
   include SolveBridgeMaze
 
-  def self.to_s
+  def self.to_string
     'bridge'
   end
 
-  def self.to_sym
-    :bridge
+  def self.to_symbol
+    name = to_string
+    name.gsub!(' ', '_') if name.include?(' ')
+    name.to_sym
   end
 
   def self.popover
     { title: "Bridge Mazes", body: "Here's a description of a bridge maze."}
-  end
-
-  def self.contraints
-    { bridges: { min: 1, max: 3 } }
   end
 
   private
@@ -197,20 +163,18 @@ class TunnelMaze < Maze
   include NavigateTunnelMaze
   include SolveTunnelMaze
 
-  def self.to_s
+  def self.to_string
     'tunnel'
   end
 
-  def self.to_sym
-    :tunnel
+  def self.to_symbol
+    name = to_string
+    name.gsub!(' ', '_') if name.include?(' ')
+    name.to_sym
   end
 
   def self.popover
     { title: "Tunnel Mazes", body: "Here's a description of a tunnel maze."}
-  end
-
-  def self.contraints
-    { tunnels: { min: 1, max: 3 } }
   end
 
   private
@@ -224,20 +188,18 @@ class PortalMaze < Maze
   include NavigatePortalMaze
   include SolvePortalMaze
 
-  def self.to_s
+  def self.to_string
     'portal'
   end
 
-  def self.to_sym
-    :portal
+  def self.to_symbol
+    name = to_string
+    name.gsub!(' ', '_') if name.include?(' ')
+    name.to_sym
   end
 
   def self.popover
     { title: "Portal Mazes", body: "Here's a description of a portal maze."}
-  end
-
-  def self.contraints
-    { portal: { min: 1, max: 3 } }
   end
 
   private

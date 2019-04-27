@@ -28,10 +28,34 @@ class MazeFormula < ActiveRecord::Base
   end
 
   def self.new_formula_form_popovers
-    maze_types = Maze.types_popover
-    maze_dimensions = Maze.dimensions_popover
-    maze_square_types = MazeSquare.types_popovers
-    maze_types.merge(maze_dimensions).merge(maze_square_types)
+    popovers = build_popovers
+    popovers.keys.each do |element|
+      next if [:title, :body].include?(element)
+      range = case element
+              when :x
+                x_range
+              when :y
+                y_range
+              when :endpoint
+                endpoint_range
+              when :barrier
+                barrier_range
+              when :bridge
+                bridge_range
+              when :tunnel
+                bridge_range
+              when :portal
+                bridge_range
+              end
+      popovers[element][:body] = popovers[element][:body].prepend(range)
+    end
+    popovers
+  end
+
+  def self.build_popovers
+    maze_types_popover = Maze.types_popover
+    maze_square_types_popovers = MazeSquare.types_popovers
+    maze_types_popover.merge(maze_dimensions_popovers).merge(maze_square_types_popovers)
   end
 
   def self.new_formula_hash(params)
@@ -118,14 +142,55 @@ class MazeFormula < ActiveRecord::Base
 
   private
 
+  def self.maze_dimensions_popovers
+    { x: { title: "Valid Widths",
+           body: "The width should be between #{X_MIN} and #{X_MAX} squares wide." },
+      y: { title: "Valid Heights",
+          body: "The width should be between #{Y_MIN} and #{Y_MAX} squares high." } }
+  end
+
+  def self.x_range
+    "<p><strong>Valid input:</strong><br>Between #{X_MIN} and #{X_MAX}<p><hr>"
+  end
+
+  def self.y_range
+    "<p><strong>Valid input:</strong><br>Between #{Y_MIN} and #{Y_MAX}<p><hr>"
+  end
+
+  def self.endpoint_range
+    "<p><strong>Valid input:</strong><br>Between #{ENDPOINT_MIN} and #{ENDPOINT_MAX}<p><hr>"
+  end
+
+  def self.barrier_range
+    "<p><strong>Valid input:</strong><br>Between #{BARRIER_MIN} and #{BARRIER_MAX}<p><hr>"
+  end
+
+  def self.bridge_range
+    min = BridgeMazeFormula::BRIDGE_MIN
+    max = BridgeMazeFormula::BRIDGE_MAX
+    "<p><strong>Valid input:</strong><br>Between #{min} and #{max}<p><hr>"
+  end
+
+  def self.tunnel_range
+    min = TunnelMazeFormula::TUNNEL_MIN
+    max = TunnelMazeFormula::TUNNEL_MAX
+    "<p><strong>Valid input:</strong><br>Between #{min} and #{max}<p><hr>"
+  end
+
+  def self.portal_range
+    min = PortalMazeFormula::PORTAL_MIN
+    max = PortalMazeFormula::PORTAL_MAX
+    "<p><strong>Valid input:</strong><br>Between #{min} and #{max}<p><hr>"
+  end
+
   def self.to_integer(value)
       value == '' ? 0 : value.to_i
   end
 
   def self.maze_type_formula_class(type)
     class_name_string = type.to_s.split('_').map(&:capitalize).join << 'MazeFormula'
-    self.descendants.each do |class_name|
-      return class_name if class_name.to_s == class_name_string
+    self.descendants.each do |formula_class|
+      return formula_class if formula_class.to_s == class_name_string
     end
   end
 
@@ -484,4 +549,3 @@ class PortalMazeFormula < MazeFormula
     end
   end
 end
-
