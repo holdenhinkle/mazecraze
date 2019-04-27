@@ -5,7 +5,7 @@ CREATE TABLE maze_formulas (
   maze_type text NOT NULL,
   width integer NOT NULL CHECK (width > 0),
   height integer NOT NULL CHECK (height > 0),
-  endpoints integer NOT NULL CHECK (endpoints > 0),
+  endpoints integer NOT NULL CHECK (endpoints >= 0),
   barriers integer NOT NULL DEFAULT 0,
   bridges integer NOT NULL DEFAULT 0,
   tunnels integer NOT NULL DEFAULT 0,
@@ -15,7 +15,4 @@ CREATE TABLE maze_formulas (
   created timestamp NOT NULL DEFAULT NOW(),
   updated timestamp NOT NULL DEFAULT NOW()
 );
-
-INSERT INTO maze_formulas (maze_type, width, height, endpoints, barriers) 
-  VALUES (':simple', 3, 3, 1, 1);
   
