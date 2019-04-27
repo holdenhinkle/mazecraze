@@ -14,6 +14,7 @@
     <p>Create a new Maze Formula.</p>
     <form action="/admin/mazes/formulas/new" method="post">
       <div class="form-group">
+        <h3>Type</h3>
         <div class="row">
           <div class="form-group col-md-8">
             <label for="maze_type" >Maze <strong>Type</strong></label>  <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:title]%>" data-content="<%= @popovers[:body]%>"><i class="fas fa-question-circle"></i></a>
@@ -33,6 +34,7 @@
             </select>
           </div>
         </div>
+        <h3>Dimensions</h3>
         <div class="row">
           <div class="form-group col-md-4">
             <label for="x_value">Maze <strong>Width</strong> (x-value)</label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:x][:title]%>" data-content="<%= @popovers[:x][:body] %>"><i class="fas fa-question-circle"></i></a>
@@ -61,6 +63,7 @@
             <% end %>
           </div>
         </div>
+        <h3>Squares</h3>
         <div class="row">
           <div class="form-group col-md-4">
             <label for="endpoints">Number of <strong>Endpoints</strong></label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:endpoint][:title] %>" data-content="<%= @popovers[:endpoint][:body] %>"><i class="fas fa-question-circle"></i></a>
