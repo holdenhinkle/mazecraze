@@ -38,6 +38,8 @@ class Maze
       popover_content << "<h6>#{content[:title]}</h6>"
       popover_content << "<p>#{content[:body]}</p>"
     end
+    popover_content << "<hr>"
+    popover_content << "<p>This is a test</p>"
     { title: "Maze Types", body: popover_content }
   end
 
