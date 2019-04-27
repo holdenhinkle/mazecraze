@@ -106,7 +106,7 @@ class MazeFormula < ActiveRecord::Base
      formula_class.portals_valid_input?(formula[:portals], formula[:experiment])].all?
   end
 
-  def self.expiriment_valid?(formula)
+  def self.experiment_valid?(formula)
     formula_class = maze_type_formula_class(formula[:type])
     [formula_class.barriers_valid_input?(formula[:barriers], formula[:endpoints], formula[:experiment]),
      formula_class.bridges_valid_input?(formula[:bridges], formula[:experiment]),
@@ -150,36 +150,34 @@ class MazeFormula < ActiveRecord::Base
   end
 
   def self.x_range
-    "<p><strong>Valid input:</strong><br>Between #{X_MIN} and #{X_MAX}<p><hr>"
+    range_message(X_MIN, X_MAX)
   end
 
   def self.y_range
-    "<p><strong>Valid input:</strong><br>Between #{Y_MIN} and #{Y_MAX}<p><hr>"
+    range_message(Y_MIN, Y_MAX)
   end
 
   def self.endpoint_range
-    "<p><strong>Valid input:</strong><br>Between #{ENDPOINT_MIN} and #{ENDPOINT_MAX}<p><hr>"
+    range_message(ENDPOINT_MIN, ENDPOINT_MAX)
   end
 
   def self.barrier_range
-    "<p><strong>Valid input:</strong><br>Between #{BARRIER_MIN} and #{BARRIER_MAX}<p><hr>"
+    range_message(BARRIER_MIN, BARRIER_MAX)
   end
 
   def self.bridge_range
-    min = BridgeMazeFormula::BRIDGE_MIN
-    max = BridgeMazeFormula::BRIDGE_MAX
-    "<p><strong>Valid input:</strong><br>Between #{min} and #{max}<p><hr>"
+    range_message(BridgeMazeFormula::BRIDGE_MIN, BridgeMazeFormula::BRIDGE_MAX)
   end
 
   def self.tunnel_range
-    min = TunnelMazeFormula::TUNNEL_MIN
-    max = TunnelMazeFormula::TUNNEL_MAX
-    "<p><strong>Valid input:</strong><br>Between #{min} and #{max}<p><hr>"
+    range_message(TunnelMazeFormula::TUNNEL_MIN, TunnelMazeFormula::TUNNEL_MAX)
   end
 
   def self.portal_range
-    min = PortalMazeFormula::PORTAL_MIN
-    max = PortalMazeFormula::PORTAL_MAX
+    range_message(PortalMazeFormula::PORTAL_MIN, PortalMazeFormula::PORTAL_MAX)
+  end
+
+  def self.range_message(min, max)
     "<p><strong>Valid input:</strong><br>Between #{min} and #{max}<p><hr>"
   end
 
