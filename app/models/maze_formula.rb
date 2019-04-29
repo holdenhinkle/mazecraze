@@ -155,6 +155,11 @@ class MazeFormula < ActiveRecord::Base
     execute(sql, type)
   end
 
+  def self.update_status(id, status)
+    sql = "UPDATE maze_formulas SET status = ? WHERE id = ?;"
+    execute(sql, status, id)
+  end
+
   private
 
   def self.maze_dimensions_popovers

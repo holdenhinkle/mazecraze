@@ -6,7 +6,7 @@
   </ol>
 </nav>
 <header>
-  <h1>Maze Formulas Type</h1>
+  <h1><%= @maze_type %> Maze Formulas</h1>
 </header>
 <section>
   <% @formula_status_list.each do |status| %>
@@ -42,10 +42,22 @@
             <td><%= formula["experiment"] %></td>
             <td>
               <% if formula["status"] == "pending" %>
-                <button type="button" class="btn btn-outline-success btn-sm">Approve</button>
-                <button type="button" class="btn btn-outline-danger btn-sm">Reject</button>
+                <form action="/admin/mazes/formulas/<%= @maze_type %>" method="post">
+                  <input type="hidden" name="update_status_to" value="approved">
+                  <input type="hidden" name="formula_id" value="<%= formula["id"] %>">
+                  <button type="type" class="btn btn-outline-success btn-sm">Approve</button>
+                </form>
+                <form action="/admin/mazes/formulas/<%= @maze_type %>" method="post">
+                  <input type="hidden" name="update_status_to" value="rejected">
+                  <input type="hidden" name="formula_id" value="<%= formula["id"] %>">
+                  <button type="type" class="btn btn-outline-danger btn-sm">Reject</button>
+                </form>
               <% else %>
-                <button type="button" class="btn btn-outline-secondary btn-sm">Edit</button>
+                <form action="/admin/mazes/formulas/<%= @maze_type %>" method="post">
+                  <input type="hidden" name="update_status_to" value="edit">
+                  <input type="hidden" name="formula_id" value="<%= formula["id"] %>">
+                  <button type="type" class="btn btn-outline-secondary btn-sm">Edit</button>
+                </form>
               <% end %>
             </td>
           </tr>

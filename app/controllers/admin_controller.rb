@@ -67,14 +67,23 @@ class AdminController < ApplicationController
   end
 
   get '/admin/mazes/formulas/:type' do
-    if Maze.types.include?(params[:type])
-      @title = "#{params[:type]} Maze Formulas - Maze Craze Admin"
+    @maze_type = params[:type]
+    if Maze.types.include?(@maze_type)
+      @title = "#{@maze_type} Maze Formulas - Maze Craze Admin"
       @formula_status_list = MazeFormula.status_list #RENAME THIS METHOD
-      @formulas = MazeFormula.status_list_by_maze_type(params[:type])
+      @formulas = MazeFormula.status_list_by_maze_type(@maze_type)
       erb :mazes_formulas_type
     else
       session[:error] = "Invalid maze type."
       redirect '/admin/mazes/formulas'
+    end
+  end
+
+  post '/admin/mazes/formulas/:type' do
+    if %w(approved rejected).include?(params[:update_status_to])
+      MazeFormula.update_status(params[:formula_id], params[:update_status_to])
+      session[:success] = "The status for Maze Formula ID:#{params[:formula_id]} was updated to '#{params[:update_status_to]}'."
+      redirect "/admin/mazes/formulas/#{params[:type]}"
     end
   end
 
