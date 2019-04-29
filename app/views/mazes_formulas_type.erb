@@ -1,0 +1,57 @@
+<nav aria-label="breadcrumb" class="mt-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/admin">Home</a></li>
+    <li class="breadcrumb-item"><a href="/admin/mazes">Mazes</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Formulas</li>
+  </ol>
+</nav>
+<header>
+  <h1>Maze Formulas Type</h1>
+</header>
+<section>
+  <% @formula_status_list.each do |status| %>
+    <% counter = 1 %>
+    <h2 id=<%= status %>><%= status.capitalize %></h2>
+    <table class="table table-hover table-sm">
+      <thead class="thead-dark">
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Width</th>
+          <th scope="col">Height</th>
+          <th scope="col">Endpoints</th>
+          <th scope="col">Barriers</th>
+          <th scope="col">Bridges</th>
+          <th scope="col">Tunnels</th>                        
+          <th scope="col">Portals</th>
+          <th scope="col">Experiment?</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @formulas.each do |formula| %>
+          <% next unless status == formula["status"] %>
+          <tr>
+            <th scope="row"><%= counter %></th>
+            <td><%= formula["width"] %></td>
+            <td><%= formula["height"] %></td>
+            <td><%= formula["endpoints"] %></td>
+            <td><%= formula["barriers"] %></td>
+            <td><%= formula["bridges"] %></td>
+            <td><%= formula["tunnels"] %></td>
+            <td><%= formula["portals"] %></td>
+            <td><%= formula["experiment"] %></td>
+            <td>
+              <% if formula["status"] == "pending" %>
+                <button type="button" class="btn btn-outline-success btn-sm">Approve</button>
+                <button type="button" class="btn btn-outline-danger btn-sm">Reject</button>
+              <% else %>
+                <button type="button" class="btn btn-outline-secondary btn-sm">Edit</button>
+              <% end %>
+            </td>
+          </tr>
+          <% counter += 1 %>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</section>

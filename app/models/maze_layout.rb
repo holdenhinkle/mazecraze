@@ -1,0 +1,3 @@
+class MazeLayout
+
+end

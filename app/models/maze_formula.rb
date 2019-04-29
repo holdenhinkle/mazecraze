@@ -8,7 +8,7 @@ class MazeFormula < ActiveRecord::Base
   BARRIER_MIN = 0
   BARRIER_MAX = 3
 
-  attr_reader :x, :y, :size,
+  attr_reader :x, :y, #:size,
               :num_endpoints, :num_barriers, :num_bridges,
               :num_portals, :num_tunnels,
               :rotate, :invert
@@ -16,7 +16,7 @@ class MazeFormula < ActiveRecord::Base
   def initialize(formula)
     @x = formula[:x]
     @y = formula[:y]
-    @size = @x * @y
+    # @size = @x * @y
     @num_endpoints = formula[:endpoints]
     @num_barriers = formula[:barriers] ? formula[:barriers] : 0
     @num_bridges = formula[:bridges] ? formula[:bridges] : 0
@@ -138,6 +138,21 @@ class MazeFormula < ActiveRecord::Base
             formula[:x], formula[:y], formula[:endpoints],
             formula[:barriers], formula[:bridges],
             formula[:tunnels], formula[:portals], formula[:experiment])
+  end
+
+  # IS THERE A BETTER PLACE TO PUT THIS
+  def self.status_list
+    %w(pending approved rejected)
+  end
+
+  def self.count_by_type_and_status(type, status)
+    sql = "SELECT count(maze_type) FROM maze_formulas WHERE maze_type = ? AND status = ?;"
+    execute(sql, type, status)
+  end
+
+  def self.status_list_by_maze_type(type)
+    sql = "SELECT id, width, height, endpoints, barriers, bridges, tunnels, portals, experiment, status FROM maze_formulas WHERE maze_type = ? ORDER BY width, height, endpoints, barriers;"
+    execute(sql, type)
   end
 
   private
@@ -410,7 +425,7 @@ class MazeFormula < ActiveRecord::Base
 
   def layout
     maze = []
-    size.times do
+    (x * y).times do
       maze << if (count_pairs(maze, 'endpoint') / 2) != num_endpoints
                 format_pair(maze, 'endpoint')
               elsif (count_pairs(maze, 'portal') / 2) != num_portals

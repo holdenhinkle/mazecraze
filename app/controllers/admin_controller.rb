@@ -11,8 +11,28 @@ class AdminController < ApplicationController
     erb :mazes
   end
 
+  # get '/admin/mazes/:type' do
+  #   @title = "Mazes - maze Craze Admin"
+  #   erb :mazes
+  # end
+
+  # get '/admin/mazes/id/:id' do
+  #   @title = "Mazes - maze Craze Admin"
+  #   erb :mazes
+  # end
+
   get '/admin/mazes/formulas' do
-    @title = "Mazes - maze Craze Admin"
+    @title = "Maze Formulas - Maze Craze Admin"
+    @maze_types = Maze.types
+    @formula_status_list = MazeFormula.status_list #RENAME THIS METHOD
+    @maze_status_counts = {}
+    @maze_types.each do |type|
+      status_counts_by_maze_type = {}
+      @formula_status_list.each do |status|
+        status_counts_by_maze_type[status] = MazeFormula.count_by_type_and_status(type, status).rows[0][0]
+      end
+      @maze_status_counts[type] = status_counts_by_maze_type
+    end
     erb :mazes_formulas
   end
 
@@ -27,11 +47,12 @@ class AdminController < ApplicationController
     # REFACTOR THIS BLOCK
     @formula = MazeFormula.new_formula_hash(params)
     if MazeFormula.exists?(@formula)
+      # validation hash
       session[:error] = "That maze formula already exists."
       @maze_types = Maze.types
       @popovers = MazeFormula.new_formula_form_popovers  
       erb :mazes_formulas_new
-    elsif params[:experiment] && MazeFormula.expiriment_valid?(@formula) ||
+    elsif params[:experiment] && MazeFormula.experiment_valid?(@formula) ||
             MazeFormula.valid?(@formula)
       MazeFormula.save!(@formula)
       session[:success] = "Your maze formula was saved."
@@ -43,5 +64,25 @@ class AdminController < ApplicationController
       @popovers = MazeFormula.new_formula_form_popovers
       erb :mazes_formulas_new
     end
+  end
+
+  get '/admin/mazes/formulas/:type' do
+    if Maze.types.include?(params[:type])
+      @title = "#{params[:type]} Maze Formulas - Maze Craze Admin"
+      @formula_status_list = MazeFormula.status_list #RENAME THIS METHOD
+      @formulas = MazeFormula.status_list_by_maze_type(params[:type])
+      erb :mazes_formulas_type
+    else
+      session[:error] = "Invalid maze type."
+      redirect '/admin/mazes/formulas'
+    end
+  end
+
+  get '/admin/mazes/formulas/:type/:id' do
+    # add :type validation
+    @title = "Mazes - maze Craze Admin"
+    @maze_types = Maze.types
+    @formula_status_list = MazeFormula.status_list #RENAME THIS METHOD
+    erb :mazes_formulas_id
   end
 end

@@ -1,4 +1,4 @@
-CREATE TYPE status_type AS ENUM ('pending', 'approved');
+CREATE TYPE status_type AS ENUM ('pending', 'approved', 'rejected');
 
 CREATE TABLE maze_formulas (
   id serial PRIMARY KEY,
