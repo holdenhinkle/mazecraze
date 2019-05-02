@@ -1,6 +1,7 @@
 require 'pry'
 
-class AdminController < ApplicationController
+class AdminController < DatabasePersistence
+# class AdminController < ApplicationController
   get '/admin' do
     @title = "Home - Maze Craze Admin"
     erb :admin
@@ -45,7 +46,8 @@ class AdminController < ApplicationController
 
   post '/admin/mazes/formulas/new' do
     # REFACTOR THIS BLOCK
-    @formula = MazeFormula.new_formula_hash(params)
+    @formula = MazeFormula.maze_formula_type_to_class(params[:maze_type]).new(params)
+    binding.pry
     if MazeFormula.exists?(@formula)
       # validation hash
       session[:error] = "That maze formula already exists."
@@ -80,11 +82,13 @@ class AdminController < ApplicationController
   end
 
   post '/admin/mazes/formulas/:type' do
+    # add type and id and status validation
     if %w(approved rejected).include?(params[:update_status_to])
       MazeFormula.update_status(params[:formula_id], params[:update_status_to])
       session[:success] = "The status for Maze Formula ID:#{params[:formula_id]} was updated to '#{params[:update_status_to]}'."
       redirect "/admin/mazes/formulas/#{params[:type]}"
     end
+    
   end
 
   get '/admin/mazes/formulas/:type/:id' do

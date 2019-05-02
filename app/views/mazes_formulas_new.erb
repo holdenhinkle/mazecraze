@@ -19,6 +19,7 @@
           <div class="form-group col-md-8">
             <label for="maze_type" >Maze <strong>Type</strong></label>  <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:title]%>" data-content="<%= @popovers[:body]%>"><i class="fas fa-question-circle"></i></a>
             <select class="form-control form-control" name="maze_type" id="maze_type">
+              <%# <option value="" disabled selected>Make a Selection</option> %>
               <% @maze_types.each do |type| %>
                 <% type_string = type.to_s.capitalize %>
                 <% if session["validation"] %>

@@ -1,4 +1,5 @@
-class MazeFormula < ActiveRecord::Base
+class MazeFormula < DatabasePersistence
+# class MazeFormula < ActiveRecord::Base
   X_MIN = 3
   X_MAX = 10
   Y_MIN = 2
@@ -8,23 +9,31 @@ class MazeFormula < ActiveRecord::Base
   BARRIER_MIN = 0
   BARRIER_MAX = 3
 
-  attr_reader :x, :y, #:size,
+  attr_reader :type, :x, :y,
               :num_endpoints, :num_barriers, :num_bridges,
-              :num_portals, :num_tunnels,
-              :rotate, :invert
+              :num_tunnels, :num_portals, :experiment
 
-  def initialize(formula)
-    @x = formula[:x]
-    @y = formula[:y]
-    # @size = @x * @y
-    @num_endpoints = formula[:endpoints]
-    @num_barriers = formula[:barriers] ? formula[:barriers] : 0
-    @num_bridges = formula[:bridges] ? formula[:bridges] : 0
-    @num_portals = formula[:portals] ? formula[:portals] : 0
-    @num_tunnels = formula[:tunnels] ? formula[:tunnels] : 0
-    @rotate = MazeRotate.new(@x, @y)
-    @flip = MazeFlip.new(@x, @y)
-    create_mazes(formula)
+  def initialize(params)
+    super
+    @type = params[:maze_type]
+    @x = integer_value(params[:x_value])
+    @y = integer_value(params[:y_value])
+    @num_endpoints = integer_value(params[:endpoints])
+    @num_barriers = integer_value(params[:barriers])
+    @num_bridges = integer_value(params[:bridges])
+    @num_tunnels = integer_value(params[:tunnels])
+    @num_portals = integer_value(params[:portals])
+    @experiment = params[:experiment] ? true : false
+    # @rotate = MazeRotate.new(@x, @y)
+    # @flip = MazeFlip.new(@x, @y)
+    binding.pry
+  end
+
+  def self.maze_formula_type_to_class(type)
+    class_name_string = type.split('_').map(&:capitalize).join << 'MazeFormula'
+    self.descendants.each do |formula_class|
+      return formula_class if formula_class.to_s == class_name_string
+    end
   end
 
   def self.new_formula_form_popovers
@@ -58,19 +67,6 @@ class MazeFormula < ActiveRecord::Base
     maze_types_popover.merge(maze_dimensions_popovers).merge(maze_square_types_popovers)
   end
 
-  def self.new_formula_hash(params)
-    formula = { type: params[:maze_type],
-                x: to_integer(params[:x_value]), #rename empty_string_to_zero_string ????
-                y: to_integer(params[:y_value]),
-                endpoints: to_integer(params[:endpoints]),
-                barriers: to_integer(params[:barriers]),
-                bridges: to_integer(params[:bridges]),
-                tunnels: to_integer(params[:tunnels]),
-                portals: to_integer(params[:portals]) }
-    params[:experiment] ? formula[:experiment] = true : formula[:experiment] = false
-    formula
-  end
-
   def self.exists?(formula)
     sql = <<~SQL
       SELECT * 
@@ -96,7 +92,7 @@ class MazeFormula < ActiveRecord::Base
   end
 
   def self.valid?(formula)
-    formula_class = maze_type_formula_class(formula[:type])
+    formula_class = maze_formula_type_to_class(formula[:type])
     [formula_class.x_valid_input?(formula[:x], formula[:experiment]),
      formula_class.y_valid_input?(formula[:y], formula[:experiment]),
      formula_class.endpoints_valid_input?(formula[:endpoints], formula[:experiment]),
@@ -107,7 +103,7 @@ class MazeFormula < ActiveRecord::Base
   end
 
   def self.experiment_valid?(formula)
-    formula_class = maze_type_formula_class(formula[:type])
+    formula_class = maze_formula_type_to_class(formula[:type])
     [formula_class.barriers_valid_input?(formula[:barriers], formula[:endpoints], formula[:experiment]),
      formula_class.bridges_valid_input?(formula[:bridges], formula[:experiment]),
      formula_class.tunnels_valid_input?(formula[:tunnels], formula[:experiment]),
@@ -115,7 +111,7 @@ class MazeFormula < ActiveRecord::Base
   end
 
   def self.validation(formula)
-    formula_class = maze_type_formula_class(formula[:type])
+    formula_class = maze_formula_type_to_class(formula[:type])
     validation = { validation: true }
     formula_class.x_validation(validation, formula[:x], formula[:experiment])
     formula_class.y_validation(validation, formula[:y], formula[:experiment])
@@ -160,7 +156,17 @@ class MazeFormula < ActiveRecord::Base
     execute(sql, status, id)
   end
 
+  # LEFT OFF HERE 
+  # def self.valid_id?(id)
+  #   sql = "SELECT * FROM maze_formulas WHERE id = ?;"
+  #   results = execute(sql, id)
+  # end
+
   private
+
+  def integer_value(value)
+    value == '' ? 0 : value.to_i
+  end
 
   def self.maze_dimensions_popovers
     { x: { title: "Valid Widths",
@@ -199,17 +205,6 @@ class MazeFormula < ActiveRecord::Base
 
   def self.range_message(min, max)
     "<p><strong>Valid input:</strong><br>Between #{min} and #{max}<p><hr>"
-  end
-
-  def self.to_integer(value)
-      value == '' ? 0 : value.to_i
-  end
-
-  def self.maze_type_formula_class(type)
-    class_name_string = type.to_s.split('_').map(&:capitalize).join << 'MazeFormula'
-    self.descendants.each do |formula_class|
-      return formula_class if formula_class.to_s == class_name_string
-    end
   end
 
   def self.x_valid_input?(x, experiment)
@@ -479,6 +474,9 @@ class MazeFormula < ActiveRecord::Base
 end
 
 class SimpleMazeFormula < MazeFormula
+  # def initialize(params)
+  #   super
+  # end
 end
 
 class BridgeMazeFormula < MazeFormula

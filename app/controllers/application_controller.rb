@@ -2,7 +2,7 @@ require './config/environments'
 require "sinatra/base"
 require "sinatra/reloader"
 require "sinatra/content_for"
-require 'sinatra/activerecord'
+# require 'sinatra/activerecord'
 require "tilt/erubis"
 require 'yaml'
 require 'fileutils'
@@ -11,7 +11,7 @@ require 'date'
 
 require 'pry'
 
-class ApplicationController < Sinatra::Base
+class ApplicationController# < Sinatra::Base
   helpers ApplicationHelper
 
   configure do
@@ -21,10 +21,12 @@ class ApplicationController < Sinatra::Base
     set :static, true
     set :session_secret, "secret"
     set :erb, escape_html: true
+    also_reload "../../models/database_persistence.rb"
   end
 
   configure(:development) do
     require "sinatra/reloader"
+    also_reload "../../models/database_persistence.rb"
   end
 
   # don't enable logging when running tests
