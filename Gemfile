@@ -7,8 +7,8 @@ gem "sinatra-contrib", "2.0.5"
 gem "erubis"
 gem "rake"
 gem "pg"
-gem "activerecord"
-gem "sinatra-activerecord"
+# gem "activerecord"
+# gem "sinatra-activerecord"
 
 gem 'pry'
 

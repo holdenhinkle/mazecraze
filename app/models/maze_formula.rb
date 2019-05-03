@@ -1,5 +1,8 @@
-class MazeFormula < DatabasePersistence
-# class MazeFormula < ActiveRecord::Base
+class MazeFormula
+  MAZE_FORMULA_CLASS_NAMES = ['SimpleMazeFormula',
+                              'BridgeMazeFormula',
+                              'TunnelMazeFormula',
+                              'PortalMazeFormula']
   X_MIN = 3
   X_MAX = 10
   Y_MIN = 2
@@ -11,10 +14,10 @@ class MazeFormula < DatabasePersistence
 
   attr_reader :type, :x, :y,
               :num_endpoints, :num_barriers, :num_bridges,
-              :num_tunnels, :num_portals, :experiment
+              :num_tunnels, :num_portals, :experiment,
+              :db
 
   def initialize(params)
-    super
     @type = params[:maze_type]
     @x = integer_value(params[:x_value])
     @y = integer_value(params[:y_value])
@@ -24,19 +27,17 @@ class MazeFormula < DatabasePersistence
     @num_tunnels = integer_value(params[:tunnels])
     @num_portals = integer_value(params[:portals])
     @experiment = params[:experiment] ? true : false
+    @db = DatabaseConnection.new
     # @rotate = MazeRotate.new(@x, @y)
     # @flip = MazeFlip.new(@x, @y)
-    binding.pry
   end
 
   def self.maze_formula_type_to_class(type)
-    class_name_string = type.split('_').map(&:capitalize).join << 'MazeFormula'
-    self.descendants.each do |formula_class|
-      return formula_class if formula_class.to_s == class_name_string
-    end
+    class_name = type.split('_').map(&:capitalize).join << 'MazeFormula'
+    Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
   end
 
-  def self.new_formula_form_popovers
+  def self.form_popovers
     popovers = build_popovers
     popovers.keys.each do |element|
       next if [:title, :body].include?(element)
@@ -67,39 +68,43 @@ class MazeFormula < DatabasePersistence
     maze_types_popover.merge(maze_dimensions_popovers).merge(maze_square_types_popovers)
   end
 
-  def self.exists?(formula)
+  def exists?
     sql = <<~SQL
       SELECT * 
       FROM maze_formulas 
       WHERE 
-      maze_type = ? AND 
-      width = ? AND 
-      height = ? AND 
-      endpoints = ? AND 
-      barriers = ? AND 
-      bridges = ? AND 
-      tunnels = ? AND 
-      portals = ?;
+      maze_type = $1 AND 
+      width = $2 AND 
+      height = $3 AND 
+      endpoints = $4 AND 
+      barriers = $5 AND 
+      bridges = $6 AND 
+      tunnels = $7 AND 
+      portals = $8;
     SQL
 
-    results = execute(sql.gsub!("\n", ""), formula[:type],
-                      formula[:x], formula[:y], formula[:endpoints],
-                      formula[:barriers], formula[:bridges],
-                      formula[:tunnels], formula[:portals])
+    results = db.query(sql.gsub!("\n", ""), type, x, y, num_endpoints,
+                       num_barriers, num_bridges, num_tunnels, num_portals)
 
-    return false if results.empty?
+    db.disconnect
+    return false if results.values.empty?
     true
   end
 
-  def self.valid?(formula)
-    formula_class = maze_formula_type_to_class(formula[:type])
-    [formula_class.x_valid_input?(formula[:x], formula[:experiment]),
-     formula_class.y_valid_input?(formula[:y], formula[:experiment]),
-     formula_class.endpoints_valid_input?(formula[:endpoints], formula[:experiment]),
-     formula_class.barriers_valid_input?(formula[:barriers], formula[:endpoints], formula[:experiment]),
-     formula_class.bridges_valid_input?(formula[:bridges], formula[:experiment]),
-     formula_class.tunnels_valid_input?(formula[:tunnels], formula[:experiment]),
-     formula_class.portals_valid_input?(formula[:portals], formula[:experiment])].all?
+  def experiment?
+    experiment
+  end
+
+  def valid?
+    # LEFT OFF HERE - CONVERT METHODS THAT ARE CALLED TO INSTANCE METHODS
+    formula_class = maze_formula_type_to_class(type)
+    [formula_class.x_valid_input?(x, experiment),
+     formula_class.y_valid_input?(y, experiment),
+     formula_class.endpoints_valid_input?(endpoints, experiment),
+     formula_class.barriers_valid_input?(barriers, endpoints, experiment),
+     formula_class.bridges_valid_input?(bridges, experiment),
+     formula_class.tunnels_valid_input?(tunnels, experiment),
+     formula_class.portals_valid_input?(portals, experiment)].all?
   end
 
   def self.experiment_valid?(formula)

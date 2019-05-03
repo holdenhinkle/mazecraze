@@ -1,7 +1,6 @@
 require 'pry'
 
-class AdminController < DatabasePersistence
-# class AdminController < ApplicationController
+class AdminController < ApplicationController
   get '/admin' do
     @title = "Home - Maze Craze Admin"
     erb :admin
@@ -40,32 +39,25 @@ class AdminController < DatabasePersistence
   get '/admin/mazes/formulas/new' do
     @title = "New Maze Formula - Maze Craze Admin"
     @maze_types = Maze.types
-    @popovers = MazeFormula.new_formula_form_popovers
+    @popovers = MazeFormula.form_popovers
     erb :mazes_formulas_new
   end
 
   post '/admin/mazes/formulas/new' do
-    # REFACTOR THIS BLOCK
     @formula = MazeFormula.maze_formula_type_to_class(params[:maze_type]).new(params)
-    binding.pry
-    if MazeFormula.exists?(@formula)
-      # validation hash
+    if @formula.exists?
       session[:error] = "That maze formula already exists."
-      @maze_types = Maze.types
-      @popovers = MazeFormula.new_formula_form_popovers  
-      erb :mazes_formulas_new
-    elsif params[:experiment] && MazeFormula.experiment_valid?(@formula) ||
-            MazeFormula.valid?(@formula)
-      MazeFormula.save!(@formula)
+    elsif @formula.experiment? && @formula.experiment_valid? || @formula.valid? # LEFT OFF HERE
+      @formula.save!
       session[:success] = "Your maze formula was saved."
       redirect "/admin/mazes/formulas/new"
     else
       add_hashes_to_session_hash(MazeFormula.validation(@formula))
       session[:error] = "That maze formula is invalid."
-      @maze_types = Maze.types
-      @popovers = MazeFormula.new_formula_form_popovers
-      erb :mazes_formulas_new
     end
+    @maze_types = Maze.types
+    @popovers = MazeFormula.form_popovers
+    erb :mazes_formulas_new
   end
 
   get '/admin/mazes/formulas/:type' do

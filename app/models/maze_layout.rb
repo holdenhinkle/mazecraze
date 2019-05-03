@@ -1,3 +1,1 @@
-class MazeLayout
-
-end
+class MazeLayout; end

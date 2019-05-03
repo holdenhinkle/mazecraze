@@ -1,4 +1,10 @@
 class MazeSquare
+  SQUARE_TYPE_CLASS_NAMES = ['EndpointSquare',
+                             'BarrierSquare',
+                             'BridgeSquare',
+                             'TunnelSquare',
+                             'PortalSquare']
+
   attr_reader :type, :index
   attr_accessor :status
 
@@ -10,9 +16,9 @@ class MazeSquare
 
   def self.types_popovers
     popover_content = {}
-    MazeSquare.descendants.each do |square_name|
-      next if square_name.to_s == 'PairSquare'
-      popover_content[square_name.to_symbol] = square_name.popover
+    SQUARE_TYPE_CLASS_NAMES.each do |class_name|
+      square_class = Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
+      popover_content[square_class.to_symbol] = square_class.popover
     end
     popover_content
   end

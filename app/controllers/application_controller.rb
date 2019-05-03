@@ -2,7 +2,6 @@ require './config/environments'
 require "sinatra/base"
 require "sinatra/reloader"
 require "sinatra/content_for"
-# require 'sinatra/activerecord'
 require "tilt/erubis"
 require 'yaml'
 require 'fileutils'
@@ -11,7 +10,7 @@ require 'date'
 
 require 'pry'
 
-class ApplicationController# < Sinatra::Base
+class ApplicationController < Sinatra::Base
   helpers ApplicationHelper
 
   configure do
@@ -21,20 +20,29 @@ class ApplicationController# < Sinatra::Base
     set :static, true
     set :session_secret, "secret"
     set :erb, escape_html: true
-    also_reload "../../models/database_persistence.rb"
   end
 
   configure(:development) do
-    require "sinatra/reloader"
+    register Sinatra::Reloader
     also_reload "../../models/database_persistence.rb"
+    after_reload do
+      puts 'reloaded'
+    end
   end
 
   # don't enable logging when running tests
   configure(:production,:development) do
-    enable :logging
+    enable :logging # IS THIS WORKING?
   end
 
-  # used to display 404 error pages
+  # before do
+  #   @db = DatabasePersistence.new(logger)
+  # end
+  
+  # after do
+  #   @db.disconnect
+  # end
+
   not_found do
     title '404 -- Page Not Found'
     erb :not_found, layout: :layout

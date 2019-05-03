@@ -1,4 +1,7 @@
 class Maze
+  MAZE_TYPES = ['simple', 'bridge', 'tunnel', 'portal']
+  MAZE_TYPE_CLASS_NAMES = ['SimpleMaze', 'BridgeMaze', 'TunnelMaze', 'PortalMaze']
+
   include MazeNavigate
   include MazeSolve
 
@@ -16,7 +19,7 @@ class Maze
   end
 
   def self.types
-    self.descendants.map { |type| type.to_string }
+    MAZE_TYPES
   end
 
   def self.types_popover
@@ -29,8 +32,9 @@ class Maze
 
   def self.types_popovers
     popover_content = {}
-    self.descendants.each do |class_name| 
-      popover_content[class_name.to_symbol] = class_name.popover
+    MAZE_TYPE_CLASS_NAMES.each do |class_name|
+      maze_class = Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
+      popover_content[maze_class.to_symbol] = maze_class.popover
     end
     popover_content
   end
