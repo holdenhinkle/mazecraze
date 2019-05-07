@@ -96,23 +96,20 @@ class MazeFormula
   end
 
   def valid?
-    # LEFT OFF HERE - CONVERT METHODS THAT ARE CALLED TO INSTANCE METHODS
-    formula_class = maze_formula_type_to_class(type)
-    [formula_class.x_valid_input?(x, experiment),
-     formula_class.y_valid_input?(y, experiment),
-     formula_class.endpoints_valid_input?(endpoints, experiment),
-     formula_class.barriers_valid_input?(barriers, endpoints, experiment),
-     formula_class.bridges_valid_input?(bridges, experiment),
-     formula_class.tunnels_valid_input?(tunnels, experiment),
-     formula_class.portals_valid_input?(portals, experiment)].all?
+    [x_valid_input?,
+     y_valid_input?,
+     endpoints_valid_input?,
+     barriers_valid_input?,
+     bridges_valid_input?,
+     tunnels_valid_input?,
+     portals_valid_input?].all?
   end
 
-  def self.experiment_valid?(formula)
-    formula_class = maze_formula_type_to_class(formula[:type])
-    [formula_class.barriers_valid_input?(formula[:barriers], formula[:endpoints], formula[:experiment]),
-     formula_class.bridges_valid_input?(formula[:bridges], formula[:experiment]),
-     formula_class.tunnels_valid_input?(formula[:tunnels], formula[:experiment]),
-     formula_class.portals_valid_input?(formula[:portals], formula[:experiment])].all?
+  def experiment_valid?
+    [barriers_valid_input?,
+     bridges_valid_input?,
+     tunnels_valid_input?,
+     portals_valid_input?].all?
   end
 
   def self.validation(formula)
@@ -212,38 +209,38 @@ class MazeFormula
     "<p><strong>Valid input:</strong><br>Between #{min} and #{max}<p><hr>"
   end
 
-  def self.x_valid_input?(x, experiment)
+  def x_valid_input?
     (X_MIN..X_MAX).cover?(x) || experiment && x > 0
   end
 
-  def self.y_valid_input?(y, experiment)
+  def y_valid_input?
     (Y_MIN..Y_MAX).cover?(y) || experiment && y > 0
   end
 
-  def self.endpoints_valid_input?(endpoints, experiment)
-    (ENDPOINT_MIN..ENDPOINT_MAX).cover?(endpoints) || experiment && endpoints > 1
+  def endpoints_valid_input?
+    (ENDPOINT_MIN..ENDPOINT_MAX).cover?(num_endpoints) || experiment && num_endpoints > 1
   end
 
-  def self.barriers_valid_input?(barriers, endpoints, experiment)
-    if endpoints == 1
-      return true if experiment && barriers >= 1
-      (1..BARRIER_MAX).cover?(barriers)
+  def barriers_valid_input?
+    if num_endpoints == 1
+      return true if experiment && num_barriers >= 1
+      (1..BARRIER_MAX).cover?(num_barriers)
     else
-      return true if experiment && barriers >= 0
-      (BARRIER_MIN..BARRIER_MAX).cover?(barriers)
+      return true if experiment && num_barriers >= 0
+      (BARRIER_MIN..BARRIER_MAX).cover?(num_barriers)
     end
   end
 
-  def self.bridges_valid_input?(bridges, _)
-    bridges == 0
+  def bridges_valid_input?
+    num_bridges == 0
   end
 
-  def self.tunnels_valid_input?(tunnels, _)
-    tunnels == 0
+  def tunnels_valid_input?
+    num_tunnels == 0
   end
 
-  def self.portals_valid_input?(portals, _)
-    portals == 0
+  def portals_valid_input?
+    num_portals == 0
   end
 
   def self.x_validation(validation, x, experiment)
@@ -488,8 +485,8 @@ class BridgeMazeFormula < MazeFormula
   BRIDGE_MIN = 1
   BRIDGE_MAX = 3
 
-  def self.bridges_valid_input?(bridges, experiment)
-    (BRIDGE_MIN..BRIDGE_MAX).cover?(bridges) || experiment && bridges > 0
+  def bridges_valid_input?
+    (BRIDGE_MIN..BRIDGE_MAX).cover?(num_bridges) || experiment && num_bridges > 0
   end
 
   def self.bridge_validation(validation, bridges, experiment)
@@ -517,16 +514,16 @@ class TunnelMazeFormula < MazeFormula
   TUNNEL_MIN = 1
   TUNNEL_MAX = 3
 
-  def self.x_valid_input?(x, experiment)
+  def x_valid_input?
     (X_MIN..X_MAX).cover?(x) || experiment && x > 0
   end
 
-  def self.y_valid_input?(y, experiment)
+  def y_valid_input?
     (Y_MIN..Y_MAX).cover?(y) || experiment && y > 0
   end
 
-  def self.tunnels_valid_input?(tunnels, experiment)
-    (TUNNEL_MIN..TUNNEL_MAX).cover?(tunnels) || experiment && tunnels > 0
+  def tunnels_valid_input?
+    (TUNNEL_MIN..TUNNEL_MAX).cover?(num_tunnels) || experiment && num_tunnels > 0
   end
 
   def self.tunnel_validation(validation, tunnels, experiment)
