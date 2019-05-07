@@ -86,7 +86,6 @@ class MazeFormula
     results = db.query(sql.gsub!("\n", ""), type, x, y, num_endpoints,
                        num_barriers, num_bridges, num_tunnels, num_portals)
 
-    db.disconnect
     return false if results.values.empty?
     true
   end
@@ -124,17 +123,20 @@ class MazeFormula
     validation
   end
 
-  def self.save!(formula)
+  def save!
     sql = <<~SQL
       INSERT INTO maze_formulas 
       (maze_type, width, height, endpoints, barriers, bridges, tunnels, portals, experiment) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
     SQL
 
-    execute(sql.gsub!("\n", ""), formula[:type],
-            formula[:x], formula[:y], formula[:endpoints],
-            formula[:barriers], formula[:bridges],
-            formula[:tunnels], formula[:portals], formula[:experiment])
+    db.query(sql.gsub!("\n", ""), type, x, y, num_endpoints,
+    num_barriers, num_bridges, num_tunnels, num_portals, experiment)
+
+    # execute(sql.gsub!("\n", ""), formula[:type],
+    #         formula[:x], formula[:y], formula[:endpoints],
+    #         formula[:barriers], formula[:bridges],
+    #         formula[:tunnels], formula[:portals], formula[:experiment])
   end
 
   # IS THERE A BETTER PLACE TO PUT THIS
