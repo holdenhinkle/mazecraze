@@ -47,12 +47,12 @@ class AdminController < ApplicationController
     @formula = MazeFormula.maze_formula_type_to_class(params[:maze_type]).new(params)
     if @formula.exists?
       session[:error] = "That maze formula already exists."
-    elsif @formula.experiment? && @formula.experiment_valid? || @formula.valid? # LEFT OFF HERE
+    elsif @formula.experiment? && @formula.experiment_valid? || @formula.valid?
       @formula.save!
       session[:success] = "Your maze formula was saved."
       redirect "/admin/mazes/formulas/new"
     else
-      add_hashes_to_session_hash(MazeFormula.validation(@formula))
+      add_hashes_to_session_hash(@formula.validation)
       session[:error] = "That maze formula is invalid."
     end
     @maze_types = Maze.types

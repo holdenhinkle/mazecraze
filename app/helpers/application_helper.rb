@@ -25,7 +25,7 @@ module ApplicationHelper
     end
   end
 
-  def add_hashes_to_session_hash(validation)
-    validation.each { |key, value| session[key] = value }
+  def add_hashes_to_session_hash(hash)
+    hash.each { |key, value| session[key] = value }
   end
 end

@@ -112,16 +112,15 @@ class MazeFormula
      portals_valid_input?].all?
   end
 
-  def self.validation(formula)
-    formula_class = maze_formula_type_to_class(formula[:type])
+  def validation
     validation = { validation: true }
-    formula_class.x_validation(validation, formula[:x], formula[:experiment])
-    formula_class.y_validation(validation, formula[:y], formula[:experiment])
-    formula_class.endpoints_validation(validation, formula[:endpoints], formula[:experiment])
-    formula_class.barrier_validation(validation, formula[:barriers], formula[:endpoints], formula[:experiment])
-    formula_class.bridge_validation(validation, formula[:bridges], formula[:experiment])
-    formula_class.tunnel_validation(validation, formula[:tunnels], formula[:experiment])
-    formula_class.portal_validation(validation, formula[:portals], formula[:experiment])
+    x_validation(validation)
+    y_validation(validation)
+    endpoints_validation(validation)
+    barrier_validation(validation)
+    bridge_validation(validation)
+    tunnel_validation(validation)
+    portal_validation(validation)
     validation
   end
 
@@ -210,23 +209,23 @@ class MazeFormula
   end
 
   def x_valid_input?
-    (X_MIN..X_MAX).cover?(x) || experiment && x > 0
+    (X_MIN..X_MAX).cover?(x) || experiment? && x > 0
   end
 
   def y_valid_input?
-    (Y_MIN..Y_MAX).cover?(y) || experiment && y > 0
+    (Y_MIN..Y_MAX).cover?(y) || experiment? && y > 0
   end
 
   def endpoints_valid_input?
-    (ENDPOINT_MIN..ENDPOINT_MAX).cover?(num_endpoints) || experiment && num_endpoints > 1
+    (ENDPOINT_MIN..ENDPOINT_MAX).cover?(num_endpoints) || experiment? && num_endpoints > 1
   end
 
   def barriers_valid_input?
     if num_endpoints == 1
-      return true if experiment && num_barriers >= 1
+      return true if experiment? && num_barriers >= 1
       (1..BARRIER_MAX).cover?(num_barriers)
     else
-      return true if experiment && num_barriers >= 0
+      return true if experiment? && num_barriers >= 0
       (BARRIER_MIN..BARRIER_MAX).cover?(num_barriers)
     end
   end
@@ -243,8 +242,8 @@ class MazeFormula
     num_portals == 0
   end
 
-  def self.x_validation(validation, x, experiment)
-    if x_valid_input?(x, experiment)
+  def x_validation(validation)
+    if x_valid_input?
       validation[:x_validation_css] = 'is-valid'
       validation[:x_validation_feedback_css] = 'valid-feedback'
       validation[:x_validation_feedback] = 'Looks good!'
@@ -255,8 +254,8 @@ class MazeFormula
     end
   end
 
-  def self.y_validation(validation, y, experiment)
-    if y_valid_input?(y, experiment)
+  def y_validation(validation)
+    if y_valid_input?
       validation[:y_validation_css] = 'is-valid'
       validation[:y_validation_feedback_css] = 'valid-feedback'
       validation[:y_validation_feedback] = 'Looks good!'
@@ -267,15 +266,15 @@ class MazeFormula
     end
   end
 
-  def self.endpoints_validation(validation, endpoints, experiment)
-    if endpoints_valid_input?(endpoints, experiment)
+  def endpoints_validation(validation)
+    if endpoints_valid_input?
       validation[:endpoint_validation_css] = 'is-valid'
       validation[:endpoint_validation_feedback_css] = 'valid-feedback'
       validation[:endpoint_validation_feedback] = 'Looks good!'
     else
       validation[:endpoint_validation_css] = 'is-invalid'
       validation[:endpoint_validation_feedback_css] = 'invalid-feedback'
-      if experiment
+      if experiment?
         validation[:endpoint_validation_feedback] = "Experiments must have at least 1 endpoint."
       else
         validation[:endpoint_validation_feedback] = "Number of endpoints must be between #{ENDPOINT_MIN} and #{ENDPOINT_MAX}."
@@ -283,15 +282,15 @@ class MazeFormula
     end
   end
 
-  def self.barrier_validation(validation, barriers, endpoints, experiment)
-    if barriers_valid_input?(barriers, endpoints, experiment)
+  def barrier_validation(validation)
+    if barriers_valid_input?
       validation[:barrier_validation_css] = 'is-valid'
       validation[:barrier_validation_feedback_css] = 'valid-feedback'
       validation[:barrier_validation_feedback] = 'Looks good!'
     else
       validation[:barrier_validation_css] = 'is-invalid'
       validation[:barrier_validation_feedback_css] = 'invalid-feedback'
-      if barriers == 0 && endpoints == 1
+      if num_barriers == 0 && num_endpoints == 1
         validation[:barrier_validation_feedback] = "You must have at least 1 barrier if you have 1 endpoint."
       else
         validation[:barrier_validation_feedback] = "Number of barriers must be between #{BARRIER_MIN} and #{BARRIER_MAX}."
@@ -299,24 +298,24 @@ class MazeFormula
     end
   end
 
-  def self.bridge_validation(validation, bridges, experiment)
-    if !bridges_valid_input?(bridges, experiment)
+  def bridge_validation(validation)
+    if !bridges_valid_input?
       validation[:bridge_validation_css] = 'is-invalid'
       validation[:bridge_validation_feedback_css] = 'invalid-feedback'
       validation[:bridge_validation_feedback] = 'Bridge squares are only allowed on bridge mazes.'
     end
   end
 
-  def self.tunnel_validation(validation, tunnels, experiment)
-    if !tunnels_valid_input?(tunnels, experiment)
+  def tunnel_validation(validation)
+    if !tunnels_valid_input?
       validation[:tunnel_validation_css] = 'is-invalid'
       validation[:tunnel_validation_feedback_css] = 'invalid-feedback'
       validation[:tunnel_validation_feedback] = 'Tunnel squares are only allowed on tunnel mazes.'
     end
   end
 
-  def self.portal_validation(validation, portals, experiment)
-    if !portals_valid_input?(portals, experiment)
+  def portal_validation(validation)
+    if !portals_valid_input?
       validation[:portal_validation_css] = 'is-invalid'
       validation[:portal_validation_feedback_css] = 'invalid-feedback'
       validation[:portal_validation_feedback] = 'Portal squares are only allowed on portal mazes.'
@@ -476,9 +475,6 @@ class MazeFormula
 end
 
 class SimpleMazeFormula < MazeFormula
-  # def initialize(params)
-  #   super
-  # end
 end
 
 class BridgeMazeFormula < MazeFormula
@@ -486,18 +482,18 @@ class BridgeMazeFormula < MazeFormula
   BRIDGE_MAX = 3
 
   def bridges_valid_input?
-    (BRIDGE_MIN..BRIDGE_MAX).cover?(num_bridges) || experiment && num_bridges > 0
+    (BRIDGE_MIN..BRIDGE_MAX).cover?(num_bridges) || experiment? && num_bridges > 0
   end
 
-  def self.bridge_validation(validation, bridges, experiment)
-    if bridges_valid_input?(bridges, experiment)
+  def bridge_validation(validation)
+    if bridges_valid_input?
       validation[:bridge_validation_css] = 'is-valid'
       validation[:bridge_validation_feedback_css] = 'valid-feedback'
       validation[:bridge_validation_feedback] = 'Looks good!'
     else
       validation[:bridge_validation_css] = 'is-invalid'
       validation[:bridge_validation_feedback_css] = 'invalid-feedback'
-      if experiment
+      if experiment?
         validation[:bridge_validation_feedback] = "Bridge experiments must have at least 1 bridge."
       else
         validation[:bridge_validation_feedback] = "Number of bridges must be between #{BRIDGE_MIN} and #{BRIDGE_MAX}."
@@ -515,26 +511,26 @@ class TunnelMazeFormula < MazeFormula
   TUNNEL_MAX = 3
 
   def x_valid_input?
-    (X_MIN..X_MAX).cover?(x) || experiment && x > 0
+    (X_MIN..X_MAX).cover?(x) || experiment? && x > 0
   end
 
   def y_valid_input?
-    (Y_MIN..Y_MAX).cover?(y) || experiment && y > 0
+    (Y_MIN..Y_MAX).cover?(y) || experiment? && y > 0
   end
 
   def tunnels_valid_input?
-    (TUNNEL_MIN..TUNNEL_MAX).cover?(num_tunnels) || experiment && num_tunnels > 0
+    (TUNNEL_MIN..TUNNEL_MAX).cover?(num_tunnels) || experiment? && num_tunnels > 0
   end
 
-  def self.tunnel_validation(validation, tunnels, experiment)
-    if tunnels_valid_input?(tunnels, experiment)
+  def tunnel_validation(validation)
+    if tunnels_valid_input?
       validation[:tunnel_validation_css] = 'is-valid'
       validation[:tunnel_validation_feedback_css] = 'valid-feedback'
       validation[:tunnel_validation_feedback] = 'Looks good!'
     else
       validation[:tunnel_validation_css] = 'is-invalid'
       validation[:tunnel_validation_feedback_css] = 'invalid-feedback'
-      if experiment
+      if experiment?
         validation[:tunnel_validation_feedback] = "Tunnel experiments must have at least 1 tunnel."
       else
         validation[:tunnel_validation_feedback] = "Number of tunnels must be between #{TUNNEL_MIN} and #{TUNNEL_MAX}."
@@ -547,19 +543,19 @@ class PortalMazeFormula < MazeFormula
   PORTAL_MIN = 1
   PORTAL_MAX = 3
 
-  def self.portals_valid_input?(portals, experiment)
-    (PORTAL_MIN..PORTAL_MAX).cover?(portals) || experiment && portals > 0
+  def portals_valid_input?
+    (PORTAL_MIN..PORTAL_MAX).cover?(num_portals) || experiment? && num_portals > 0
   end
 
-  def self.portal_validation(validation, portals, experiment)
-    if portals_valid_input?(portals, experiment)
+  def portal_validation(validation)
+    if portals_valid_input?
       validation[:portal_validation_css] = 'is-valid'
       validation[:portal_validation_feedback_css] = 'valid-feedback'
       validation[:portal_validation_feedback] = 'Looks good!'
     else
       validation[:portal_validation_css] = 'is-invalid'
       validation[:portal_validation_feedback_css] = 'invalid-feedback'
-      if 
+      if experiment?
         validation[:portal_validation_feedback] = "Portal experiments must have at least 1 portal."
       else
         validation[:portal_validation_feedback] = "Number of portals must be between #{PORTAL_MIN} and #{PORTAL_MAX}."
