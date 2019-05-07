@@ -68,6 +68,13 @@ class MazeFormula
     maze_types_popover.merge(maze_dimensions_popovers).merge(maze_square_types_popovers)
   end
 
+  def self.query(sql, *params)
+    db = DatabaseConnection.new
+    results = db.query(sql, *params)
+    db.disconnect
+    results
+  end
+
   def exists?
     sql = <<~SQL
       SELECT * 
@@ -145,18 +152,18 @@ class MazeFormula
   end
 
   def self.count_by_type_and_status(type, status)
-    sql = "SELECT count(maze_type) FROM maze_formulas WHERE maze_type = ? AND status = ?;"
-    execute(sql, type, status)
+    sql = "SELECT count(maze_type) FROM maze_formulas WHERE maze_type = $1 AND status = $2;"
+    query(sql, type, status)
   end
 
   def self.status_list_by_maze_type(type)
-    sql = "SELECT id, width, height, endpoints, barriers, bridges, tunnels, portals, experiment, status FROM maze_formulas WHERE maze_type = ? ORDER BY width, height, endpoints, barriers;"
-    execute(sql, type)
+    sql = "SELECT id, width, height, endpoints, barriers, bridges, tunnels, portals, experiment, status FROM maze_formulas WHERE maze_type = $1 ORDER BY width, height, endpoints, barriers;"
+    query(sql, type)
   end
 
   def self.update_status(id, status)
-    sql = "UPDATE maze_formulas SET status = ? WHERE id = ?;"
-    execute(sql, status, id)
+    sql = "UPDATE maze_formulas SET status = $1 WHERE id = $2;"
+    query(sql, status, id)
   end
 
   # LEFT OFF HERE 

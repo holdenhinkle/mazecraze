@@ -29,7 +29,7 @@ class AdminController < ApplicationController
     @maze_types.each do |type|
       status_counts_by_maze_type = {}
       @formula_status_list.each do |status|
-        status_counts_by_maze_type[status] = MazeFormula.count_by_type_and_status(type, status).rows[0][0]
+        status_counts_by_maze_type[status] = MazeFormula.count_by_type_and_status(type, status)
       end
       @maze_status_counts[type] = status_counts_by_maze_type
     end
