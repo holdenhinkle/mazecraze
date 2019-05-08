@@ -15,4 +15,12 @@ CREATE TABLE maze_formulas (
   created timestamp NOT NULL DEFAULT NOW(),
   updated timestamp NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE maze_layouts (
+  id serial PRIMARY KEY,
+  layout text NOT NULL,
+  maze_formula_id integer NOT NULL REFERENCES maze_formulas(id) ON DELETE CASCADE,
+  created timestamp NOT NULL DEFAULT NOW(),
+  updated timestamp NOT NULL DEFAULT NOW()
+);
   
