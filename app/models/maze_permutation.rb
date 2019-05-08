@@ -19,14 +19,10 @@ class MazePermutation
   # as being derivitaves of the same original permutation.
   def exists?
     sql = "SELECT * FROM maze_formula_permutations WHERE permutation = $1;"
-    results = query(sql, variation)
-    binding.pry
-    return true if results.values
-
-    # permutation_rotations_and_inversions.each do |variation|
-    #   results = query(sql, variation)
-    #   return true if results.values
-    # end
+    permutation_rotations_and_inversions.each do |variation|
+      results = query(sql, variation)
+      return true if results.values
+    end
     false
   end
 
@@ -42,13 +38,13 @@ class MazePermutation
   def query(sql, *params)
     db = DatabaseConnection.new
     results = db.query(sql, *params)
-    db.disconnect
+    # db.disconnect
     results
   end
 
   def permutation_rotations_and_inversions
     [permutation] +
-    rotate.all_rotations(permutation).values +
-    invert.all_inversions(permutation).values
+      rotate.all_rotations(permutation).values +
+      invert.all_inversions(permutation).values
   end
 end
