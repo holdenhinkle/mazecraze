@@ -23,7 +23,7 @@
               <% @maze_types.each do |type| %>
                 <% type_string = type.to_s.capitalize %>
                 <% if session["validation"] %>
-                  <% if @formula.type == type %>
+                  <% if @formula.maze_type == type %>
                     <option value="<%= type %>" selected="selected"><%= type_string %></option>
                   <% else %>
                     <option value="<%= type %>"><%= type_string %></option>
@@ -38,11 +38,11 @@
         <h3>Dimensions</h3>
         <div class="row">
           <div class="form-group col-md-4">
-            <label for="x_value">Maze <strong>Width</strong> (x-value)</label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:x][:title]%>" data-content="<%= @popovers[:x][:body] %>"><i class="fas fa-question-circle"></i></a>
+            <label for="x">Maze <strong>Width</strong> (x-value)</label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:x][:title]%>" data-content="<%= @popovers[:x][:body] %>"><i class="fas fa-question-circle"></i></a>
             <% if session["x_validation_css"] %>
-              <input type="number" class="form-control <%= session.delete("x_validation_css") %>" name="x_value" id="x_value" aria-describedby="x-help" value="<%= @formula.x %>">
+              <input type="number" class="form-control <%= session.delete("x_validation_css") %>" name="x" id="x" aria-describedby="x-help" value="<%= @formula.x %>">
             <% else %>
-              <input type="number" class="form-control" name="x_value" id="x_value" aria-describedby="x-help" placeholder="0">
+              <input type="number" class="form-control" name="x" id="x" aria-describedby="x-help" placeholder="0">
             <% end %>
             <% if session["x_validation_feedback"] %>
               <div class="<%= session.delete("x_validation_feedback_css") %>">
@@ -51,11 +51,11 @@
             <% end %>
           </div>
           <div class="form-group col-md-4">
-            <label for="y_value">Maze <strong>Height</strong> (y-value)</label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:y][:title]%>" data-content="<%= @popovers[:y][:body] %>"><i class="fas fa-question-circle"></i></a>
+            <label for="y">Maze <strong>Height</strong> (y-value)</label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:y][:title]%>" data-content="<%= @popovers[:y][:body] %>"><i class="fas fa-question-circle"></i></a>
             <% if session["y_validation_css"] %>
-              <input type="number" class="form-control <%= session.delete("y_validation_css") %>" name="y_value" id="y_value" aria-describedby="y-help" value="<%= @formula.y %>">
+              <input type="number" class="form-control <%= session.delete("y_validation_css") %>" name="y" id="y" aria-describedby="y-help" value="<%= @formula.y %>">
             <% else %>
-              <input type="number" class="form-control" name="y_value" id="y_value" aria-describedby="y-help" placeholder="0">
+              <input type="number" class="form-control" name="y" id="y" aria-describedby="y-help" placeholder="0">
             <% end %>
             <% if session["y_validation_feedback"] %>
               <div class="<%= session.delete("y_validation_feedback_css") %>">
@@ -69,7 +69,7 @@
           <div class="form-group col-md-4">
             <label for="endpoints">Number of <strong>Endpoints</strong></label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:endpoint][:title] %>" data-content="<%= @popovers[:endpoint][:body] %>"><i class="fas fa-question-circle"></i></a>
             <% if session["endpoint_validation_css"] %>
-              <input type="number" class="form-control <%= session.delete("endpoint_validation_css") %>" name="endpoints" id="endpoints" aria-describedby="endpoints-help"  value="<%= @formula.num_endpoints %>">
+              <input type="number" class="form-control <%= session.delete("endpoint_validation_css") %>" name="endpoints" id="endpoints" aria-describedby="endpoints-help"  value="<%= @formula.endpoints %>">
             <% else %>
               <input type="number" class="form-control" name="endpoints" id="endpoints" aria-describedby="endpoints-help" placeholder="0">
             <% end %>
@@ -84,7 +84,7 @@
           <div class="form-group col-md-4">
             <label for="barriers">Number of <strong>Barriers</strong></label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:barrier][:title]%>" data-content="<%= @popovers[:barrier][:body]%>"><i class="fas fa-question-circle"></i></a>
             <% if session["barrier_validation_css"] %>
-              <input type="number" class="form-control <%= session.delete("barrier_validation_css") %>" name="barriers" id="barriers" aria-describedby="barriers-help" value="<%= @formula.num_barriers %>">
+              <input type="number" class="form-control <%= session.delete("barrier_validation_css") %>" name="barriers" id="barriers" aria-describedby="barriers-help" value="<%= @formula.barriers %>">
             <% else %>
               <input type="number" class="form-control" name="barriers" id="barriers" aria-describedby="barriers-help" placeholder="0">
             <% end %>
@@ -99,7 +99,7 @@
           <div class="form-group col-md-4">
             <label for="bridges">Number of <strong>Bridges</strong></label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:bridge][:title]%>" data-content="<%= @popovers[:bridge][:body]%>"><i class="fas fa-question-circle"></i></a>
             <% if session["bridge_validation_css"] %>
-              <input type="number" class="form-control <%= session.delete("bridge_validation_css") %>" name="bridges" id="bridges" aria-describedby="bridges-help" value="<%= @formula.num_bridges %>">
+              <input type="number" class="form-control <%= session.delete("bridge_validation_css") %>" name="bridges" id="bridges" aria-describedby="bridges-help" value="<%= @formula.bridges %>">
             <% else %>
               <input type="number" class="form-control" name="bridges" id="bridges" aria-describedby="bridges-help" placeholder="0">
             <% end %>
@@ -114,7 +114,7 @@
           <div class="form-group col-md-4">
             <label for="tunnels">Number of <strong>Tunnels</strong></label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:tunnel][:title]%>" data-content="<%= @popovers[:tunnel][:body]%>"><i class="fas fa-question-circle"></i></a>
             <% if session["tunnel_validation_css"] %>
-              <input type="number" class="form-control <%= session.delete("tunnel_validation_css") %>" name="tunnels" id="tunnels" aria-describedby="tunnels-help" value="<%= @formula.num_tunnels %>">
+              <input type="number" class="form-control <%= session.delete("tunnel_validation_css") %>" name="tunnels" id="tunnels" aria-describedby="tunnels-help" value="<%= @formula.tunnels %>">
             <% else %>
               <input type="number" class="form-control" name="tunnels" id="tunnels" aria-describedby="tunnels-help" placeholder="0">
             <% end %>
@@ -129,7 +129,7 @@
           <div class="form-group col-md-4">
             <label for="portals">Number of <strong>Portals</strong></label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:portal][:title]%>" data-content="<%= @popovers[:portal][:body]%>"><i class="fas fa-question-circle"></i></a>
             <% if session["portal_validation_css"] %>
-              <input type="number" class="form-control <%= session.delete("portal_validation_css") %>" name="portals" id="portals" aria-describedby="portals-help" value="<%= @formula.num_portals %>">
+              <input type="number" class="form-control <%= session.delete("portal_validation_css") %>" name="portals" id="portals" aria-describedby="portals-help" value="<%= @formula.portals %>">
             <% else %>
               <input type="number" class="form-control" name="portals" id="portals" aria-describedby="portals-help" placeholder="0">
             <% end %>

@@ -6,10 +6,11 @@ Bundler.require(:default, ENV['SINATRA_ENV'])
 # model files must be required in a specific order
 model_file_names = ["./app/models/database_connection.rb",
 										"./app/models/maze_rotate.rb",
-                    "./app/models/maze_flip.rb",
+                    "./app/models/maze_invert.rb",
                     "./app/models/maze_navigate.rb",
                     "./app/models/maze_solve.rb",
                     "./app/models/maze_formula.rb",
+                    "./app/models/maze_permutation.rb",
                     "./app/models/maze_layout.rb",
                     "./app/models/maze.rb",
                     "./app/models/maze_square.rb" ]

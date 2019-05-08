@@ -12,22 +12,22 @@ class MazeFormula
   BARRIER_MIN = 0
   BARRIER_MAX = 3
 
-  attr_reader :type, :x, :y,
-              :num_endpoints, :num_barriers, :num_bridges,
-              :num_tunnels, :num_portals, :experiment,
-              :set, :db
+  attr_reader :maze_type, :x, :y,
+              :endpoints, :barriers, :bridges,
+              :tunnels, :portals, :experiment,
+              :formula_set, :db
 
-  def initialize(params)
-    @type = params[:maze_type]
-    @x = integer_value(params[:x_value])
-    @y = integer_value(params[:y_value])
-    @num_endpoints = integer_value(params[:endpoints])
-    @num_barriers = integer_value(params[:barriers])
-    @num_bridges = integer_value(params[:bridges])
-    @num_tunnels = integer_value(params[:tunnels])
-    @num_portals = integer_value(params[:portals])
-    @experiment = params[:experiment] ? true : false
-    @set = create_set
+  def initialize(formula)
+    @maze_type = formula[:maze_type]
+    @x = integer_value(formula[:x])
+    @y = integer_value(formula[:y])
+    @endpoints = integer_value(formula[:endpoints])
+    @barriers = integer_value(formula[:barriers])
+    @bridges = integer_value(formula[:bridges])
+    @tunnels = integer_value(formula[:tunnels])
+    @portals = integer_value(formula[:portals])
+    @experiment = formula[:experiment] ? true : false
+    @formula_set = create_set
     @db = DatabaseConnection.new
   end
 
@@ -85,8 +85,8 @@ class MazeFormula
       FROM maze_formulas 
       WHERE 
       maze_type = $1 AND 
-      width = $2 AND 
-      height = $3 AND 
+      x = $2 AND 
+      y = $3 AND 
       endpoints = $4 AND 
       barriers = $5 AND 
       bridges = $6 AND 
@@ -94,8 +94,8 @@ class MazeFormula
       portals = $8;
     SQL
 
-    results = db.query(sql.gsub!("\n", ""), type, x, y, num_endpoints,
-                       num_barriers, num_bridges, num_tunnels, num_portals)
+    results = db.query(sql.gsub!("\n", ""), maze_type, x, y, endpoints,
+                       barriers, bridges, tunnels, portals)
 
     return false if results.values.empty?
     true
@@ -137,12 +137,12 @@ class MazeFormula
   def save!
     sql = <<~SQL
       INSERT INTO maze_formulas 
-      (maze_type, formula_set, width, height, endpoints, barriers, bridges, tunnels, portals, experiment) 
+      (maze_type, formula_set, x, y, endpoints, barriers, bridges, tunnels, portals, experiment) 
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
     SQL
 
-    db.query(sql.gsub!("\n", ""), type, set, x, y, num_endpoints,
-    num_barriers, num_bridges, num_tunnels, num_portals, experiment)
+    db.query(sql.gsub!("\n", ""), maze_type, formula_set, x, y, endpoints,
+    barriers, bridges, tunnels, portals, experiment)
   end
 
   # IS THERE A BETTER PLACE TO PUT THIS
@@ -151,14 +151,14 @@ class MazeFormula
   end
   # END COMMENT
 
-  def self.count_by_type_and_status(type, status)
+  def self.count_by_type_and_status(maze_type, status)
     sql = "SELECT count(maze_type) FROM maze_formulas WHERE maze_type = $1 AND status = $2;"
-    query(sql, type, status)
+    query(sql, maze_type, status)
   end
 
-  def self.status_list_by_maze_type(type)
-    sql = "SELECT id, width, height, endpoints, barriers, bridges, tunnels, portals, experiment, status FROM maze_formulas WHERE maze_type = $1 ORDER BY width, height, endpoints, barriers;"
-    query(sql, type)
+  def self.status_list_by_maze_type(maze_type)
+    sql = "SELECT id, x, y, endpoints, barriers, bridges, tunnels, portals, experiment, status FROM maze_formulas WHERE maze_type = $1 ORDER BY width, height, endpoints, barriers;"
+    query(sql, maze_type)
   end
 
   def self.update_status(id, status)
@@ -226,29 +226,29 @@ class MazeFormula
   end
 
   def endpoints_valid_input?
-    (ENDPOINT_MIN..ENDPOINT_MAX).cover?(num_endpoints) || experiment? && num_endpoints > 1
+    (ENDPOINT_MIN..ENDPOINT_MAX).cover?(endpoints) || experiment? && endpoints > 1
   end
 
   def barriers_valid_input?
-    if num_endpoints == 1
-      return true if experiment? && num_barriers >= 1
-      (1..BARRIER_MAX).cover?(num_barriers)
+    if endpoints == 1
+      return true if experiment? && barriers >= 1
+      (1..BARRIER_MAX).cover?(barriers)
     else
-      return true if experiment? && num_barriers >= 0
-      (BARRIER_MIN..BARRIER_MAX).cover?(num_barriers)
+      return true if experiment? && barriers >= 0
+      (BARRIER_MIN..BARRIER_MAX).cover?(barriers)
     end
   end
 
   def bridges_valid_input?
-    num_bridges == 0
+    bridges == 0
   end
 
   def tunnels_valid_input?
-    num_tunnels == 0
+    tunnels == 0
   end
 
   def portals_valid_input?
-    num_portals == 0
+    portals == 0
   end
 
   def x_validation(validation)
@@ -299,7 +299,7 @@ class MazeFormula
     else
       validation[:barrier_validation_css] = 'is-invalid'
       validation[:barrier_validation_feedback_css] = 'invalid-feedback'
-      if num_barriers == 0 && num_endpoints == 1
+      if barriers == 0 && endpoints == 1
         validation[:barrier_validation_feedback] = "You must have at least 1 barrier if you have 1 endpoint."
       else
         validation[:barrier_validation_feedback] = "Number of barriers must be between #{BARRIER_MIN} and #{BARRIER_MAX}."
@@ -385,15 +385,15 @@ class MazeFormula
   def create_set
     maze = []
     (x * y).times do
-      maze << if (count_pairs(maze, 'endpoint') / 2) != num_endpoints
+      maze << if (count_pairs(maze, 'endpoint') / 2) != endpoints
                 format_pair(maze, 'endpoint')
-              elsif (count_pairs(maze, 'portal') / 2) != num_portals
+              elsif (count_pairs(maze, 'portal') / 2) != portals
                 format_pair(maze, 'portal')
-              elsif (count_pairs(maze, 'tunnel') / 2) != num_tunnels
+              elsif (count_pairs(maze, 'tunnel') / 2) != tunnels
                 format_pair(maze, 'tunnel')
-              elsif maze.count('bridge') != num_bridges
+              elsif maze.count('bridge') != bridges
                 'bridge'
-              elsif maze.count('barrier') != num_barriers
+              elsif maze.count('barrier') != barriers
                 'barrier'
               else
                 'normal'
@@ -402,15 +402,15 @@ class MazeFormula
     maze
   end
 
-  def count_pairs(maze, type)
-    maze.count { |square| square.match(Regexp.new(Regexp.escape(type))) }
+  def count_pairs(maze, square_type)
+    maze.count { |square| square.match(Regexp.new(Regexp.escape(square_type))) }
   end
 
-  def format_pair(maze, type)
-    count = count_pairs(maze, type)
+  def format_pair(maze, square_type)
+    count = count_pairs(maze, square_type)
     group = count / 2 + 1
     subgroup = count.even? ? 'a' : 'b'
-    "#{type}_#{group}_#{subgroup}"
+    "#{square_type}_#{group}_#{subgroup}"
   end
 
   def generate_permutations(id)
@@ -422,7 +422,7 @@ class MazeFormula
   end
 
   def each_permutation
-    set.permutation do |permutation| 
+    formula_set.permutation do |permutation| 
       yield(MazePermutation.new(permutation, x, y))
     end
   end
@@ -435,7 +435,6 @@ class MazeFormula
   #     file.write(maze.to_yaml)
   #   end
   # end
-end
 
 class SimpleMazeFormula < MazeFormula
 end
@@ -445,7 +444,7 @@ class BridgeMazeFormula < MazeFormula
   BRIDGE_MAX = 3
 
   def bridges_valid_input?
-    (BRIDGE_MIN..BRIDGE_MAX).cover?(num_bridges) || experiment? && num_bridges > 0
+    (BRIDGE_MIN..BRIDGE_MAX).cover?(bridges) || experiment? && bridges > 0
   end
 
   def bridge_validation(validation)
@@ -482,7 +481,7 @@ class TunnelMazeFormula < MazeFormula
   end
 
   def tunnels_valid_input?
-    (TUNNEL_MIN..TUNNEL_MAX).cover?(num_tunnels) || experiment? && num_tunnels > 0
+    (TUNNEL_MIN..TUNNEL_MAX).cover?(tunnels) || experiment? && tunnels > 0
   end
 
   def tunnel_validation(validation)
@@ -507,7 +506,7 @@ class PortalMazeFormula < MazeFormula
   PORTAL_MAX = 3
 
   def portals_valid_input?
-    (PORTAL_MIN..PORTAL_MAX).cover?(num_portals) || experiment? && num_portals > 0
+    (PORTAL_MIN..PORTAL_MAX).cover?(portals) || experiment? && portals > 0
   end
 
   def portal_validation(validation)

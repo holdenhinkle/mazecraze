@@ -87,6 +87,7 @@ class AdminController < ApplicationController
 
     if params[:update_status_to] == 'approved'
       formula = MazeFormula.retrieve_formula(params[:formula_id]) # LEFT OFF HERE
+      binding.pry
       formula.create_permutations(params[:formula_id])
 
     elsif params[:update_status_to] == 'rejected'
