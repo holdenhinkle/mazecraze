@@ -18,20 +18,26 @@ class MazePermutation
   # way, any rotated or inverted versions can be grouped together
   # as being derivitaves of the same original permutation.
   def exists?
-    sql = "SELECT * FROM maze_permutations WHERE permutation = $1;"
-    permutation_rotations_and_inversions.each do |variation|
-      results = query(sql, variation)
-      return true if results.values
-    end
+    sql = "SELECT * FROM maze_formula_permutations WHERE permutation = $1;"
+    results = query(sql, variation)
+    binding.pry
+    return true if results.values
+
+    # permutation_rotations_and_inversions.each do |variation|
+    #   results = query(sql, variation)
+    #   return true if results.values
+    # end
     false
   end
 
   def save!(id)
-    sql = "INSERT INTO maze_permutations (maze_formula_id, permutation) VALUES($1, $2);"
+    sql = "INSERT INTO maze_formula_permutations (maze_formula_id, permutation) VALUES($1, $2);"
     query(sql, id, permutation)
   end
 
   private
+
+  attr_reader :rotate, :invert
 
   def query(sql, *params)
     db = DatabaseConnection.new
@@ -43,6 +49,6 @@ class MazePermutation
   def permutation_rotations_and_inversions
     [permutation] +
     rotate.all_rotations(permutation).values +
-    flip.all_inversions(permutation).values
+    invert.all_inversions(permutation).values
   end
 end

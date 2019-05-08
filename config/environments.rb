@@ -10,8 +10,8 @@ model_file_names = ["./app/models/database_connection.rb",
                     "./app/models/maze_navigate.rb",
                     "./app/models/maze_solve.rb",
                     "./app/models/maze_formula.rb",
+                    "./app/models/maze_formula_set.rb",
                     "./app/models/maze_permutation.rb",
-                    "./app/models/maze_layout.rb",
                     "./app/models/maze.rb",
                     "./app/models/maze_square.rb" ]
 

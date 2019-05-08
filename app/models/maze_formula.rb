@@ -18,14 +18,14 @@ class MazeFormula
               :formula_set, :db
 
   def initialize(formula)
-    @maze_type = formula[:maze_type]
-    @x = integer_value(formula[:x])
-    @y = integer_value(formula[:y])
-    @endpoints = integer_value(formula[:endpoints])
-    @barriers = integer_value(formula[:barriers])
-    @bridges = integer_value(formula[:bridges])
-    @tunnels = integer_value(formula[:tunnels])
-    @portals = integer_value(formula[:portals])
+    @maze_type = formula['maze_type']
+    @x = integer_value(formula['x'])
+    @y = integer_value(formula['y'])
+    @endpoints = integer_value(formula['endpoints'])
+    @barriers = integer_value(formula['barriers'])
+    @bridges = integer_value(formula['bridges'])
+    @tunnels = integer_value(formula['tunnels'])
+    @portals = integer_value(formula['portals'])
     @experiment = formula[:experiment] ? true : false
     @formula_set = create_set
     @db = DatabaseConnection.new
@@ -74,9 +74,9 @@ class MazeFormula
     results
   end
 
-  def self.retrieve_formula(id) # LEFT OFF HERE
+  def self.retrieve_formula_values(id)
     sql = "SELECT * FROM maze_formulas WHERE id = $1;"
-    query(sql, id)
+    query(sql, id)[0]
   end
 
   def exists?
@@ -157,13 +157,21 @@ class MazeFormula
   end
 
   def self.status_list_by_maze_type(maze_type)
-    sql = "SELECT id, x, y, endpoints, barriers, bridges, tunnels, portals, experiment, status FROM maze_formulas WHERE maze_type = $1 ORDER BY width, height, endpoints, barriers;"
+    sql = "SELECT id, x, y, endpoints, barriers, bridges, tunnels, portals, experiment, status FROM maze_formulas WHERE maze_type = $1 ORDER BY x, y, endpoints, barriers;"
     query(sql, maze_type)
   end
 
   def self.update_status(id, status)
     sql = "UPDATE maze_formulas SET status = $1 WHERE id = $2;"
     query(sql, status, id)
+  end
+
+  def generate_permutations(id)
+    each_permutation do |permutation|
+      next if permutation.exists?
+      permutation.save!(id)
+      end
+    end
   end
 
   # LEFT OFF HERE 
@@ -411,14 +419,6 @@ class MazeFormula
     group = count / 2 + 1
     subgroup = count.even? ? 'a' : 'b'
     "#{square_type}_#{group}_#{subgroup}"
-  end
-
-  def generate_permutations(id)
-    each_permutation do |permutation|
-      next if permutation.exists?
-      permutation.save!(id)
-      end
-    end
   end
 
   def each_permutation

@@ -86,9 +86,10 @@ class AdminController < ApplicationController
     # approved permutations and versions of permutations => mazes
 
     if params[:update_status_to] == 'approved'
-      formula = MazeFormula.retrieve_formula(params[:formula_id]) # LEFT OFF HERE
+      formula_values = MazeFormula.retrieve_formula_values(params[:formula_id])
+      @formula = MazeFormula.maze_formula_type_to_class(formula_values['maze_type']).new(formula_values)
+      @formula.generate_permutations(params[:formula_id])
       binding.pry
-      formula.create_permutations(params[:formula_id])
 
     elsif params[:update_status_to] == 'rejected'
       MazeFormula.update_status(params[:formula_id], params[:update_status_to])
