@@ -170,7 +170,6 @@ class MazeFormula
     each_permutation do |permutation|
       next if permutation.exists?
       permutation.save!(id)
-      end
     end
   end
 
@@ -339,17 +338,17 @@ class MazeFormula
     end
   end
 
-  def create_maze
-    # counter = starting_file_number(formula[:level]) + 1
-    # permutations_file_path = create_permutations_file_path
-    # generate_permutations(layout, permutations_file_path)
-    File.open(permutations_file_path, "r").each_line do |maze_layout|
-      maze = Object.const_get(maze_type(formula[:type])).new(formula, JSON.parse(maze_layout))
-      next unless maze.valid?
-      save_maze!(maze, counter)
-      counter += 1
-    end
-  end
+  # def create_maze
+  #   counter = starting_file_number(formula[:level]) + 1
+  #   permutations_file_path = create_permutations_file_path
+  #   generate_permutations(layout, permutations_file_path)
+  #   File.open(permutations_file_path, "r").each_line do |maze_layout|
+  #     maze = Object.const_get(maze_type(formula[:type])).new(formula, JSON.parse(maze_layout))
+  #     next unless maze.valid?
+  #     save_maze!(maze, counter)
+  #     counter += 1
+  #   end
+  # end
 
   # * *
   # FOR testing
@@ -426,6 +425,7 @@ class MazeFormula
       yield(MazePermutation.new(permutation, x, y))
     end
   end
+end
 
   # def save_maze!(maze, index)
   #   directory = "/levels/level_#{maze.level}"
