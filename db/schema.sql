@@ -3,6 +3,7 @@ CREATE TYPE status_type AS ENUM ('pending', 'approved', 'rejected');
 CREATE TABLE maze_formulas (
   id serial PRIMARY KEY,
   maze_type text NOT NULL,
+  formula_set text NOT NULL,
   width integer NOT NULL CHECK (width > 0),
   height integer NOT NULL CHECK (height > 0),
   endpoints integer NOT NULL CHECK (endpoints >= 0),
@@ -16,10 +17,10 @@ CREATE TABLE maze_formulas (
   updated timestamp NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE maze_layouts (
+CREATE TABLE maze_formula_permutations (
   id serial PRIMARY KEY,
-  layout text NOT NULL,
   maze_formula_id integer NOT NULL REFERENCES maze_formulas(id) ON DELETE CASCADE,
+  permutation text NOT NULL,
   created timestamp NOT NULL DEFAULT NOW(),
   updated timestamp NOT NULL DEFAULT NOW()
 );

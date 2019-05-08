@@ -1,4 +1,4 @@
-class FlipMaze
+class MazeInvert
   attr_reader :x, :y
 
   def initialize(x, y)
@@ -6,7 +6,7 @@ class FlipMaze
     @y = y
   end
 
-  def all_flips(maze)
+  def all_inversions(maze)
     { horizontal: horizontal(maze.clone),
       vertical: vertical(maze.clone) }
   end
@@ -17,19 +17,19 @@ class FlipMaze
   # variable in the methods must be cloned.
 
   def horizontal(maze)
-    process_flip(maze) { |mz| mz.shift(x).reverse! }
+    process_inversion(maze) { |mz| mz.shift(x).reverse! }
   end
 
   def vertical(maze)
-    process_flip(maze) { |mz| mz.pop(x) }
+    process_inversion(maze) { |mz| mz.pop(x) }
   end
 
-  def process_flip(maze)
-    flipped_maze = []
+  def process_inversion(maze)
+    inverted_maze = []
     y.times do
-      flipped_maze << yield(maze)
+      inverted_maze << yield(maze)
     end
-    flipped_maze.flatten!
-    flipped_maze
+    inverted_maze.flatten!
+    inverted_maze
   end
 end

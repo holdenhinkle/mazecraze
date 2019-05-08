@@ -75,12 +75,25 @@ class AdminController < ApplicationController
 
   post '/admin/mazes/formulas/:type' do
     # add type and id and status validation
-    if %w(approved rejected).include?(params[:update_status_to])
+    # if rejected, update status, set success message, redirect
+    # if approved, 
+    # create layout from formula, 
+    # create permutations of layout
+
+    # formula
+    # layout
+    # permutations
+    # approved permutations and versions of permutations => mazes
+
+    if params[:update_status_to] == 'approved'
+      formula = MazeFormula.retrieve_formula(params[:formula_id]) # LEFT OFF HERE
+      formula.create_permutations(params[:formula_id])
+
+    elsif params[:update_status_to] == 'rejected'
       MazeFormula.update_status(params[:formula_id], params[:update_status_to])
       session[:success] = "The status for Maze Formula ID:#{params[:formula_id]} was updated to '#{params[:update_status_to]}'."
       redirect "/admin/mazes/formulas/#{params[:type]}"
     end
-    
   end
 
   get '/admin/mazes/formulas/:type/:id' do
