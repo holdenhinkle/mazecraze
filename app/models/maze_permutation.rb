@@ -32,7 +32,7 @@ class MazePermutation
   end
 
   def save!(id)
-    sql = "INSERT INTO maze_formula_permutations (maze_formula_id, permutation) VALUES($1, $2);"
+    sql = "INSERT INTO maze_formula_set_permutations (maze_formula_id, permutation) VALUES($1, $2);"
     query(sql, id, permutation)
   end
 
@@ -41,7 +41,7 @@ class MazePermutation
   attr_reader :rotate, :invert
 
   def each_variation
-    sql = "SELECT * FROM maze_formula_permutations WHERE permutation = $1;"
+    sql = "SELECT * FROM maze_formula_set_permutations WHERE permutation = $1;"
     permutation_rotations_and_inversions.each do |variation|
       yield(sql, variation)
     end
