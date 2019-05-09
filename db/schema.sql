@@ -17,11 +17,19 @@ CREATE TABLE maze_formulas (
   updated timestamp NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE maze_formula_permutations (
+CREATE TABLE maze_formula_set_permutations (
   id serial PRIMARY KEY,
   maze_formula_id integer NOT NULL REFERENCES maze_formulas(id) ON DELETE CASCADE,
   permutation text NOT NULL,
   created timestamp NOT NULL DEFAULT NOW(),
   updated timestamp NOT NULL DEFAULT NOW()
 );
-  
+
+CREATE TABLE maze_candidates (
+  id serial PRIMARY KEY,
+  maze_formula_set_permutation_id integer NOT NULL REFERENCES maze_formula_set_permutations(id) ON DELETE CASCADE,
+  number_of_solutions integer NOT NULL,
+  solutions text NOT NULL,
+  created timestamp NOT NULL DEFAULT NOW(),
+  updated timestamp NOT NULL DEFAULT NOW()
+);
