@@ -1,8 +1,8 @@
 class MazeFormula
-  MAZE_FORMULA_CLASS_NAMES = ['SimpleMazeFormula',
-                              'BridgeMazeFormula',
-                              'TunnelMazeFormula',
-                              'PortalMazeFormula']
+  MAZE_FORMULA_CLASS_NAMES = { 'simple' => 'SimpleMazeFormula',
+                               'bridge' => 'BridgeMazeFormula',
+                               'tunnel' => 'TunnelMazeFormula',
+                               'portal' => 'PortalMazeFormula' }
   X_MIN = 3
   X_MAX = 10
   Y_MIN = 2
@@ -32,7 +32,7 @@ class MazeFormula
   end
 
   def self.maze_formula_type_to_class(type)
-    class_name = type.split('_').map(&:capitalize).join << 'MazeFormula'
+    class_name = MAZE_FORMULA_CLASS_NAMES[type]
     Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
   end
 
@@ -171,6 +171,28 @@ class MazeFormula
       next if permutation.exists?
       permutation.save!(id)
     end
+  end
+
+  def each_permutation
+    formula_set.permutation do |permutation| 
+      yield(MazePermutation.new(permutation, x, y))
+    end
+  end
+
+  def generate_candidates(id)
+    # get maze class to create new maze
+
+    # to create candidate
+    # formula:
+    # maze type - table: maze_formulas
+    # maze type class - generate
+    # x - table: maze_formulas
+    # y - table: maze_formulas
+    # endpoints - table: maze_formulas
+
+    # layout:
+    # permutation - table: maze_formulas_set_permutations
+
   end
 
   # LEFT OFF HERE 
@@ -419,12 +441,6 @@ class MazeFormula
     subgroup = count.even? ? 'a' : 'b'
     "#{square_type}_#{group}_#{subgroup}"
   end
-
-  def each_permutation
-    formula_set.permutation do |permutation| 
-      yield(MazePermutation.new(permutation, x, y))
-    end
-  end
 end
 
   # def save_maze!(maze, index)
@@ -482,6 +498,30 @@ class TunnelMazeFormula < MazeFormula
 
   def tunnels_valid_input?
     (TUNNEL_MIN..TUNNEL_MAX).cover?(tunnels) || experiment? && tunnels > 0
+  end
+
+  def x_validation(validation)
+    if x_valid_input?
+      validation[:x_validation_css] = 'is-valid'
+      validation[:x_validation_feedback_css] = 'valid-feedback'
+      validation[:x_validation_feedback] = 'Looks good!'
+    else
+      validation[:x_validation_css] = 'is-invalid'
+      validation[:x_validation_feedback_css] = 'invalid-feedback'
+      validation[:x_validation_feedback] = "Width must be between #{X_MIN} and #{X_MAX}."
+    end
+  end
+
+  def y_validation(validation)
+    if y_valid_input?
+      validation[:y_validation_css] = 'is-valid'
+      validation[:y_validation_feedback_css] = 'valid-feedback'
+      validation[:y_validation_feedback] = 'Looks good!'
+    else
+      validation[:y_validation_css] = 'is-invalid'
+      validation[:y_validation_feedback_css] = 'invalid-feedback'
+      validation[:y_validation_feedback] = "Height must be between #{Y_MIN} and #{Y_MAX}."
+    end
   end
 
   def tunnel_validation(validation)
