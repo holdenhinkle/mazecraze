@@ -21,6 +21,8 @@ class Maze
   # end
 
   def initialize(maze)
+    # convert x, y, endpoint values to integers
+    # make sure permutation is an array
     @maze_type = maze['maze_type']
     @x = maze['x']
     @y = maze['y']
@@ -40,6 +42,11 @@ class Maze
     elsif valid_maze?
       solve([{ path: [start_square_index], maze: self }])
     end
+  end
+
+  def self.maze_type_to_class(type)
+    class_name = MAZE_TYPE_CLASS_NAMES[type]
+    Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
   end
 
   def self.types_popover

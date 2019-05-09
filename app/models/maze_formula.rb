@@ -180,6 +180,21 @@ class MazeFormula
   end
 
   def generate_candidates(id)
+    sql = <<~SQL
+      SELECT maze_type, x, y, endpoints, permutation 
+      FROM maze_formula_set_permutations 
+      LEFT JOIN maze_formulas ON maze_formula_id = maze_formulas.id 
+      WHERE maze_formulas.id = $1;
+    SQL
+
+    results = db.query(sql.gsub!("\n", ""), id)
+
+    binding.pry
+
+    results.each do |tuple|
+      maze_type_to_class(tuple[maze_type]).new(tuple)
+    end
+
     # get maze class to create new maze
 
     # to create candidate
@@ -192,7 +207,6 @@ class MazeFormula
 
     # layout:
     # permutation - table: maze_formulas_set_permutations
-
   end
 
   # LEFT OFF HERE 

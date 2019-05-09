@@ -62,7 +62,7 @@ class AdminController < ApplicationController
 
   get '/admin/mazes/formulas/:type' do
     @maze_type = params[:type]
-    if Maze::MAZE_TYPES.include?(@maze_type)
+    if Maze::MAZE_TYPE_CLASS_NAMES.keys.include?(@maze_type)
       @title = "#{@maze_type} Maze Formulas - Maze Craze Admin"
       @formula_status_list = MazeFormula.status_list #RENAME THIS METHOD
       @formulas = MazeFormula.status_list_by_maze_type(@maze_type)
