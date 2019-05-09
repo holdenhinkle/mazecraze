@@ -23,7 +23,7 @@ class AdminController < ApplicationController
 
   get '/admin/mazes/formulas' do
     @title = "Maze Formulas - Maze Craze Admin"
-    @maze_types = Maze.types
+    @maze_types = Maze::MAZE_TYPE_CLASS_NAMES.keys
     @formula_status_list = MazeFormula.status_list #RENAME THIS METHOD
     @maze_status_counts = {}
     @maze_types.each do |type|
@@ -38,7 +38,7 @@ class AdminController < ApplicationController
 
   get '/admin/mazes/formulas/new' do
     @title = "New Maze Formula - Maze Craze Admin"
-    @maze_types = Maze.types
+    @maze_types = Maze::MAZE_TYPE_CLASS_NAMES.keys
     @popovers = MazeFormula.form_popovers
     erb :mazes_formulas_new
   end
@@ -55,14 +55,14 @@ class AdminController < ApplicationController
       add_hashes_to_session_hash(@formula.validation)
       session[:error] = "That maze formula is invalid."
     end
-    @maze_types = Maze.types
+    @maze_types = Maze::MAZE_TYPE_CLASS_NAMES.keys
     @popovers = MazeFormula.form_popovers
     erb :mazes_formulas_new
   end
 
   get '/admin/mazes/formulas/:type' do
     @maze_type = params[:type]
-    if Maze.types.include?(@maze_type)
+    if Maze::MAZE_TYPES.include?(@maze_type)
       @title = "#{@maze_type} Maze Formulas - Maze Craze Admin"
       @formula_status_list = MazeFormula.status_list #RENAME THIS METHOD
       @formulas = MazeFormula.status_list_by_maze_type(@maze_type)
@@ -89,6 +89,8 @@ class AdminController < ApplicationController
       formula_values = MazeFormula.retrieve_formula_values(params[:formula_id])
       @formula = MazeFormula.maze_formula_type_to_class(formula_values['maze_type']).new(formula_values)
       @formula.generate_permutations(params[:formula_id])
+      @formula.generate_candidates(params[:formula_id])
+      # create maze candidates from permutations
     end
     MazeFormula.update_status(params[:formula_id], params[:update_status_to])
     session[:success] = "The status for Maze Formula ID:#{params[:formula_id]} was updated to '#{params[:update_status_to]}'."
@@ -98,7 +100,7 @@ class AdminController < ApplicationController
   get '/admin/mazes/formulas/:type/:id' do
     # add :type validation
     @title = "Mazes - maze Craze Admin"
-    @maze_types = Maze.types
+    @maze_types = Maze::MAZE_TYPE_CLASS_NAMES.keys
     @formula_status_list = MazeFormula.status_list #RENAME THIS METHOD
     erb :mazes_formulas_id
   end

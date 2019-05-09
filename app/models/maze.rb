@@ -1,25 +1,45 @@
 class Maze
-  MAZE_TYPES = ['simple', 'bridge', 'tunnel', 'portal']
-  MAZE_TYPE_CLASS_NAMES = ['SimpleMaze', 'BridgeMaze', 'TunnelMaze', 'PortalMaze']
+  MAZE_TYPE_CLASS_NAMES = { 'simple' => 'SimpleMaze',
+                            'bridge' => 'BridgeMaze',
+                            'tunnel' => 'TunnelMaze',
+                            'portal' => 'PortalMaze' }
 
   include MazeNavigate
   include MazeSolve
 
-  attr_reader :type, :level, :x, :y, :squares, :valid, :solutions
+  attr_reader :maze_type, :level, :x, :y, :squares, :valid, :solutions
 
-  def initialize(maze_formula, maze_layout)
-    @type = maze_formula[:type]
-    @level = maze_formula[:level]
-    @x = maze_formula[:x]
-    @y = maze_formula[:y]
-    @squares = create_maze(maze_layout, maze_formula[:endpoints])
-    @valid = valid_maze?
+  # def initialize(maze)
+  #   @maze_type = maze['maze_type']
+  #   # @level = maze['level']
+  #   @x = maze['x']
+  #   @y = maze['y']
+  #   @squares = create_maze(maze['permutation'], maze['endpoints'])
+  #   @valid = valid_maze?
+  #   @solutions = []
+  #   solve([{ path: [start_square_index], maze: self }]) if @valid
+  # end
+
+  def initialize(maze)
+    @maze_type = maze['maze_type']
+    @x = maze['x']
+    @y = maze['y']
+
+    @squares = []
+    if maze['squares']
+      @squares = maze['squares']
+    else
+      @squares = create_maze(maze['permutation'], maze['endpoints']) # FINISH THIS
+    end
+
+    # @valid = valid_maze?
+
     @solutions = []
-    solve([{ path: [start_square_index], maze: self }]) if @valid
-  end
-
-  def self.types
-    MAZE_TYPES
+    if maze['solutions']
+      @solutions = maze['solutions']
+    elsif valid_maze?
+      solve([{ path: [start_square_index], maze: self }])
+    end
   end
 
   def self.types_popover
@@ -32,7 +52,7 @@ class Maze
 
   def self.types_popovers
     popover_content = {}
-    MAZE_TYPE_CLASS_NAMES.each do |class_name|
+    MAZE_TYPE_CLASS_NAMES.values.each do |class_name|
       maze_class = Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
       popover_content[maze_class.to_symbol] = maze_class.popover
     end
