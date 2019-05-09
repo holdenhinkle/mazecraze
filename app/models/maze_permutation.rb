@@ -17,26 +17,18 @@ class MazePermutation
   # versions of the permutation, which s/he can choose to approve. That
   # way, any rotated or inverted versions can be grouped together
   # as being derivitaves of the same original permutation.
-  # def exists?
-  #   sql = "SELECT * FROM maze_formula_permutations WHERE permutation = $1;"
-  #   permutation_rotations_and_inversions.each do |variation|
-  #     results = query(sql, variation)
-  #     return true if results.values.any?
-  #   end
-  #   false
-  # end
-
   def exists?
+    exists = false
     db = DatabaseConnection.new
     each_variation do |sql, variation|
       results = db.query(sql, variation)
       if results.values.any?
-        db.disconnect
-        return true
+        exists = true
+        break
       end
-      db.disconnect
-      false
     end
+    db.disconnect
+    exists
   end
 
   def save!(id)
