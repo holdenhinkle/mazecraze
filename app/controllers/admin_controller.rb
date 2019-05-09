@@ -89,13 +89,10 @@ class AdminController < ApplicationController
       formula_values = MazeFormula.retrieve_formula_values(params[:formula_id])
       @formula = MazeFormula.maze_formula_type_to_class(formula_values['maze_type']).new(formula_values)
       @formula.generate_permutations(params[:formula_id])
-      binding.pry
-
-    elsif params[:update_status_to] == 'rejected'
-      MazeFormula.update_status(params[:formula_id], params[:update_status_to])
-      session[:success] = "The status for Maze Formula ID:#{params[:formula_id]} was updated to '#{params[:update_status_to]}'."
-      redirect "/admin/mazes/formulas/#{params[:type]}"
     end
+    MazeFormula.update_status(params[:formula_id], params[:update_status_to])
+    session[:success] = "The status for Maze Formula ID:#{params[:formula_id]} was updated to '#{params[:update_status_to]}'."
+    redirect "/admin/mazes/formulas/#{params[:type]}"
   end
 
   get '/admin/mazes/formulas/:type/:id' do

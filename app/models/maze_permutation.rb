@@ -21,7 +21,7 @@ class MazePermutation
     sql = "SELECT * FROM maze_formula_permutations WHERE permutation = $1;"
     permutation_rotations_and_inversions.each do |variation|
       results = query(sql, variation)
-      return true if results.values
+      return true if results.values.any?
     end
     false
   end
@@ -38,7 +38,7 @@ class MazePermutation
   def query(sql, *params)
     db = DatabaseConnection.new
     results = db.query(sql, *params)
-    # db.disconnect
+    db.disconnect
     results
   end
 
