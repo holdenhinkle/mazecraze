@@ -189,24 +189,11 @@ class MazeFormula
 
     results = db.query(sql.gsub!("\n", ""), id)
 
-    binding.pry
-
     results.each do |tuple|
-      maze_type_to_class(tuple[maze_type]).new(tuple)
+      maze = Maze.maze_type_to_class(tuple["maze_type"]).new(tuple)
+      binding.pry if maze.solutions.any?
+      # save if valid and solutions
     end
-
-    # get maze class to create new maze
-
-    # to create candidate
-    # formula:
-    # maze type - table: maze_formulas
-    # maze type class - generate
-    # x - table: maze_formulas
-    # y - table: maze_formulas
-    # endpoints - table: maze_formulas
-
-    # layout:
-    # permutation - table: maze_formulas_set_permutations
   end
 
   # LEFT OFF HERE 

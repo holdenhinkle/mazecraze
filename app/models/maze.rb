@@ -9,34 +9,21 @@ class Maze
 
   attr_reader :maze_type, :level, :x, :y, :squares, :valid, :solutions
 
-  # def initialize(maze)
-  #   @maze_type = maze['maze_type']
-  #   # @level = maze['level']
-  #   @x = maze['x']
-  #   @y = maze['y']
-  #   @squares = create_maze(maze['permutation'], maze['endpoints'])
-  #   @valid = valid_maze?
-  #   @solutions = []
-  #   solve([{ path: [start_square_index], maze: self }]) if @valid
-  # end
-
   def initialize(maze)
-    # convert x, y, endpoint values to integers
-    # make sure permutation is an array
     @maze_type = maze['maze_type']
-    @x = maze['x']
-    @y = maze['y']
-
+    @x = maze['x'].to_i
+    @y = maze['y'].to_i
     @squares = []
+
     if maze['squares']
       @squares = maze['squares']
     else
-      @squares = create_maze(maze['permutation'], maze['endpoints']) # FINISH THIS
+      @squares = create_maze(JSON.parse(maze['permutation']),
+                             maze['endpoints'].to_i)
     end
 
-    # @valid = valid_maze?
-
     @solutions = []
+
     if maze['solutions']
       @solutions = maze['solutions']
     elsif valid_maze?
@@ -67,7 +54,7 @@ class Maze
   end
 
   def valid?
-    valid_maze? && one_solution?
+    valid_maze? # && one_solution?
   end
 
   def all_squares_taken?
@@ -131,9 +118,9 @@ class Maze
       elsif square == 'bridge'
         BridgeSquare.new(:bridge, :not_taken, index)
       elsif square == 'barrier'
-        Square.new(:barrier, :taken, index)
+        MazeSquare.new(:barrier, :taken, index)
       else
-        Square.new(:normal, :not_taken, index)
+        MazeSquare.new(:normal, :not_taken, index)
       end
     end
   end
