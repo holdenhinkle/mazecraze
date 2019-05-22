@@ -31,6 +31,23 @@ class Maze
     end
   end
 
+  def query(sql, *params)
+    db = DatabaseConnection.new
+    results = db.query(sql, *params)
+    db.disconnect
+    results
+  end
+
+  def save_candidate!(id)
+    sql = <<~SQL
+      INSERT INTO maze_candidates 
+      (maze_formula_set_permutation_id, number_of_solutions, solutions) 
+      VALUES ($1, $2, $3);
+    SQL
+
+    query(sql.gsub!("\n", ""), id, @solutions.length, @solutions)
+  end
+
   def self.maze_type_to_class(type)
     class_name = MAZE_TYPE_CLASS_NAMES[type]
     Kernel.const_get(class_name) if Kernel.const_defined?(class_name)

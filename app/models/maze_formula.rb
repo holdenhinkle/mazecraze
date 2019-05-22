@@ -181,7 +181,7 @@ class MazeFormula
 
   def generate_candidates(id)
     sql = <<~SQL
-      SELECT maze_type, x, y, endpoints, permutation 
+      SELECT maze_formula_set_permutations.id AS id, maze_type, x, y, endpoints, permutation 
       FROM maze_formula_set_permutations 
       LEFT JOIN maze_formulas ON maze_formula_id = maze_formulas.id 
       WHERE maze_formulas.id = $1;
@@ -191,8 +191,7 @@ class MazeFormula
 
     results.each do |tuple|
       maze = Maze.maze_type_to_class(tuple["maze_type"]).new(tuple)
-      binding.pry if maze.solutions.any?
-      # save if valid and solutions
+      maze.save_candidate!(tuple['id']) if maze.solutions.any?
     end
   end
 
