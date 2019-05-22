@@ -13,17 +13,9 @@ class Maze
     @maze_type = maze['maze_type']
     @x = maze['x'].to_i
     @y = maze['y'].to_i
-    @squares = []
-
-    if maze['squares']
-      @squares = maze['squares']
-    else
-      @squares = create_maze(JSON.parse(maze['permutation']),
-                             maze['endpoints'].to_i)
-    end
-
+    @squares = create_maze(JSON.parse(maze['permutation']),
+                           maze['endpoints'].to_i)
     @solutions = []
-
     if maze['solutions']
       @solutions = maze['solutions']
     elsif valid_maze?
