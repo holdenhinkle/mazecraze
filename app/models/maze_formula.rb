@@ -360,57 +360,6 @@ class MazeFormula
     end
   end
 
-  # def create_maze
-  #   counter = starting_file_number(formula[:level]) + 1
-  #   permutations_file_path = create_permutations_file_path
-  #   generate_permutations(layout, permutations_file_path)
-  #   File.open(permutations_file_path, "r").each_line do |maze_layout|
-  #     maze = Object.const_get(maze_type(formula[:type])).new(formula, JSON.parse(maze_layout))
-  #     next unless maze.valid?
-  #     save_maze!(maze, counter)
-  #     counter += 1
-  #   end
-  # end
-
-  # * *
-  # FOR testing
-  # *
-
-  # ONE LINE BRIDGE
-  # def create_mazes(formula)
-  #   new_maze = ["endpoint_1_b", "barrier", "normal", "normal",
-  #               "normal", "normal", "bridge", "normal",
-  #               "normal", "normal", "normal", "endpoint_1_a",
-  #               "normal", "normal", "normal", "normal"]
-
-  #   maze = BridgeMaze.new(formula, new_maze)
-  #   binding.pry
-  # end
-
-  # ONE LINE TUNNEL
-  # def create_mazes(formula)
-  #   counter = starting_file_number(formula[:level]) + 1
-  #   permutations_file_path = "/Users/hamedahinkle/Documents/LaunchSchool/17x_projects/maze/data/do_not_delete/maze_permutations/tunnel_3x3.txt"
-  #   File.open(permutations_file_path, "r").each_line do |maze_layout|
-  #     maze = Object.const_get(maze_type(formula[:type])).new(formula, JSON.parse(maze_layout))
-  #     next unless maze.valid?
-  #     save_maze!(maze, counter)
-  #     counter += 1
-  #   end
-  # end
-
-  # ONE LINE PORTAL
-  # def create_mazes(formula)
-  #   counter = starting_file_number(formula[:level]) + 1
-  #   permutations_file_path = "/Users/hamedahinkle/Documents/LaunchSchool/17x_projects/maze/data/do_not_delete/maze_permutations/portal_3x3.txt""
-  #   File.open(permutations_file_path, "r").each_line do |maze_layout|
-  #     maze = Object.const_get(maze_type(formula[:type])).new(formula, JSON.parse(maze_layout))
-  #     next unless maze.valid?
-  #     save_maze!(maze, counter)
-  #     counter += 1
-  #   end
-  # end
-
   def create_set
     maze = []
     (x * y).times do
@@ -443,15 +392,6 @@ class MazeFormula
   end
 end
 
-  # def save_maze!(maze, index)
-  #   directory = "/levels/level_#{maze.level}"
-  #   directory_path = File.join(data_path, directory)
-  #   FileUtils.mkdir_p(directory_path) unless File.directory?(directory_path)
-  #   File.open(File.join(directory_path, "#{index}.yml"), "w") do |file|
-  #     file.write(maze.to_yaml)
-  #   end
-  # end
-
 class SimpleMazeFormula < MazeFormula
 end
 
@@ -481,10 +421,10 @@ class BridgeMazeFormula < MazeFormula
 end
 
 class TunnelMazeFormula < MazeFormula
-  X_MIN = 5
-  X_MAX = 15
-  Y_MIN = 5
-  Y_MAX = 15
+  # X_MIN = 5
+  # X_MAX = 15
+  # Y_MIN = 5
+  # Y_MAX = 15
   TUNNEL_MIN = 1
   TUNNEL_MAX = 3
 
