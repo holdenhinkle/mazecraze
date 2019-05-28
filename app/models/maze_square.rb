@@ -160,4 +160,3 @@ class PortalSquare < PairSquare
     { title: "The Portal Square", body: "Here's a description of portal squares."}
   end
 end
-

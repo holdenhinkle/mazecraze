@@ -15,7 +15,7 @@ class MazeFormula
   attr_reader :maze_type, :x, :y,
               :endpoints, :barriers, :bridges,
               :tunnels, :portals, :experiment,
-              :formula_set, :db
+              :formula_set, :permutations, :db
 
   def initialize(formula)
     @maze_type = formula['maze_type']
@@ -27,7 +27,9 @@ class MazeFormula
     @tunnels = integer_value(formula['tunnels'])
     @portals = integer_value(formula['portals'])
     @experiment = formula[:experiment] ? true : false
-    @formula_set = create_set
+    # @formula_set = create_set
+    @formula_set = create_base_set
+    @permutations = []
     @db = DatabaseConnection.new
   end
 
@@ -166,18 +168,64 @@ class MazeFormula
     query(sql, status, id)
   end
 
+  # def generate_permutations(id)
+    # create array of all squares except for normal squares
+    # generate all permutations of array
+    # iterate through permutations array
+    #   upon each iteration, create new array of x * y - permutation_array.length - 1 filled with normal squares and add it to permutaiton array
+    #   iterate from permutation_array.length - 1 down to index 1 (we're not going to move index 0) (the left)
+    #     iterate from the left up to permutation_array.length - left
+    #       replace current index - 1 with normal and current index with current index - 1
+    #       check if array or 90, 180, 270 or flip h or flip v is in results array
+    #         if it doesn next
+    #         save
+
+    # permutation array = [a, b, c]
+    # permutation array + x * y - permutation_array.length - 1 filled with normal (n) squares
+    # example of iterating:
+    # a, b, c, n, n, n
+    # a, b, n, c, n, n
+    # a, b, n, n, c, n
+    # a, b, n, n, n, c
+    # a, n, b, n, n, c
+    # a, n, n, b, n, c
+    # a, n, n, n, b, c
+
+  #   each_permutation do |permutation|
+  #     next if permutation.exists?
+  #     permutation.save!(id)
+  #   end
+  # end
+
   def generate_permutations(id)
     each_permutation do |permutation|
       next if permutation.exists?
-      permutation.save!(id)
+      permutations << permutation.permutation
+      # permutation.save!(id)
     end
+    binding.pry
   end
 
   def each_permutation
-    formula_set.permutation do |permutation| 
-      yield(MazePermutation.new(permutation, x, y))
+    base_length = formula_set.length
+
+    formula_set.permutation.to_a.each do |base_set|
+      permutations << base_set + Array.new(x * y - base_length, 'normal')
+      (base_length).downto(1) do |left|
+        left.upto(x * y - (base_length - left) - 1) do |right|
+          new_permutation = permutations.last.clone
+          new_permutation[right - 1], new_permutation[right] = 'normal', new_permutation[right - 1]
+          yield(MazePermutation.new(new_permutation, x, y))
+        end
+      end
     end
   end
+
+  # def each_permutation
+  #   formula_set.permutation do |permutation| 
+  #     yield(MazePermutation.new(permutation, x, y))
+  #   end
+  # end
 
   def generate_candidates(id)
     sql = <<~SQL
@@ -360,22 +408,43 @@ class MazeFormula
     end
   end
 
-  def create_set
-    maze = []
-    (x * y).times do
-      maze << if (count_pairs(maze, 'endpoint') / 2) != endpoints
-                format_pair(maze, 'endpoint')
-              elsif (count_pairs(maze, 'portal') / 2) != portals
-                format_pair(maze, 'portal')
-              elsif (count_pairs(maze, 'tunnel') / 2) != tunnels
-                format_pair(maze, 'tunnel')
-              elsif maze.count('bridge') != bridges
-                'bridge'
-              elsif maze.count('barrier') != barriers
-                'barrier'
-              else
-                'normal'
-              end
+  # def create_set
+  #   maze = []
+  #   (x * y).times do
+  #     maze << if (count_pairs(maze, 'endpoint') / 2) != endpoints
+  #               format_pair(maze, 'endpoint')
+  #             elsif (count_pairs(maze, 'portal') / 2) != portals
+  #               format_pair(maze, 'portal')
+  #             elsif (count_pairs(maze, 'tunnel') / 2) != tunnels
+  #               format_pair(maze, 'tunnel')
+  #             elsif maze.count('bridge') != bridges
+  #               'bridge'
+  #             elsif maze.count('barrier') != barriers
+  #               'barrier'
+  #             else
+  #               'normal'
+  #             end
+  #   end
+  #   maze
+  # end
+
+  # base_set does not include 'normal' squares
+  def create_base_set(maze = [])
+    if (count_pairs(maze, 'endpoint') / 2) != endpoints
+      maze << format_pair(maze, 'endpoint')
+      create_base_set(maze)
+    elsif (count_pairs(maze, 'portal') / 2) != portals
+      maze << format_pair(maze, 'portal')
+      create_base_set(maze)
+    elsif (count_pairs(maze, 'tunnel') / 2) != tunnels
+      maze << format_pair(maze, 'tunnel')
+      create_base_set(maze)
+    elsif maze.count('bridge') != bridges
+      maze << 'bridge'
+      create_base_set(maze)
+    elsif maze.count('barrier') != barriers
+      maze << 'barrier'
+      create_base_set(maze)
     end
     maze
   end
