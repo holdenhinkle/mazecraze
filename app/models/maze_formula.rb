@@ -15,7 +15,7 @@ class MazeFormula
   attr_reader :maze_type, :x, :y,
               :endpoints, :barriers, :bridges,
               :tunnels, :portals, :experiment,
-              :formula_set, :permutations, :db
+              :formula_set, :base_permutations, :permutations, :db
 
   def initialize(formula)
     @maze_type = formula['maze_type']
@@ -28,7 +28,8 @@ class MazeFormula
     @portals = integer_value(formula['portals'])
     @experiment = formula[:experiment] ? true : false
     # @formula_set = create_set
-    @formula_set = create_base_set
+    @formula_set = create_base_set # array of unique maze squares
+    @base_permutations = []
     @permutations = []
     @db = DatabaseConnection.new
   end
@@ -197,23 +198,42 @@ class MazeFormula
   #   end
   # end
 
+
+  def generate_base_set_permutations
+    formula_set.permutation.to_a.each do |permutation| 
+      next if permutation.last == 'normal'
+      base_permutations << permutation
+    end
+  end
+
   def generate_permutations(id)
+    generate_base_set_permutations
+    
     each_permutation do |permutation|
       next if permutation.exists?
       permutations << permutation.permutation
-      # permutation.save!(id)
+      # permutation.save!(id) # the first permutiation based on @forumla_set isn't saved
     end
     binding.pry
   end
 
   def each_permutation
-    base_length = formula_set.length
-
-    formula_set.permutation.to_a.each do |base_set|
-      permutations << base_set + Array.new(x * y - base_length, 'normal')
+    base_permutations.each do |base_permutation|
+      base_length = base_permutation.length
+      permutations << base_permutation + Array.new(x * y - base_length, 'normal')
       (base_length).downto(1) do |left|
-        left.upto(x * y - (base_length - left) - 1) do |right|
+        # binding.pry
+        # 4
+        # 3
+        # 2
+        # 1
+        left.upto(x * y - (base_length - left) - 1) do |right| # the right value is messed up for second rounds +
+          # 6 - (4 - 4) - 1 = 6 - 0 - 1 = 5
+          # 6 - (4 - 3) - 1 = 6 - 1 - 1 = 4
+          # 6 - (4 - 2) - 1 = 6 - 2 - 1 = 3
+          # 6 - (4 - 1) - 1 = 6 - 3 - 1 = 2
           new_permutation = permutations.last.clone
+          # binding.pry
           new_permutation[right - 1], new_permutation[right] = 'normal', new_permutation[right - 1]
           yield(MazePermutation.new(new_permutation, x, y))
         end
@@ -431,21 +451,18 @@ class MazeFormula
   # base_set does not include 'normal' squares
   def create_base_set(maze = [])
     if (count_pairs(maze, 'endpoint') / 2) != endpoints
-      maze << format_pair(maze, 'endpoint')
-      create_base_set(maze)
+      create_base_set(maze << format_pair(maze, 'endpoint'))
     elsif (count_pairs(maze, 'portal') / 2) != portals
-      maze << format_pair(maze, 'portal')
-      create_base_set(maze)
+      create_base_set(maze << format_pair(maze, 'portal'))
     elsif (count_pairs(maze, 'tunnel') / 2) != tunnels
-      maze << format_pair(maze, 'tunnel')
-      create_base_set(maze)
+      create_base_set(maze << format_pair(maze, 'tunnel'))
     elsif maze.count('bridge') != bridges
-      maze << 'bridge'
-      create_base_set(maze)
+      create_base_set(maze << 'bridge')
     elsif maze.count('barrier') != barriers
-      maze << 'barrier'
-      create_base_set(maze)
-    end
+      create_base_set(maze << 'barrier')
+    else
+      maze << 'normal'
+    end    
     maze
   end
 
