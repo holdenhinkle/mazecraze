@@ -74,23 +74,11 @@ class AdminController < ApplicationController
   end
 
   post '/admin/mazes/formulas/:type' do
-    # add type and id and status validation
-    # if rejected, update status, set success message, redirect
-    # if approved, 
-    # create layout from formula, 
-    # create permutations of layout
-
-    # formula
-    # layout
-    # permutations
-    # approved permutations and versions of permutations => mazes
-
     if params[:update_status_to] == 'approved'
       formula_values = MazeFormula.retrieve_formula_values(params[:formula_id])
       @formula = MazeFormula.maze_formula_type_to_class(formula_values['maze_type']).new(formula_values)
       @formula.generate_permutations(params[:formula_id])
       @formula.generate_candidates(params[:formula_id])
-      # create maze candidates from permutations
     end
     MazeFormula.update_status(params[:formula_id], params[:update_status_to])
     session[:success] = "The status for Maze Formula ID:#{params[:formula_id]} was updated to '#{params[:update_status_to]}'."

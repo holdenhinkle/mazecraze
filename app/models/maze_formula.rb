@@ -16,8 +16,6 @@ class MazeFormula
               :endpoints, :barriers, :bridges,
               :tunnels, :portals, :experiment,
               :unique_maze_square_set,
-              # :unique_maze_square_permutations,
-              # :permutations,
               :db
 
   def initialize(formula)
@@ -30,9 +28,11 @@ class MazeFormula
     @tunnels = integer_value(formula['tunnels'])
     @portals = integer_value(formula['portals'])
     @experiment = formula[:experiment] ? true : false
-    @unique_maze_square_set = create_unique_maze_square_set
-    # @unique_maze_square_permutations = []
-    # @permutations = []
+    @unique_maze_square_set = if formula['unique_maze_square_set']
+                                JSON.parse(formula['unique_maze_square_set'])
+                              else
+                                create_unique_maze_square_set
+                              end
     @db = DatabaseConnection.new
   end
 
@@ -172,7 +172,7 @@ class MazeFormula
   end
 
   def generate_permutations(id)
-    save_maze_permutations(generate_maze_permutations(id))
+    save_maze_permutations(generate_maze_permutations(id), id)
   end
 
   def generate_maze_permutations(id)
@@ -192,15 +192,13 @@ class MazeFormula
   end
 
   def unique_maze_square_set_permutations
-    permutations = []
-    unique_maze_square_set.permutation.to_a.each do |permutation| 
+    unique_maze_square_set.permutation.to_a.each_with_object([]) do |permutation, permutations| 
       next if permutation.last == 'normal'
       permutations << permutation
     end
-    permutations
   end
 
-  def save_maze_permutations(permutations)
+  def save_maze_permutations(permutations, id)
     permutations.each do |permutation|
       permutation = MazePermutation.new(permutation, x, y)
       permutation.save!(id) unless permutation.exists?
@@ -388,27 +386,6 @@ class MazeFormula
     end
   end
 
-  # def create_set
-  #   maze = []
-  #   (x * y).times do
-  #     maze << if (count_pairs(maze, 'endpoint') / 2) != endpoints
-  #               format_pair(maze, 'endpoint')
-  #             elsif (count_pairs(maze, 'portal') / 2) != portals
-  #               format_pair(maze, 'portal')
-  #             elsif (count_pairs(maze, 'tunnel') / 2) != tunnels
-  #               format_pair(maze, 'tunnel')
-  #             elsif maze.count('bridge') != bridges
-  #               'bridge'
-  #             elsif maze.count('barrier') != barriers
-  #               'barrier'
-  #             else
-  #               'normal'
-  #             end
-  #   end
-  #   maze
-  # end
-
-  # base_set does not include 'normal' squares
   def create_unique_maze_square_set(maze = [])
     if (count_pairs(maze, 'endpoint') / 2) != endpoints
       create_unique_maze_square_set(maze << format_pair(maze, 'endpoint'))
