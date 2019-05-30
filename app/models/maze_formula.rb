@@ -15,9 +15,8 @@ class MazeFormula
   attr_reader :maze_type, :x, :y,
               :endpoints, :barriers, :bridges,
               :tunnels, :portals, :experiment,
-              :unique_square_set,
-              :db
-
+              :unique_square_set
+              
   def initialize(formula)
     @maze_type = formula['maze_type']
     @x = integer_value(formula['x'])
@@ -33,7 +32,20 @@ class MazeFormula
                          else
                            create_unique_square_set
                          end
-    @db = DatabaseConnection.new
+  end
+
+  def self.query(sql, *params)
+    db = DatabaseConnection.new
+    results = db.query(sql, *params)
+    db.disconnect
+    results
+  end
+
+  def query(sql, *params)
+    db = DatabaseConnection.new
+    results = db.query(sql, *params)
+    db.disconnect
+    results
   end
 
   def self.generate_formulas
@@ -87,13 +99,6 @@ class MazeFormula
     maze_types_popover.merge(maze_dimensions_popovers).merge(maze_square_types_popovers)
   end
 
-  def self.query(sql, *params)
-    db = DatabaseConnection.new
-    results = db.query(sql, *params)
-    db.disconnect
-    results
-  end
-
   def self.retrieve_formula_values(id)
     sql = "SELECT * FROM maze_formulas WHERE id = $1;"
     query(sql, id)[0]
@@ -114,7 +119,7 @@ class MazeFormula
       portals = $8;
     SQL
 
-    results = db.query(sql.gsub!("\n", ""), maze_type, x, y, endpoints,
+    results = query(sql.gsub!("\n", ""), maze_type, x, y, endpoints,
                        barriers, bridges, tunnels, portals)
 
     return false if results.values.empty?
@@ -161,7 +166,7 @@ class MazeFormula
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
     SQL
 
-    db.query(sql.gsub!("\n", ""), maze_type, unique_square_set, x, y, endpoints,
+    query(sql.gsub!("\n", ""), maze_type, unique_square_set, x, y, endpoints,
     barriers, bridges, tunnels, portals, experiment)
   end
 
@@ -226,7 +231,7 @@ class MazeFormula
       WHERE maze_formulas.id = $1;
     SQL
 
-    results = db.query(sql.gsub!("\n", ""), id)
+    results = query(sql.gsub!("\n", ""), id)
 
     results.each do |tuple|
       maze = Maze.maze_type_to_class(tuple["maze_type"]).new(tuple)
@@ -429,45 +434,15 @@ class MazeFormula
 end
 
 class SimpleMazeFormula < MazeFormula
-  # X_MIN = 3
-  # X_MAX = 10
-  # Y_MIN = 2
-  # Y_MAX = 10
-  # ENDPOINT_MIN = 1
-  # ENDPOINT_MAX = 4
-  # BARRIER_MIN = 0
-  # BARRIER_MAX = 3
   def self.generate_formulas
-    # create array of formulas
-    # create formulas_created counter
-    # iterate through array of formulas
-
-        # create array with subarrays of x / y dimensions to iterate through
-          # dimensions should be x by x and x by x - 1
-
     formula_dimensions = (X_MIN..X_MAX).each_with_object([]) do |dimension, dimensions|
       dimensions << { x: dimension, y: dimension -1 }
       dimensions << { x: dimension, y: dimension }
     end
 
-    # binding.pry
-
-    # @maze_type = formula['maze_type']
-    # @x = integer_value(formula['x'])
-    # @y = integer_value(formula['y'])
-    # @endpoints = integer_value(formula['endpoints'])
-    # @barriers = integer_value(formula['barriers'])
-    # @bridges = integer_value(formula['bridges'])
-    # @tunnels = integer_value(formula['tunnels'])
-    # @portals = integer_value(formula['portals'])
-    # @experiment = formula[:experiment] ? true : false
-
     formulas = formula_dimensions.each_with_object([]) do |dimensions, formulas|
       ENDPOINT_MIN.upto(ENDPOINT_MAX) do |num_endpoints|
         BARRIER_MIN.upto(BARRIER_MAX) do |num_barriers|
-
-          # binding.pry
-
           next if (num_endpoints * 2 + num_barriers) > dimensions[:x] * dimensions[:y] / 2
           formulas << { 'maze_type' => 'simple',
                         'x' => dimensions[:x],
@@ -482,7 +457,6 @@ class SimpleMazeFormula < MazeFormula
     end
 
     formulas_created = 0
-
     formulas.each do |formula|
       new_formula = MazeFormula.new(formula)
       next if new_formula.exists? 
