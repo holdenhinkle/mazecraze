@@ -36,6 +36,10 @@ class AdminController < ApplicationController
     erb :mazes_formulas
   end
 
+  post '/admin/mazes/formulas' do
+    MazeFormula.generate_formulas if params['generate_formulas']
+  end
+
   get '/admin/mazes/formulas/new' do
     @title = "New Maze Formula - Maze Craze Admin"
     @maze_types = Maze::MAZE_TYPE_CLASS_NAMES.keys

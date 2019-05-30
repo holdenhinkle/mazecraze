@@ -36,6 +36,10 @@ class MazeFormula
     @db = DatabaseConnection.new
   end
 
+  def self.generate_formulas
+
+  end
+
   def self.maze_formula_type_to_class(type)
     class_name = MAZE_FORMULA_CLASS_NAMES[type]
     Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
