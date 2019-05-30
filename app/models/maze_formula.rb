@@ -48,26 +48,39 @@ class MazeFormula
     results
   end
 
-  def self.generate_formulas
-    maze_formula_classes = MAZE_FORMULA_CLASS_NAMES.keys.each_with_object([]) do |maze_type, maze_formula_classes|
+  def self.maze_formula_classes
+    MAZE_FORMULA_CLASS_NAMES.keys.each_with_object([]) do |maze_type, maze_formula_classes|
       maze_formula_classes << maze_formula_type_to_class(maze_type)
     end
-
-    new_formula_count = 0
-    existed_formula_count = 0
-
-    maze_formula_classes.each do |maze_class|
-      generated_formula_stats = save_formulas!(maze_class.generate_formulas)
-      new_formula_count += generated_formula_stats[:new]
-      existed_formula_count += generated_formula_stats[:existed]
-    end
-
-    { new: new_formula_count, existed: existed_formula_count }
   end
 
   def self.maze_formula_type_to_class(type)
     class_name = MAZE_FORMULA_CLASS_NAMES[type]
     Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
+  end
+
+  def self.generate_formulas(classes = maze_formula_classes)
+    new_formula_count = 0
+    existed_formula_count = 0
+
+    classes.each do |maze_class|
+      formulas = formula_dimensions.each_with_object([]) do |dimensions, formulas|
+        ENDPOINT_MIN.upto(ENDPOINT_MAX) do |num_endpoints|
+          BARRIER_MIN.upto(BARRIER_MAX) do |num_barriers|
+            next if num_endpoints == 1 && num_barriers == 0
+            maze_class.generate_formulas(dimensions, num_endpoints, num_barriers) do |formula|
+              formulas << formula
+            end
+          end
+        end
+      end
+
+      generated_formula_stats = save_formulas!(formulas)
+      new_formula_count += generated_formula_stats[:new]
+      existed_formula_count += generated_formula_stats[:existed]
+    end
+
+    { new: new_formula_count, existed: existed_formula_count }
   end
 
   def self.formula_dimensions
@@ -460,23 +473,16 @@ class MazeFormula
 end
 
 class SimpleMazeFormula < MazeFormula
-  def self.generate_formulas
-    formula_dimensions.each_with_object([]) do |dimensions, formulas|
-      ENDPOINT_MIN.upto(ENDPOINT_MAX) do |num_endpoints|
-        BARRIER_MIN.upto(BARRIER_MAX) do |num_barriers|
-          next if num_endpoints == 1 && num_barriers == 0
-          next if (num_endpoints * 2 + num_barriers) > dimensions[:x] * dimensions[:y] / 2
-          formulas << { 'maze_type' => 'simple',
-                        'x' => dimensions[:x],
-                        'y' => dimensions[:y],
-                        'endpoints' => num_endpoints,
-                        'barriers' => num_barriers,
-                        'bridges' => 0,
-                        'tunnels' => 0,
-                        'portals' => 0 }
-        end
-      end
-    end
+  def self.generate_formulas(dimensions, num_endpoints, num_barriers)
+    return if (num_endpoints * 2 + num_barriers) > dimensions[:x] * dimensions[:y] / 2
+    yield({ 'maze_type' => 'simple',
+            'x' => dimensions[:x],
+            'y' => dimensions[:y],
+            'endpoints' => num_endpoints,
+            'barriers' => num_barriers,
+            'bridges' => 0,
+            'tunnels' => 0,
+            'portals' => 0 })
   end
 end
 
@@ -484,24 +490,17 @@ class BridgeMazeFormula < MazeFormula
   BRIDGE_MIN = 1
   BRIDGE_MAX = 3
 
-  def self.generate_formulas
-    formula_dimensions.each_with_object([]) do |dimensions, formulas|
-      ENDPOINT_MIN.upto(ENDPOINT_MAX) do |num_endpoints|
-        BARRIER_MIN.upto(BARRIER_MAX) do |num_barriers|
-          BRIDGE_MIN.upto(BRIDGE_MAX) do |num_bridges|
-            next if num_endpoints == 1 && num_barriers == 0
-            next if (num_endpoints * 2 + num_barriers + num_bridges) > dimensions[:x] * dimensions[:y] / 2
-            formulas << { 'maze_type' => 'bridge',
-                          'x' => dimensions[:x],
-                          'y' => dimensions[:y],
-                          'endpoints' => num_endpoints,
-                          'barriers' => num_barriers,
-                          'bridges' => num_bridges,
-                          'tunnels' => 0,
-                          'portals' => 0 }
-          end
-        end
-      end
+  def self.generate_formulas(dimensions, num_endpoints, num_barriers)
+    BRIDGE_MIN.upto(BRIDGE_MAX) do |num_bridges|
+      next if (num_endpoints * 2 + num_barriers + num_bridges) > dimensions[:x] * dimensions[:y] / 2
+      yield({ 'maze_type' => 'bridge',
+              'x' => dimensions[:x],
+              'y' => dimensions[:y],
+              'endpoints' => num_endpoints,
+              'barriers' => num_barriers,
+              'bridges' => num_bridges,
+              'tunnels' => 0,
+              'portals' => 0 })
     end
   end
 
@@ -534,24 +533,17 @@ class TunnelMazeFormula < MazeFormula
   TUNNEL_MIN = 1
   TUNNEL_MAX = 3
 
-  def self.generate_formulas
-    formula_dimensions.each_with_object([]) do |dimensions, formulas|
-      ENDPOINT_MIN.upto(ENDPOINT_MAX) do |num_endpoints|
-        BARRIER_MIN.upto(BARRIER_MAX) do |num_barriers|
-          TUNNEL_MIN.upto(TUNNEL_MAX) do |num_tunnels|
-            next if num_endpoints == 1 && num_barriers == 0
-            next if (num_endpoints * 2 + num_barriers + num_tunnels * 2) > dimensions[:x] * dimensions[:y] / 2
-            formulas << { 'maze_type' => 'tunnel',
-                          'x' => dimensions[:x],
-                          'y' => dimensions[:y],
-                          'endpoints' => num_endpoints,
-                          'barriers' => num_barriers,
-                          'bridges' => 0,
-                          'tunnels' => num_tunnels,
-                          'portals' => 0 }
-          end
-        end
-      end
+  def self.generate_formulas(dimensions, num_endpoints, num_barriers)
+    TUNNEL_MIN.upto(TUNNEL_MAX) do |num_tunnels|
+      next if (num_endpoints * 2 + num_barriers + num_tunnels * 2) > dimensions[:x] * dimensions[:y] / 2
+      yield({ 'maze_type' => 'tunnel',
+              'x' => dimensions[:x],
+              'y' => dimensions[:y],
+              'endpoints' => num_endpoints,
+              'barriers' => num_barriers,
+              'bridges' => 0,
+              'tunnels' => num_tunnels,
+              'portals' => 0 })
     end
   end
 
@@ -580,24 +572,17 @@ class PortalMazeFormula < MazeFormula
   PORTAL_MIN = 1
   PORTAL_MAX = 3
 
-  def self.generate_formulas
-    formula_dimensions.each_with_object([]) do |dimensions, formulas|
-      ENDPOINT_MIN.upto(ENDPOINT_MAX) do |num_endpoints|
-        BARRIER_MIN.upto(BARRIER_MAX) do |num_barriers|
-          PORTAL_MIN.upto(PORTAL_MAX) do |num_portals|
-            next if num_endpoints == 1 && num_barriers == 0
-            next if (num_endpoints * 2 + num_barriers + num_portals * 2) > dimensions[:x] * dimensions[:y] / 2
-            formulas << { 'maze_type' => 'portal',
-                          'x' => dimensions[:x],
-                          'y' => dimensions[:y],
-                          'endpoints' => num_endpoints,
-                          'barriers' => num_barriers,
-                          'bridges' => 0,
-                          'tunnels' => 0,
-                          'portals' => num_portals }
-          end
-        end
-      end
+  def self.generate_formulas(dimensions, num_endpoints, num_barriers)
+    PORTAL_MIN.upto(PORTAL_MAX) do |num_portals|
+      next if (num_endpoints * 2 + num_barriers + num_portals * 2) > dimensions[:x] * dimensions[:y] / 2
+      yield({ 'maze_type' => 'portal',
+              'x' => dimensions[:x],
+              'y' => dimensions[:y],
+              'endpoints' => num_endpoints,
+              'barriers' => num_barriers,
+              'bridges' => 0,
+              'tunnels' => 0,
+              'portals' => num_portals })
     end
   end
 

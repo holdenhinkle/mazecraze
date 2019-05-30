@@ -87,10 +87,16 @@ class AdminController < ApplicationController
       @formula = MazeFormula.maze_formula_type_to_class(formula_values['maze_type']).new(formula_values)
       @formula.generate_permutations(params[:formula_id])
       @formula.generate_candidates(params[:formula_id])
+      MazeFormula.update_status(params[:formula_id], params[:update_status_to]) # change to instance method
+      session[:success] = "The status for Maze Formula ID:#{params[:formula_id]} was updated to '#{params[:update_status_to]}'."
+    elsif params['generate_formulas']
+      maze_formula_class = MazeFormula.maze_formula_type_to_class(params['maze_type'])
+      generated_formula_stats = MazeFormula.generate_formulas([maze_formula_class])
+      new_message = "#{generated_formula_stats[:new]} new #{params['maze_type'].upcase} maze formulas were created."
+      existed_message = "#{generated_formula_stats[:existed]} #{params['maze_type'].upcase} maze formulas already existed."
+      session[:success] = new_message + ' ' + existed_message
     end
-    MazeFormula.update_status(params[:formula_id], params[:update_status_to])
-    session[:success] = "The status for Maze Formula ID:#{params[:formula_id]} was updated to '#{params[:update_status_to]}'."
-    redirect "/admin/mazes/formulas/#{params[:type]}"
+    redirect "/admin/mazes/formulas/#{params['maze_type']}"
   end
 
   get '/admin/mazes/formulas/:type/:id' do

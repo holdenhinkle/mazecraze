@@ -9,6 +9,13 @@
   <h1><%= @maze_type.capitalize %> Maze Formulas</h1>
 </header>
 <section>
+  <form action="/admin/mazes/formulas/:type" method="post">
+    <input type="hidden" name="maze_type" value="<%= @maze_type %>">
+    <input type="hidden" name="generate_formulas" value="true">
+    <button type="type" class="btn btn-primary">Generate <%= @maze_type.capitalize %> Maze Formulas</button>
+  </form>
+  <a class="btn btn-primary" href="/admin/mazes/formulas/new" role="button">New Maze Formula</a>
+<section>
   <% @formula_status_list.each do |status| %>
     <% counter = 1 %>
     <h2 id=<%= status %>><%= status.capitalize %></h2>
