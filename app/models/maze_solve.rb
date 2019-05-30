@@ -58,11 +58,6 @@ module SolveBridgeMaze
     else
       square.taken!
     end
-    # if square.type != :bridge
-    #   square.taken!
-    # else
-    #   update_bridge_square!(current_path, square)
-    # end
   end
 
   def update_bridge_square!(current_path, square)
