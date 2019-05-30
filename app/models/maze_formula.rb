@@ -16,7 +16,7 @@ class MazeFormula
               :endpoints, :barriers, :bridges,
               :tunnels, :portals, :experiment,
               :unique_square_set
-              
+
   def initialize(formula)
     @maze_type = formula['maze_type']
     @x = integer_value(formula['x'])
@@ -49,23 +49,50 @@ class MazeFormula
   end
 
   def self.generate_formulas
-    maze_formula_classes = []
-    MAZE_FORMULA_CLASS_NAMES.keys.each do |maze_type|
+    maze_formula_classes = MAZE_FORMULA_CLASS_NAMES.keys.each_with_object([]) do |maze_type, maze_formula_classes|
       maze_formula_classes << maze_formula_type_to_class(maze_type)
     end
 
-    formulas_created = 0
+    new_formula_count = 0
+    existed_formula_count = 0
+
     maze_formula_classes.each do |maze_class|
-      binding.pry
-      maze_class.generate_formulas { |total| formulas_created += total }
+      generated_formula_stats = save_formulas!(maze_class.generate_formulas)
+      new_formula_count += generated_formula_stats[:new]
+      existed_formula_count += generated_formula_stats[:existed]
     end
 
-    formulas_created
+    { new: new_formula_count, existed: existed_formula_count }
   end
 
   def self.maze_formula_type_to_class(type)
     class_name = MAZE_FORMULA_CLASS_NAMES[type]
     Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
+  end
+
+  def self.formula_dimensions
+    (self::X_MIN..self::X_MAX).each_with_object([]) do |dimension, dimensions|
+      dimensions << { x: dimension, y: dimension -1 }
+      dimensions << { x: dimension, y: dimension }
+    end
+  end
+
+  def self.save_formulas!(formulas)
+    new_formula_count = 0
+    existed_formula_count = 0
+
+    formulas.each do |formula|
+      new_formula = MazeFormula.new(formula)
+      if new_formula.exists?
+        binding.pry
+        existed_formula_count += 1
+      else
+        new_formula.save!
+        new_formula_count += 1
+      end
+    end
+
+    { new: new_formula_count, existed: existed_formula_count }
   end
 
   def self.form_popovers
@@ -435,14 +462,10 @@ end
 
 class SimpleMazeFormula < MazeFormula
   def self.generate_formulas
-    formula_dimensions = (X_MIN..X_MAX).each_with_object([]) do |dimension, dimensions|
-      dimensions << { x: dimension, y: dimension -1 }
-      dimensions << { x: dimension, y: dimension }
-    end
-
-    formulas = formula_dimensions.each_with_object([]) do |dimensions, formulas|
+    formula_dimensions.each_with_object([]) do |dimensions, formulas|
       ENDPOINT_MIN.upto(ENDPOINT_MAX) do |num_endpoints|
         BARRIER_MIN.upto(BARRIER_MAX) do |num_barriers|
+          next if num_endpoints == 1 && num_barriers == 0
           next if (num_endpoints * 2 + num_barriers) > dimensions[:x] * dimensions[:y] / 2
           formulas << { 'maze_type' => 'simple',
                         'x' => dimensions[:x],
@@ -455,22 +478,33 @@ class SimpleMazeFormula < MazeFormula
         end
       end
     end
-
-    formulas_created = 0
-    formulas.each do |formula|
-      new_formula = MazeFormula.new(formula)
-      next if new_formula.exists? 
-      new_formula.save!
-      formulas_created += 1
-    end
-
-    formulas_created
   end
 end
 
 class BridgeMazeFormula < MazeFormula
   BRIDGE_MIN = 1
   BRIDGE_MAX = 3
+
+  def self.generate_formulas
+    formula_dimensions.each_with_object([]) do |dimensions, formulas|
+      ENDPOINT_MIN.upto(ENDPOINT_MAX) do |num_endpoints|
+        BARRIER_MIN.upto(BARRIER_MAX) do |num_barriers|
+          BRIDGE_MIN.upto(BRIDGE_MAX) do |num_bridges|
+            next if num_endpoints == 1 && num_barriers == 0
+            next if (num_endpoints * 2 + num_barriers) > dimensions[:x] * dimensions[:y] / 2
+            formulas << { 'maze_type' => 'bridge',
+                          'x' => dimensions[:x],
+                          'y' => dimensions[:y],
+                          'endpoints' => num_endpoints,
+                          'barriers' => num_barriers,
+                          'bridges' => num_bridges,
+                          'tunnels' => 0,
+                          'portals' => 0 }
+          end
+        end
+      end
+    end
+  end
 
   def bridges_valid_input?
     (BRIDGE_MIN..BRIDGE_MAX).cover?(bridges) || experiment? && bridges > 0
@@ -500,6 +534,27 @@ class TunnelMazeFormula < MazeFormula
   # Y_MAX = 15
   TUNNEL_MIN = 1
   TUNNEL_MAX = 3
+
+  def self.generate_formulas
+    formula_dimensions.each_with_object([]) do |dimensions, formulas|
+      ENDPOINT_MIN.upto(ENDPOINT_MAX) do |num_endpoints|
+        BARRIER_MIN.upto(BARRIER_MAX) do |num_barriers|
+          TUNNEL_MIN.upto(TUNNEL_MAX) do |num_tunnels|
+            next if num_endpoints == 1 && num_barriers == 0
+            next if (num_endpoints * 2 + num_barriers) > dimensions[:x] * dimensions[:y] / 2
+            formulas << { 'maze_type' => 'tunnel',
+                          'x' => dimensions[:x],
+                          'y' => dimensions[:y],
+                          'endpoints' => num_endpoints,
+                          'barriers' => num_barriers,
+                          'bridges' => 0,
+                          'tunnels' => num_tunnels,
+                          'portals' => 0 }
+          end
+        end
+      end
+    end
+  end
 
   def x_valid_input?
     (X_MIN..X_MAX).cover?(x) || experiment? && x > 0
@@ -557,6 +612,27 @@ end
 class PortalMazeFormula < MazeFormula
   PORTAL_MIN = 1
   PORTAL_MAX = 3
+
+  def self.generate_formulas
+    formula_dimensions.each_with_object([]) do |dimensions, formulas|
+      ENDPOINT_MIN.upto(ENDPOINT_MAX) do |num_endpoints|
+        BARRIER_MIN.upto(BARRIER_MAX) do |num_barriers|
+          PORTAL_MIN.upto(PORTAL_MAX) do |num_portals|
+            next if num_endpoints == 1 && num_barriers == 0
+            next if (num_endpoints * 2 + num_barriers) > dimensions[:x] * dimensions[:y] / 2
+            formulas << { 'maze_type' => 'portal',
+                          'x' => dimensions[:x],
+                          'y' => dimensions[:y],
+                          'endpoints' => num_endpoints,
+                          'barriers' => num_barriers,
+                          'bridges' => 0,
+                          'tunnels' => 0,
+                          'portals' => num_portals }
+          end
+        end
+      end
+    end
+  end
 
   def portals_valid_input?
     (PORTAL_MIN..PORTAL_MAX).cover?(portals) || experiment? && portals > 0

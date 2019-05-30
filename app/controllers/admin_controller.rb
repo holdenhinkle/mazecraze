@@ -37,7 +37,11 @@ class AdminController < ApplicationController
   end
 
   post '/admin/mazes/formulas' do
-    MazeFormula.generate_formulas if params['generate_formulas']
+    generated_formula_stats = MazeFormula.generate_formulas if params['generate_formulas']
+    new_message = "#{generated_formula_stats[:new]} new maze formulas were created."
+    existed_message = "#{generated_formula_stats[:existed]} formulas already existed."
+    session[:success] = new_message + ' ' + existed_message
+    redirect "/admin/mazes/formulas"
   end
 
   get '/admin/mazes/formulas/new' do
