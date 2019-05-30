@@ -84,7 +84,6 @@ class MazeFormula
     formulas.each do |formula|
       new_formula = MazeFormula.new(formula)
       if new_formula.exists?
-        binding.pry
         existed_formula_count += 1
       else
         new_formula.save!
@@ -280,25 +279,25 @@ class MazeFormula
 
   def self.maze_dimensions_popovers
     { x: { title: "Valid Widths",
-           body: "The width should be between #{X_MIN} and #{X_MAX} squares wide." },
+           body: "The width should be between #{self::X_MIN} and #{self::X_MAX} squares wide." },
       y: { title: "Valid Heights",
-          body: "The width should be between #{Y_MIN} and #{Y_MAX} squares high." } }
+          body: "The width should be between #{self::Y_MIN} and #{self::Y_MAX} squares high." } }
   end
 
   def self.x_range
-    range_message(X_MIN, X_MAX)
+    range_message(self::X_MIN, self::X_MAX)
   end
 
   def self.y_range
-    range_message(Y_MIN, Y_MAX)
+    range_message(self::Y_MIN, self::Y_MAX)
   end
 
   def self.endpoint_range
-    range_message(ENDPOINT_MIN, ENDPOINT_MAX)
+    range_message(self::ENDPOINT_MIN, self::ENDPOINT_MAX)
   end
 
   def self.barrier_range
-    range_message(BARRIER_MIN, BARRIER_MAX)
+    range_message(self::BARRIER_MIN, self::BARRIER_MAX)
   end
 
   def self.bridge_range
@@ -318,24 +317,24 @@ class MazeFormula
   end
 
   def x_valid_input?
-    (X_MIN..X_MAX).cover?(x) || experiment? && x > 0
+    (self.class::X_MIN..self.class::X_MAX).cover?(x) || experiment? && x > 0
   end
 
   def y_valid_input?
-    (Y_MIN..Y_MAX).cover?(y) || experiment? && y > 0
+    (self.class::Y_MIN..self.class::Y_MAX).cover?(y) || experiment? && y > 0
   end
 
   def endpoints_valid_input?
-    (ENDPOINT_MIN..ENDPOINT_MAX).cover?(endpoints) || experiment? && endpoints > 1
+    (self.class::ENDPOINT_MIN..self.class::ENDPOINT_MAX).cover?(endpoints) || experiment? && endpoints > 1
   end
 
   def barriers_valid_input?
     if endpoints == 1
       return true if experiment? && barriers >= 1
-      (1..BARRIER_MAX).cover?(barriers)
+      (1..self.class::BARRIER_MAX).cover?(barriers)
     else
       return true if experiment? && barriers >= 0
-      (BARRIER_MIN..BARRIER_MAX).cover?(barriers)
+      (self.class::BARRIER_MIN..self.class::BARRIER_MAX).cover?(barriers)
     end
   end
 
@@ -359,7 +358,7 @@ class MazeFormula
     else
       validation[:x_validation_css] = 'is-invalid'
       validation[:x_validation_feedback_css] = 'invalid-feedback'
-      validation[:x_validation_feedback] = "Width must be between #{X_MIN} and #{X_MAX}."
+      validation[:x_validation_feedback] = "Width must be between #{self.class::X_MIN} and #{self.class::X_MAX}."
     end
   end
 
@@ -371,7 +370,7 @@ class MazeFormula
     else
       validation[:y_validation_css] = 'is-invalid'
       validation[:y_validation_feedback_css] = 'invalid-feedback'
-      validation[:y_validation_feedback] = "Height must be between #{Y_MIN} and #{Y_MAX}."
+      validation[:y_validation_feedback] = "Height must be between #{self.class::Y_MIN} and #{self.class::Y_MAX}."
     end
   end
 
@@ -386,7 +385,7 @@ class MazeFormula
       if experiment?
         validation[:endpoint_validation_feedback] = "Experiments must have at least 1 endpoint."
       else
-        validation[:endpoint_validation_feedback] = "Number of endpoints must be between #{ENDPOINT_MIN} and #{ENDPOINT_MAX}."
+        validation[:endpoint_validation_feedback] = "Number of endpoints must be between #{self.class::ENDPOINT_MIN} and #{self.class::ENDPOINT_MAX}."
       end
     end
   end
@@ -402,7 +401,7 @@ class MazeFormula
       if barriers == 0 && endpoints == 1
         validation[:barrier_validation_feedback] = "You must have at least 1 barrier if you have 1 endpoint."
       else
-        validation[:barrier_validation_feedback] = "Number of barriers must be between #{BARRIER_MIN} and #{BARRIER_MAX}."
+        validation[:barrier_validation_feedback] = "Number of barriers must be between #{self.class::BARRIER_MIN} and #{self.class::BARRIER_MAX}."
       end
     end
   end
@@ -491,7 +490,7 @@ class BridgeMazeFormula < MazeFormula
         BARRIER_MIN.upto(BARRIER_MAX) do |num_barriers|
           BRIDGE_MIN.upto(BRIDGE_MAX) do |num_bridges|
             next if num_endpoints == 1 && num_barriers == 0
-            next if (num_endpoints * 2 + num_barriers) > dimensions[:x] * dimensions[:y] / 2
+            next if (num_endpoints * 2 + num_barriers + num_bridges) > dimensions[:x] * dimensions[:y] / 2
             formulas << { 'maze_type' => 'bridge',
                           'x' => dimensions[:x],
                           'y' => dimensions[:y],
@@ -528,10 +527,10 @@ class BridgeMazeFormula < MazeFormula
 end
 
 class TunnelMazeFormula < MazeFormula
-  # X_MIN = 5
-  # X_MAX = 15
-  # Y_MIN = 5
-  # Y_MAX = 15
+  X_MIN = 5
+  X_MAX = 15
+  Y_MIN = 5
+  Y_MAX = 15
   TUNNEL_MIN = 1
   TUNNEL_MAX = 3
 
@@ -541,7 +540,7 @@ class TunnelMazeFormula < MazeFormula
         BARRIER_MIN.upto(BARRIER_MAX) do |num_barriers|
           TUNNEL_MIN.upto(TUNNEL_MAX) do |num_tunnels|
             next if num_endpoints == 1 && num_barriers == 0
-            next if (num_endpoints * 2 + num_barriers) > dimensions[:x] * dimensions[:y] / 2
+            next if (num_endpoints * 2 + num_barriers + num_tunnels * 2) > dimensions[:x] * dimensions[:y] / 2
             formulas << { 'maze_type' => 'tunnel',
                           'x' => dimensions[:x],
                           'y' => dimensions[:y],
@@ -556,40 +555,8 @@ class TunnelMazeFormula < MazeFormula
     end
   end
 
-  def x_valid_input?
-    (X_MIN..X_MAX).cover?(x) || experiment? && x > 0
-  end
-
-  def y_valid_input?
-    (Y_MIN..Y_MAX).cover?(y) || experiment? && y > 0
-  end
-
   def tunnels_valid_input?
     (TUNNEL_MIN..TUNNEL_MAX).cover?(tunnels) || experiment? && tunnels > 0
-  end
-
-  def x_validation(validation)
-    if x_valid_input?
-      validation[:x_validation_css] = 'is-valid'
-      validation[:x_validation_feedback_css] = 'valid-feedback'
-      validation[:x_validation_feedback] = 'Looks good!'
-    else
-      validation[:x_validation_css] = 'is-invalid'
-      validation[:x_validation_feedback_css] = 'invalid-feedback'
-      validation[:x_validation_feedback] = "Width must be between #{X_MIN} and #{X_MAX}."
-    end
-  end
-
-  def y_validation(validation)
-    if y_valid_input?
-      validation[:y_validation_css] = 'is-valid'
-      validation[:y_validation_feedback_css] = 'valid-feedback'
-      validation[:y_validation_feedback] = 'Looks good!'
-    else
-      validation[:y_validation_css] = 'is-invalid'
-      validation[:y_validation_feedback_css] = 'invalid-feedback'
-      validation[:y_validation_feedback] = "Height must be between #{Y_MIN} and #{Y_MAX}."
-    end
   end
 
   def tunnel_validation(validation)
@@ -619,7 +586,7 @@ class PortalMazeFormula < MazeFormula
         BARRIER_MIN.upto(BARRIER_MAX) do |num_barriers|
           PORTAL_MIN.upto(PORTAL_MAX) do |num_portals|
             next if num_endpoints == 1 && num_barriers == 0
-            next if (num_endpoints * 2 + num_barriers) > dimensions[:x] * dimensions[:y] / 2
+            next if (num_endpoints * 2 + num_barriers + num_portals * 2) > dimensions[:x] * dimensions[:y] / 2
             formulas << { 'maze_type' => 'portal',
                           'x' => dimensions[:x],
                           'y' => dimensions[:y],
