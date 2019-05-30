@@ -37,7 +37,18 @@ class MazeFormula
   end
 
   def self.generate_formulas
+    maze_formula_classes = []
+    MAZE_FORMULA_CLASS_NAMES.keys.each do |maze_type|
+      maze_formula_classes << maze_formula_type_to_class(maze_type)
+    end
 
+    formulas_created = 0
+    maze_formula_classes.each do |maze_class|
+      binding.pry
+      maze_class.generate_formulas { |total| formulas_created += total }
+    end
+
+    formulas_created
   end
 
   def self.maze_formula_type_to_class(type)
@@ -418,6 +429,69 @@ class MazeFormula
 end
 
 class SimpleMazeFormula < MazeFormula
+  # X_MIN = 3
+  # X_MAX = 10
+  # Y_MIN = 2
+  # Y_MAX = 10
+  # ENDPOINT_MIN = 1
+  # ENDPOINT_MAX = 4
+  # BARRIER_MIN = 0
+  # BARRIER_MAX = 3
+  def self.generate_formulas
+    # create array of formulas
+    # create formulas_created counter
+    # iterate through array of formulas
+
+        # create array with subarrays of x / y dimensions to iterate through
+          # dimensions should be x by x and x by x - 1
+
+    formula_dimensions = (X_MIN..X_MAX).each_with_object([]) do |dimension, dimensions|
+      dimensions << { x: dimension, y: dimension -1 }
+      dimensions << { x: dimension, y: dimension }
+    end
+
+    # binding.pry
+
+    # @maze_type = formula['maze_type']
+    # @x = integer_value(formula['x'])
+    # @y = integer_value(formula['y'])
+    # @endpoints = integer_value(formula['endpoints'])
+    # @barriers = integer_value(formula['barriers'])
+    # @bridges = integer_value(formula['bridges'])
+    # @tunnels = integer_value(formula['tunnels'])
+    # @portals = integer_value(formula['portals'])
+    # @experiment = formula[:experiment] ? true : false
+
+    formulas = formula_dimensions.each_with_object([]) do |dimensions, formulas|
+      ENDPOINT_MIN.upto(ENDPOINT_MAX) do |num_endpoints|
+        BARRIER_MIN.upto(BARRIER_MAX) do |num_barriers|
+
+          # binding.pry
+
+          next if (num_endpoints * 2 + num_barriers) > dimensions[:x] * dimensions[:y] / 2
+          formulas << { 'maze_type' => 'simple',
+                        'x' => dimensions[:x],
+                        'y' => dimensions[:y],
+                        'endpoints' => num_endpoints,
+                        'barriers' => num_barriers,
+                        'bridges' => 0,
+                        'tunnels' => 0,
+                        'portals' => 0 }
+        end
+      end
+    end
+
+    formulas_created = 0
+
+    formulas.each do |formula|
+      new_formula = MazeFormula.new(formula)
+      next if new_formula.exists? 
+      new_formula.save!
+      formulas_created += 1
+    end
+
+    formulas_created
+  end
 end
 
 class BridgeMazeFormula < MazeFormula
