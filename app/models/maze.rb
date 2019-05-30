@@ -13,9 +13,9 @@ class Maze
     @maze_type = maze['maze_type']
     @x = maze['x'].to_i
     @y = maze['y'].to_i
-    @squares = create_maze(JSON.parse(maze['permutation']),
-                           maze['endpoints'].to_i)
+    @squares = create_maze(JSON.parse(maze['permutation']), maze['endpoints'].to_i)
     @solutions = []
+    
     if maze['solutions']
       @solutions = maze['solutions']
     elsif valid_maze?
@@ -54,16 +54,14 @@ class Maze
   end
 
   def self.types_popovers
-    popover_content = {}
-    MAZE_TYPE_CLASS_NAMES.values.each do |class_name|
+    MAZE_TYPE_CLASS_NAMES.values.each_with_object({}) do |class_name, popover_content|
       maze_class = Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
       popover_content[maze_class.to_symbol] = maze_class.popover
     end
-    popover_content
   end
 
   def valid?
-    valid_maze? # && one_solution?
+    valid_maze?
   end
 
   def all_squares_taken?
@@ -109,21 +107,17 @@ class Maze
   def create_maze(maze, number_of_endpoints)
     maze.map.with_index do |square, index|
       if square =~ /endpoint/
-        group = square.match(/\d/).to_s.to_i
-        subgroup = square.match(/(?<=_)[a-z]/).to_s
+        group = square_group(square)
+        subgroup = square_subgroup(square)
         if subgroup == 'a' && number_of_endpoints == 1
           EndpointSquare.new(:endpoint, :taken, group, subgroup, index)
         else
           EndpointSquare.new(:endpoint, :not_taken, group, subgroup, index)
         end
       elsif square =~ /portal/
-        group = square.match(/\d/).to_s.to_i
-        subgroup = square.match(/(?<=_)[a-z]/).to_s
-        PortalSquare.new(:portal, :not_taken, group, subgroup, index)
+        PortalSquare.new(:portal, :not_taken, square_group(square),square_subgroup(square), index)
       elsif square =~ /tunnel/
-        group = square.match(/\d/).to_s.to_i
-        subgroup = square.match(/(?<=_)[a-z]/).to_s
-        TunnelSquare.new(:tunnel, :not_taken, group, subgroup, index)
+        TunnelSquare.new(:tunnel, :not_taken, square_group(square), square_subgroup(square), index)
       elsif square == 'bridge'
         BridgeSquare.new(:bridge, :not_taken, index)
       elsif square == 'barrier'
@@ -132,6 +126,14 @@ class Maze
         MazeSquare.new(:normal, :not_taken, index)
       end
     end
+  end
+
+  def square_group(square)
+    square.match(/\d/).to_s.to_i
+  end
+
+  def square_subgroup(square)
+    square.match(/(?<=_)[a-z]/).to_s
   end
 
   def size
