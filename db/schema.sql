@@ -3,7 +3,7 @@ CREATE TYPE status_type AS ENUM ('pending', 'approved', 'rejected');
 CREATE TABLE maze_formulas (
   id serial PRIMARY KEY,
   maze_type text NOT NULL,
-  unique_maze_square_set text NOT NULL,
+  unique_square_set text NOT NULL,
   x integer NOT NULL CHECK (x > 0),
   y integer NOT NULL CHECK (y > 0),
   endpoints integer NOT NULL CHECK (endpoints >= 0),
