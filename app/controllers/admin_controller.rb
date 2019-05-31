@@ -6,6 +6,11 @@ class AdminController < ApplicationController
     erb :admin
   end
 
+  get '/admin/background-jobs' do
+    @title = "Background Jobs - Maze Craze Admin"
+    erb :background_jobs
+  end
+
   get '/admin/mazes' do
     @title = "Mazes - maze Craze Admin"
     erb :mazes
