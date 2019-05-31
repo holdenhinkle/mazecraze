@@ -19,13 +19,6 @@ class BackgroundJob
     results
   end
 
-  def query(sql, *params)
-    db = DatabaseConnection.new
-    results = db.query(sql, *params)
-    db.disconnect
-    results
-  end
-
   def self.all_jobs
     JOB_STATUSES.each_with_object({}) do |status, jobs|
       sql = "SELECT * FROM background_jobs WHERE status = $1 ORDER BY updated DESC LIMIT 10;"
@@ -40,11 +33,18 @@ class BackgroundJob
     query(sql, status)
   end
 
-  def work
+  def run
     obj.send(type) if obj.respond_to?(type) && JOB_TYPES.include?(type)
   end
 
   private
+
+  def query(sql, *params)
+    db = DatabaseConnection.new
+    results = db.query(sql, *params)
+    db.disconnect
+    results
+  end
 
   def generate_maze_formulas
   end
@@ -53,5 +53,8 @@ class BackgroundJob
   end
 
   def generate_maze_candidates
+  end
+
+  def update_job_status
   end
 end
