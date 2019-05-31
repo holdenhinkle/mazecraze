@@ -1,11 +1,11 @@
 <nav aria-label="breadcrumb" class="mt-3">
   <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="/admin">Home</a></li>
-    <li class="breadcrumb-item active" aria-current="page">Background Jobs</li>
+    <li class="breadcrumb-item active" aria-current="page">All Background Jobs</li>
   </ol>
 </nav>
 <header>
-  <h1>Background Jobs</h1>
+  <h1>All Background Jobs</h1>
 </header>
 <section>
   <% @job_statuses.each do |status| %>
@@ -40,12 +40,20 @@
             <td><%= job['created'] %></td>
             <td><%= job['updated'] %></td>
             <% if status == 'failed' %>
-              <td scope="col"></td>
+              <td scope="col">
+                <form action="/admin/background-jobs" method="post">
+                  <input type="hidden" name="job_id" value="<%= job['id'] %>">
+                  <input type="hidden" name="queue_job" value="true">
+                  <button type="type" class="btn btn-primary">Try again</button>
+                </form>
+              </td>
             <% end %>
           </tr>
         <% end %>
       </tbody>
     <table>
-    <p><a href=""><%= @jobs[(status + '_count')][0]['count'] %> more</a></p>
+    <% if @jobs[(status + '_count')][0]['count'].to_i > 10 %>
+      <p><a href=""><%= @jobs[(status + '_count')][0]['count'].to_i - 10 %> more results...</a></p>
+    <% end %>
   <% end %>
 </section>
