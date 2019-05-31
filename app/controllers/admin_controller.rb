@@ -8,6 +8,8 @@ class AdminController < ApplicationController
 
   get '/admin/background-jobs' do
     @title = "Background Jobs - Maze Craze Admin"
+    @job_statuses = BackgroundJob::JOB_STATUSES
+    @jobs = BackgroundJob.all_jobs
     erb :background_jobs
   end
 
