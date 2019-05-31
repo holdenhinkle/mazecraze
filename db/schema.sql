@@ -1,4 +1,4 @@
-CREATE TYPE status_type AS ENUM ('pending', 'approved', 'rejected');
+CREATE TYPE formula_status AS ENUM ('pending', 'approved', 'rejected');
 
 CREATE TABLE maze_formulas (
   id serial PRIMARY KEY,
@@ -12,7 +12,7 @@ CREATE TABLE maze_formulas (
   tunnels integer NOT NULL DEFAULT 0,
   portals integer NOT NULL DEFAULT 0,
   experiment boolean NOT NULL DEFAULT FALSE,
-  status status_type NOT NULL DEFAULT 'pending',
+  status formula_status NOT NULL DEFAULT 'pending',
   created timestamp NOT NULL DEFAULT NOW(),
   updated timestamp NOT NULL DEFAULT NOW()
 );
