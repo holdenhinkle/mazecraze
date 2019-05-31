@@ -13,6 +13,22 @@ class AdminController < ApplicationController
     erb :background_jobs
   end
 
+  post '/admin/background-jobs' do
+    binding.pry
+    redirect "/admin/background-jobs"
+  end
+
+  get '/admin/background-jobs/:status' do
+    status = params[:status]
+    if !BackgroundJob::JOB_STATUSES.include?(status)
+      session[:error] = "The page you requested doesn't exist."
+      redirect '/admin'
+    end
+    @title = "#{status.capitalize} Background Jobs - Maze Craze Admin"
+    @jobs = BackgroundJob.all_jobs_of_status_type(status)
+    erb :background_jobs_status
+  end
+
   get '/admin/mazes' do
     @title = "Mazes - maze Craze Admin"
     erb :mazes
