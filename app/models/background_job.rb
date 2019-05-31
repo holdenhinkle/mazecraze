@@ -35,6 +35,11 @@ class BackgroundJob
     end
   end
 
+  def self.all_jobs_of_status_type(status)
+    sql = "SELECT * FROM background_jobs WHERE status = $1 ORDER BY updated DESC;"
+    query(sql, status)
+  end
+
   def work
     obj.send(type) if obj.respond_to?(type) && JOB_TYPES.include?(type)
   end
