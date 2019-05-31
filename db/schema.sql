@@ -42,7 +42,7 @@ CREATE TABLE background_jobs (
   id serial PRIMARY KEY,
   job_type job_type NOT NULL,
   params text NOT NULL,
-  status job_status NOT NULL DEFAULT 'pending',
+  status job_status NOT NULL DEFAULT 'queued',
   pid TEXT,
   system_message text,
   created timestamp NOT NULL DEFAULT NOW(),
