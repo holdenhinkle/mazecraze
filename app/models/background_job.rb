@@ -5,7 +5,7 @@ class BackgroundJob
 
   JOB_STATUSES = %w(queued processing completed failed).freeze
 
-  attr_reader :job_type, :params
+  attr_reader :type, :params
 
   def initialize(job)
     @type = job[:type]
@@ -31,6 +31,11 @@ class BackgroundJob
   def self.all_jobs_of_status_type(status)
     sql = "SELECT * FROM background_jobs WHERE status = $1 ORDER BY updated DESC;"
     query(sql, status)
+  end
+
+  def save!
+    sql = "INSERT INTO background_jobs (job_type, params) VALUES ($1, $2);"
+    query(sql, type, params)
   end
 
   def run

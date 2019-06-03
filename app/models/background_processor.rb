@@ -1,10 +1,14 @@
-class BackgroundJobProcessor
+class BackgroundProcessor
+  def initialize; end
+
   def self.query(sql, *params)
     db = DatabaseConnection.new
     results = db.query(sql, *params)
     db.disconnect
     results
   end
+
+  def save!; end
 
   def run
     job = next_queued_job

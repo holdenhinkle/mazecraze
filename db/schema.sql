@@ -51,7 +51,7 @@ CREATE TABLE background_jobs (
   job_type job_type NOT NULL,
   params text NOT NULL,
   status job_status NOT NULL DEFAULT 'queued',
-  ppid integer REFERENCES background_processed(ID),
+  ppid integer REFERENCES background_processes(ID),
   pid integer,
   system_message text,
   created timestamp NOT NULL DEFAULT NOW(),
