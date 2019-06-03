@@ -33,6 +33,11 @@ class BackgroundJob
     query(sql, status)
   end
 
+  def self.next_queued_job
+    sql = "SELECT * FROM background_jobs WHERE status = $1 ORDER BY created LIMIT 1;"
+    query(sql, 'queued')
+  end
+
   def save!
     sql = "INSERT INTO background_jobs (job_type, params) VALUES ($1, $2);"
     query(sql, type, params)
@@ -52,6 +57,10 @@ class BackgroundJob
   end
 
   def generate_maze_formulas
+    generated_formula_stats = MazeFormula.generate_formulas
+    new_message = "#{generated_formula_stats[:new]} new maze formulas were created."
+    existed_message = "#{generated_formula_stats[:existed]} formulas already existed."
+    AdminNotification.new(new_message + ' ' + existed_message).save!
   end
 
   def generate_maze_permutations
