@@ -57,3 +57,11 @@ CREATE TABLE background_jobs (
   created timestamp NOT NULL DEFAULT NOW(),
   updated timestamp NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE admin_notifications (
+  id serial PRIMARY KEY,
+  notification TEXT NOT NULL,
+  delivered BOOLEAN NOT NULL DEFAULT FALSE,
+  created timestamp NOT NULL DEFAULT NOW(),
+  updated timestamp NOT NULL DEFAULT NOW()
+);
