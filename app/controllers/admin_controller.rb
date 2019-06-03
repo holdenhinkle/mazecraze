@@ -63,10 +63,8 @@ class AdminController < ApplicationController
     if params['generate_formulas']
       # check if request is already in the queue
       BackgroundJob.new({ type: 'generate_maze_formulas', params: [] }).save!
-      # generated_formula_stats = MazeFormula.generate_formulas if params['generate_formulas']
-      # new_message = "#{generated_formula_stats[:new]} new maze formulas were created."
-      # existed_message = "#{generated_formula_stats[:existed]} formulas already existed."
       session[:success] = "The task 'Generate Maze Formulas' was sent to the queue. You will be notified when it's complete."
+      BackgroundJobProcessor.new.run if BackgroundJob.all_jobs_of_status_type('processing').values.none?
       redirect "/admin/mazes/formulas"
     end
     session[:error] = "The page you requested doesn't exist."
