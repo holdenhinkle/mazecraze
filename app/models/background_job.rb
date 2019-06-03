@@ -44,7 +44,7 @@ class BackgroundJob
   end
 
   def run
-    obj.send(type) if obj.respond_to?(type) && JOB_TYPES.include?(type)
+    send(type) if respond_to?(type.to_sym, :include_private) && JOB_TYPES.include?(type)
   end
 
   private
