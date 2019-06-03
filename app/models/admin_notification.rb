@@ -1,7 +1,7 @@
 class AdminNotification
   attr_reader :notification
 
-  def initilaize(notification)
+  def initialize(notification)
     @notification = notification
   end
 
