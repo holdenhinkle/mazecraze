@@ -64,7 +64,13 @@ class AdminController < ApplicationController
       # check if request is already in the queue
       BackgroundJob.new({ type: 'generate_maze_formulas', params: [] }).save!
       session[:success] = "The task 'Generate Maze Formulas' was sent to the queue. You will be notified when it's complete."
-      BackgroundJobProcessor.new.run if BackgroundJob.all_jobs_of_status_type('processing').values.none?
+      # if BackgroundJob.all_jobs_of_status_type('processing').values.none?
+      if !BackgroundJobProcessor.running?
+        background_processor = BackgroundJobProcessor.new
+        background_processor.enqueue
+        background_processor.run
+      end
+      # BackgroundJobProcessor.new.run if BackgroundJob.all_jobs_of_status_type('processing').values.none?
       redirect "/admin/mazes/formulas"
     end
     session[:error] = "The page you requested doesn't exist."
@@ -117,11 +123,21 @@ class AdminController < ApplicationController
       MazeFormula.update_status(params[:formula_id], params[:update_status_to]) # change to instance method
       session[:success] = "The status for Maze Formula ID:#{params[:formula_id]} was updated to '#{params[:update_status_to]}'."
     elsif params['generate_formulas']
-      maze_formula_class = MazeFormula.maze_formula_type_to_class(params['maze_type'])
-      generated_formula_stats = MazeFormula.generate_formulas([maze_formula_class])
-      new_message = "#{generated_formula_stats[:new]} new #{params['maze_type'].upcase} maze formulas were created."
-      existed_message = "#{generated_formula_stats[:existed]} #{params['maze_type'].upcase} maze formulas already existed."
-      session[:success] = new_message + ' ' + existed_message
+      # check if request is already in the queue
+      BackgroundJob.new({ type: 'generate_maze_formulas', params: { 'maze_type' => params['maze_type'] } }).save!
+      session[:success] = "The task 'Generate Maze Formulas' was sent to the queue. You will be notified when it's complete."
+      binding.pry
+      if !BackgroundJobProcessor.running?
+        background_processor = BackgroundJobProcessor.new
+        background_processor.enqueue
+        background_processor.run
+      end
+      # BackgroundJobProcessor.new.enqueue.run if BackgroundJob.all_jobs_of_status_type('processing').values.none?
+      # maze_formula_class = MazeFormula.maze_formula_type_to_class(params['maze_type'])
+      # generated_formula_stats = MazeFormula.generate_formulas([maze_formula_class])
+      # new_message = "#{generated_formula_stats[:new]} new #{params['maze_type'].upcase} maze formulas were created."
+      # existed_message = "#{generated_formula_stats[:existed]} #{params['maze_type'].upcase} maze formulas already existed."
+      # session[:success] = new_message + ' ' + existed_message
     end
     redirect "/admin/mazes/formulas/#{params['maze_type']}"
   end
