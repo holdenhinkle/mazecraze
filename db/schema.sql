@@ -34,15 +34,27 @@ CREATE TABLE maze_candidates (
   updated timestamp NOT NULL DEFAULT NOW()
 );
 
+CREATE TYPE worker_status AS ENUM ('active', 'killed');
+
+CREATE TABLE background_workers (
+  id serial PRIMARY KEY,
+  object_id integer NOT NULL,
+  status text DEFAULT 'active',
+  created timestamp NOT NULL DEFAULT NOW(),
+  updated timestamp NOT NULL DEFAULT NOW()
+);
+
 CREATE TYPE job_type AS ENUM ('generate_maze_formulas', 'generate_maze_permutations', 'generate_maze_candidates');
 
-CREATE TYPE job_status AS ENUM ('queued', 'processing', 'completed', 'failed');
+CREATE TYPE job_status AS ENUM ('queued', 'running', 'completed', 'failed');
 
 CREATE TABLE background_jobs (
   id serial PRIMARY KEY,
   job_type job_type NOT NULL,
   params text NOT NULL,
   status job_status NOT NULL DEFAULT 'queued',
+  worker_id integer REFERENCES background_workers(id),
+  thread_object_id INTEGER,
   system_message text,
   created timestamp NOT NULL DEFAULT NOW(),
   updated timestamp NOT NULL DEFAULT NOW()
