@@ -34,12 +34,12 @@ CREATE TABLE maze_candidates (
   updated timestamp NOT NULL DEFAULT NOW()
 );
 
-CREATE TYPE worker_status AS ENUM ('active', 'killed');
+CREATE TYPE worker_status AS ENUM ('alive', 'dead');
 
 CREATE TABLE background_workers (
   id serial PRIMARY KEY,
-  object_id integer NOT NULL,
-  status text DEFAULT 'active',
+  object_id bigint NOT NULL,
+  status text DEFAULT 'alive',
   created timestamp NOT NULL DEFAULT NOW(),
   updated timestamp NOT NULL DEFAULT NOW()
 );
@@ -54,7 +54,7 @@ CREATE TABLE background_jobs (
   params text NOT NULL,
   status job_status NOT NULL DEFAULT 'queued',
   worker_id integer REFERENCES background_workers(id),
-  thread_object_id INTEGER,
+  thread_object_id bigint,
   system_message text,
   created timestamp NOT NULL DEFAULT NOW(),
   updated timestamp NOT NULL DEFAULT NOW()
@@ -67,3 +67,15 @@ CREATE TABLE admin_notifications (
   created timestamp NOT NULL DEFAULT NOW(),
   updated timestamp NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE settings (
+  id serial PRIMARY KEY,
+  name text NOT NULL,
+  integer_value integer,
+  text_value text,
+  updated_by text NOT NULL,
+  created timestamp NOT NULL DEFAULT NOW(),
+  updated timestamp NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO settings (name, integer_value, updated_by) VALUES ('number_of_threads', 1, 'default setting');
