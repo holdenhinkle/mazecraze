@@ -3,14 +3,16 @@ class BackgroundJob
                  generate_maze_permutations
                  generate_maze_candidates).freeze
 
-  JOB_STATUSES = %w(queued processing completed failed).freeze
+  JOB_STATUSES = %w(running queued completed failed).freeze
 
-  attr_reader :id, :type, :params
+  attr_reader :id, :type, :params, :worker_id, :thread_object_id
 
   def initialize(job)
-    @id = job[:id] # refactor - doesn't exist upon job creation
+    @id = job[:id] # refactor - doesn't exist when first saving to db
     @type = job[:type]
     @params = job[:params] # refactor - sometimes doesn't exist - depends on job type
+    @worker_id = job[:worker_id]
+    @thread_object_id = job[:thread_object_id]
   end
 
   def self.query(sql, *params)
@@ -44,6 +46,16 @@ class BackgroundJob
     query(sql, type, params.to_json)
   end
 
+  def update_job_is_running
+    sql = "UPDATE background_jobs SET status = $1, worker_id = $2, thread_object_id = $3, updated = $4 WHERE id = $5;"
+    query(sql, 'running', worker_id, thread_object_id, 'NOW()', id)
+  end
+
+  def update_job_status(status)
+    sql = "UPDATE background_jobs SET status = $1, updated = $2 WHERE id = $3;"
+    query(sql, status, 'NOW()', id)
+  end
+
   def run
     send(type) if respond_to?(type.to_sym, :include_private) && JOB_TYPES.include?(type)
   end
@@ -58,8 +70,7 @@ class BackgroundJob
   end
 
   def generate_maze_formulas
-    update_job_status('processing')
-    # must update job to 'running'
+    update_job_is_running
     if params.empty?
       generated_formula_stats = MazeFormula.generate_formulas
     else
@@ -76,10 +87,5 @@ class BackgroundJob
   end
 
   def generate_maze_candidates
-  end
-
-  def update_job_status(status)
-    sql = "UPDATE background_jobs SET status = $1 WHERE id = $2;"
-    query(sql, status, id)
   end
 end
