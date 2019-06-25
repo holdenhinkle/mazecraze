@@ -37,8 +37,8 @@ class BackgroundWorker
   end
 
   def self.update_number_of_threads(number)
-    sql = 'UPDATE settings SET integer_value = $1 WHERE name = $2;'
-    query(sql, number.to_i, 'number_of_threads')
+    sql = 'UPDATE settings SET integer_value = $1, updated = $2 WHERE name = $3;'
+    query(sql, number.to_i, 'NOW()', 'number_of_threads')
   end
 
   def enqueue_jobs
