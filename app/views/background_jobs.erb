@@ -15,14 +15,19 @@
         <tr>
           <th scope="col">#</th>
           <th scope="col">ID</th>
-          <th scope="col">job_type</th>
-          <th scope="col">params</th>
-          <th scope="col">status</th>
-          <th scope="col">pid</th>
-          <th scope="col">system_message</th>                        
-          <th scope="col">created</th>
-          <th scope="col">updated</th>
-          <% if status == 'failed' %>
+          <th scope="col">Job Type</th>
+          <th scope="col">Params</th>
+          <th scope="col">Status</th>
+          <% if status == 'queued' %>
+            <th scope="col">Assigned to Worker ID</th>
+          <% end %>  
+          <% if status == 'running' || status == 'failed' %>
+            <th scope="col">Worker ID</th>
+            <th scope="col">Thread ID</th>
+          <% end %>                      
+          <th scope="col">Created</th>
+          <th scope="col">Updated</th>
+          <% unless status == 'completed' %>
             <th scope="col"></th>
           <% end %>
         </tr>
@@ -35,16 +40,42 @@
             <td><%= job['job_type'] %></td>
             <td><%= job['params'] %></td>
             <td><%= job['status'] %></td>
-            <td><%= job['pid'] %></td>
-            <td><%= job['system_message'] %></td>
+            <% if status == 'queued' %>
+              <td><%= job['background_worker_id'] %></td>
+            <% end %>  
+            <% if status == 'running' || status == 'failed' %>  
+              <td><%= job['background_worker_id'] %></td>          
+              <td><%= job['background_thread_id'] %></td>
+            <% end %>
             <td><%= job['created'] %></td>
             <td><%= job['updated'] %></td>
+            <% if status == 'queued' %>
+              <td scope="col">
+                <form action="/admin/background-jobs" method="post">
+                  <input type="hidden" name="delete" value="true">
+                  <input type="hidden" name="id" value="<%= job['id'] %>">
+                  <input type="hidden" name="background_worker_id" value="<%= job['background_worker_id'] %>">
+                  <button type="type" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+              </td>
+            <% end %>
+            <% if status == 'running' %>
+              <td scope="col">
+                <form action="/admin/background-jobs" method="post">
+                  <input type="hidden" name="cancel" value="true">
+                  <input type="hidden" name="id" value="<%= job['id'] %>">
+                  <input type="hidden" name="background_worker_id" value="<%= job['background_worker_id'] %>">
+                  <input type="hidden" name="background_thread_id" value="<%= job['background_thread_id'] %>">
+                  <button type="type" class="btn btn-danger btn-sm">Cancel</button>
+                </form>
+              </td>
+            <% end %>
             <% if status == 'failed' %>
               <td scope="col">
                 <form action="/admin/background-jobs" method="post">
-                  <input type="hidden" name="job_id" value="<%= job['id'] %>">
-                  <input type="hidden" name="queue_job" value="true">
-                  <button type="type" class="btn btn-primary">Try again</button>
+                  <input type="hidden" name="id" value="<%= job['id'] %>">
+                  <input type="hidden" name="queue" value="true">
+                  <button type="type" class="btn btn-success btn-sm">Try again</button>
                 </form>
               </td>
             <% end %>

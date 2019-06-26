@@ -2,26 +2,25 @@ class BackgroundWorker
   MIN_THREADS = 1
   MAX_THREADS = 10
 
-  attr_reader :db_id, :number_of_threads, :jobs
-  attr_accessor :threads, :deleted_jobs
-
-  @workers = []
+  @all = []
 
   class << self
-    attr_accessor :workers
+    attr_accessor :all
   end
 
-  def initialize(number_of_threads = 1)
-    self.class.workers << self
-    @db_id = nil
-    @number_of_threads = number_of_threads
+  attr_reader :number_of_threads, :jobs
+  attr_accessor :id, :threads, :deleted_jobs
+
+  def initialize
+    self.class.all << self
+    @id = nil
+    @number_of_threads = self.class.number_of_threads
     @threads = []
     @deleted_jobs = []
     @jobs = Queue.new
-    save_worker!
-    set_db_id
+    save!
     enqueue_jobs
-    run
+    work
   end
 
   def self.query(sql, *params)
@@ -31,6 +30,10 @@ class BackgroundWorker
     results
   end
 
+  def self.worker_from_id(worker_id)
+    all.each { |worker| return worker if worker.id == worker_id }
+  end
+
   def self.number_of_threads
     sql = 'SELECT integer_value FROM settings WHERE name = $1;'
     query(sql, 'number_of_threads').first['integer_value'].to_i
@@ -38,39 +41,29 @@ class BackgroundWorker
 
   def self.update_number_of_threads(number)
     sql = 'UPDATE settings SET integer_value = $1, updated = $2 WHERE name = $3;'
-    query(sql, number.to_i, 'NOW()', 'number_of_threads')
+    query(sql, number, 'NOW()', 'number_of_threads')
+    # kill current threads
+    # stop worker
+    # start new worker
   end
 
   def enqueue_jobs
-    BackgroundJob.all_jobs_of_status_type('queued').each do |job|
-      enqueue_job(job)
-    end
+    BackgroundJob.all.each { |job| enqueue_job(job) if job.status == 'queued' }
   end
 
   def enqueue_job(job)
-    jobs << { id: job['id'],
-              type: job['job_type'],
-              params: JSON.parse(job['params']) }
-    sql = "UPDATE background_jobs SET worker_id = $1 WHERE id = $2;"
-    query(sql, db_id, job['id'])
+    jobs << job
+    sql = 'UPDATE background_jobs SET background_worker_id = $1, updated = $2 WHERE id = $3;'
+    query(sql, id, 'NOW()', job.id)
   end
 
   def self.active_worker
-    workers.each do |worker|
+    all.each do |worker|
       worker.threads.each do |thread|
         return worker if thread.alive? && worker.queue_open?
       end
     end
     nil
-  end
-
-  def self.object_id_from_db_id(db_id)
-    sql = "SELECT object_id FROM background_workers WHERE id = $1;"
-    query(sql, db_id)
-  end
-
-  def self.worker_from_object_id(object_id)
-    workers.each { |worker| return worker if worker.object_id == object_id }
   end
 
   def still_active?
@@ -84,16 +77,33 @@ class BackgroundWorker
 
   def delete_job(job_id)
     deleted_jobs << job_id
-    sql = "DELETE FROM background_jobs WHERE id = $1;"
-    query(sql, job_id)
   end
 
-  def kill_job(thread_object_id)
-    # undo what's been done so far
-    # set status to 'queued'
-    threads.each do |thread|
-      return thread.kill if thread.object_id == thread_object_id
+  def kill_one_job(thread_id, job_id)
+    BackgroundThread.all.each do |background_thread|
+      if background_thread.id == thread_id
+        thread = background_thread.thread
+        kill_job(thread, job_id) # kill thread job is running on
+        threads.delete(thread) # delete thread from threads array
+        new_thread # replace killed thread with new thread
+        break
+      end
     end
+  end
+
+  def kill_all_jobs
+    # UPDATE THIS - MUST SEND job_id TO kill_job
+    BackgroundThread.all.each { |thread| kill_job(thread) }
+    stop!
+  end
+
+  def kill_job(thread, job_id)
+    Thread.kill(thread)
+    job = BackgroundJob.job_from_id(job_id)
+    job.update_job_status('queued')
+    job.update_job_thread_id(nil)
+    job.undo
+    enqueue_job(job)
   end
 
   private
@@ -105,42 +115,35 @@ class BackgroundWorker
     results
   end
 
-  def save_worker!
-    sql = "INSERT INTO background_workers (object_id) VALUES($1);"
-    query(sql, object_id)
+  def save!
+    sql = "INSERT INTO background_workers DEFAULT VALUES RETURNING id;"
+    self.id = query(sql).first['id']
   end
 
-  def update_worker_is_dead!
-    sql = "UPDATE background_workers SET status = $1, updated = $2;"
-    query(sql, 'dead', 'NOW()')
+  def update_worker_status(status)
+    sql = "UPDATE background_workers SET status = $1, updated = $2 WHERE id = $3;"
+    query(sql, status, 'NOW()', id)
   end
 
-  def retrieve_worker_db_id
-    sql = "SELECT id FROM background_workers WHERE object_id = $1;"
-    query(sql, object_id)
+  def work
+    number_of_threads.times { new_thread }
   end
 
-  def set_db_id
-    @db_id = retrieve_worker_db_id.first['id']
-  end
-
-  def run # rename to work
-    number_of_threads.times do
-      threads << Thread.new do
-        while queue_open? || jobs?
-          job = wait_for_job
-          if job && deleted_jobs.include?(job[:id])
-            deleted_jobs.delete(job[:id])
-            next
-          elsif job
-            job[:worker_id] = db_id
-            job[:thread_object_id] = Thread.current.object_id
-            BackgroundJob.new(job).run
-          end
+  def new_thread
+    threads << thread = Thread.new do
+      thread = BackgroundThread.new(id, thread)
+      while queue_open? || jobs?
+        job = wait_for_job
+        if job && deleted_jobs.include?(job.id)
+          deleted_jobs.delete(job.id)
+          next
+        elsif job
+          job.background_thread_id = thread.id
+          job.run
         end
       end
-      stop! unless queue_open? || jobs?
     end
+    stop! unless queue_open? || jobs?
   end
 
   def jobs?
@@ -154,8 +157,7 @@ class BackgroundWorker
   def stop!
     jobs.close
     threads.each(&:join).each(&:exit).clear
-    update_worker_is_dead!
-    self.class.workers.delete(self)
-    true
+    update_worker_status('dead')
+    self.class.all.delete(self)
   end
 end

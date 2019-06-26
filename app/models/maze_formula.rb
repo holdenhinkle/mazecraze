@@ -12,12 +12,14 @@ class MazeFormula
   BARRIER_MIN = 0
   BARRIER_MAX = 3
 
-  attr_reader :maze_type, :x, :y,
+  attr_reader :background_job_id,
+              :maze_type, :x, :y,
               :endpoints, :barriers, :bridges,
               :tunnels, :portals, :experiment,
               :unique_square_set
 
   def initialize(formula)
+    @background_job_id = formula['background_job_id']
     @maze_type = formula['maze_type']
     @x = integer_value(formula['x'])
     @y = integer_value(formula['y'])
@@ -59,7 +61,7 @@ class MazeFormula
     Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
   end
 
-  def self.generate_formulas(classes = maze_formula_classes)
+  def self.generate_formulas(background_job_id, classes = maze_formula_classes)
     new_formula_count = 0
     existed_formula_count = 0
 
@@ -69,6 +71,7 @@ class MazeFormula
           BARRIER_MIN.upto(BARRIER_MAX) do |num_barriers|
             next if num_endpoints == 1 && num_barriers == 0
             maze_class.generate_formulas(dimensions, num_endpoints, num_barriers) do |formula|
+              formula['background_job_id'] = background_job_id
               formulas << formula
             end
           end
@@ -198,22 +201,21 @@ class MazeFormula
     validation
   end
 
-  def save! # rename this to save_formula! or something
+  def save!
     sql = <<~SQL
       INSERT INTO maze_formulas 
-      (maze_type, unique_square_set, x, y, endpoints, barriers, bridges, tunnels, portals, experiment) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
+      (background_job_id, maze_type, unique_square_set, x, y, endpoints, barriers, bridges, tunnels, portals, experiment) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
     SQL
 
-    query(sql.gsub!("\n", ""), maze_type, unique_square_set, x, y, endpoints,
+    query(sql.gsub!("\n", ""), background_job_id, maze_type, unique_square_set, x, y, endpoints,
     barriers, bridges, tunnels, portals, experiment)
   end
 
-  # IS THERE A BETTER PLACE TO PUT THIS
+  # IS THERE A BETTER PLACE TO PUT THIS:
   def self.status_list
     %w(pending approved rejected)
   end
-  # END COMMENT
 
   def self.count_by_type_and_status(maze_type, status)
     sql = "SELECT count(maze_type) FROM maze_formulas WHERE maze_type = $1 AND status = $2;"

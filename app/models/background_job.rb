@@ -5,14 +5,25 @@ class BackgroundJob
 
   JOB_STATUSES = %w(running queued completed failed).freeze
 
-  attr_reader :id, :type, :params, :worker_id, :thread_object_id
+  @all = []
+
+  class << self
+    attr_accessor :all
+  end
+
+  attr_reader :type, :params, :thread_id
+  attr_accessor :id, :background_worker_id,
+                :background_thread_id, :status
 
   def initialize(job)
-    @id = job[:id] # refactor - doesn't exist when first saving to db
+    self.class.all << self
+    @id = job[:id]
+    @background_worker_id = nil
+    @background_thread_id = nil
     @type = job[:type]
-    @params = job[:params] # refactor - sometimes doesn't exist - depends on job type
-    @worker_id = job[:worker_id]
-    @thread_object_id = job[:thread_object_id]
+    @params = job[:params]
+    @status = 'queued'
+    save!
   end
 
   def self.query(sql, *params)
@@ -20,6 +31,10 @@ class BackgroundJob
     results = db.query(sql, *params)
     db.disconnect
     results
+  end
+
+  def self.job_from_id(job_id)
+    all.each { |job| return job if job.id == job_id }
   end
 
   def self.all_jobs
@@ -36,28 +51,58 @@ class BackgroundJob
     query(sql, status)
   end
 
-  def self.last_job_added
-    sql = "SELECT id, job_type, params FROM background_jobs ORDER BY created DESC LIMIT 1;"
-    query(sql)
+  def self.delete_job_from_db(job_id)
+    # all results from running this job will be deleted when job is deleted from database
+    sql = "DELETE FROM background_jobs WHERE id = $1;"
+    query(sql, job_id)
   end
 
   def save!
-    sql = "INSERT INTO background_jobs (job_type, params) VALUES ($1, $2);"
-    query(sql, type, params.to_json)
+    sql = "INSERT INTO background_jobs (job_type, params, status) VALUES ($1, $2, $3) RETURNING id;"
+    self.id = query(sql, type, params.to_json, status).first['id']
   end
 
   def update_job_is_running
-    sql = "UPDATE background_jobs SET status = $1, worker_id = $2, thread_object_id = $3, updated = $4 WHERE id = $5;"
-    query(sql, 'running', worker_id, thread_object_id, 'NOW()', id)
+    self.status = 'running'
+    sql = "UPDATE background_jobs SET status = $1, background_thread_id = $2, updated = $3 WHERE id = $4;"
+    query(sql, status, background_thread_id, 'NOW()', id)
   end
 
-  def update_job_status(status)
+  def update_job_status(job_status)
+    self.status = job_status
     sql = "UPDATE background_jobs SET status = $1, updated = $2 WHERE id = $3;"
     query(sql, status, 'NOW()', id)
   end
 
+  def update_job_thread_id(thread_id)
+    self.background_thread_id = thread_id
+    sql = "UPDATE background_jobs SET background_thread_id = $1, updated = $2 WHERE id = $3;"
+    query(sql, background_thread_id, 'NOW()', id)
+  end
+
   def run
-    send(type) if respond_to?(type.to_sym, :include_private) && JOB_TYPES.include?(type)
+    send(type) if respond_to?(type.to_sym, :include_private) &&
+                  JOB_TYPES.include?(type)
+  end
+
+  # def undo
+  #   method_name = 'undo_' + type
+  #   send(method_name) if respond_to?(method_name.to_sym, :include_private) &&
+  #                        JOB_TYPES.include?(type)
+  # end
+
+  def undo
+    table_name = case type
+                 when 'generate_maze_formulas'
+                   'maze_formulas'
+                 when 'generate_maze_permutations'
+                   'maze_formula_set_permutations'
+                 when 'generate_maze_candidates'
+                   'maze_candidates'
+                 end
+
+    sql = "DELETE FROM #{table_name} WHERE background_job_id = $1;"
+    query(sql, id)
   end
 
   private
@@ -72,15 +117,16 @@ class BackgroundJob
   def generate_maze_formulas
     update_job_is_running
     if params.empty?
-      generated_formula_stats = MazeFormula.generate_formulas
+      generated_formula_stats = MazeFormula.generate_formulas(id.to_i)
     else
       maze_formula_class = MazeFormula.maze_formula_type_to_class(params['maze_type'])
-      generated_formula_stats = MazeFormula.generate_formulas([maze_formula_class]) # refactor - i don't like that I have to pass a one element array
+      generated_formula_stats = MazeFormula.generate_formulas(id.to_i, [maze_formula_class]) # refactor - i don't like that I have to pass a one element array
     end
     new_message = "#{generated_formula_stats[:new]} new maze formulas were created."
     existed_message = "#{generated_formula_stats[:existed]} formulas already existed."
     AdminNotification.new(new_message + ' ' + existed_message).save!
     update_job_status('completed')
+    # remove job from jobs array - doesn't need to exist in memory anymore because it will never be used again
   end
 
   def generate_maze_permutations
@@ -88,4 +134,15 @@ class BackgroundJob
 
   def generate_maze_candidates
   end
+
+  # def undo_generate_maze_formulas
+  #   sql = 'DELETE FROM maze_formulas WHERE background_job_id = $1;'
+  #   query(sql, id)
+  # end
+
+  # def undo_generate_maze_permutations
+  # end
+
+  # def undo_generate_maze_candidates
+  # end
 end

@@ -16,7 +16,7 @@ class AdminController < ApplicationController
 
   post '/admin/settings' do
     if params['number_of_threads']
-      BackgroundWorker.update_number_of_threads(params['number_of_threads'])
+      BackgroundWorker.update_number_of_threads(params['number_of_threads'].to_i)
       session[:success] = "The settings have been updated."
     end
     redirect '/admin/settings'
@@ -30,14 +30,14 @@ class AdminController < ApplicationController
   end
 
   post '/admin/background-jobs' do
-    # REDO THIS OBJECT_ID STUFF
-    object_id = BackgroundWorker.object_id_from_db_id(params[:worker_id])[0]['object_id']
-    worker = BackgroundWorker.worker_from_object_id(object_id)[0]
+    worker = BackgroundWorker.worker_from_id(params['background_worker_id'])
     if params['delete']
-      worker.delete_job(params[:job_id])
+      if params['background_worker_id'] != ''
+        worker.delete_job(params[:job_id])
+      end
+      BackgroundJob.delete_job_from_db(params['id'])
     elsif params['cancel']
-    # worker.kill_job(params[:thread_object_id])
-    # update job status
+      worker.kill_one_job(params['background_thread_id'], params['id'])
     elsif params['queue']
     end
     redirect "/admin/background-jobs"
@@ -87,12 +87,12 @@ class AdminController < ApplicationController
   post '/admin/mazes/formulas' do
     if params['generate_formulas']
       # check if request is already in the queue
-      BackgroundJob.new({ type: 'generate_maze_formulas', params: [] }).save!
+      BackgroundJob.new({ type: 'generate_maze_formulas', params: [] })
       session[:success] = "The task 'Generate Maze Formulas' was sent to the queue. You will be notified when it's complete."
       if (worker = BackgroundWorker.active_worker).nil?
         BackgroundWorker.new
       else
-        worker.enqueue_job(BackgroundJob.last_job_added.first)
+        worker.enqueue_job(BackgroundJob.all.last)
         BackgroundWorker.new unless worker.still_active?
       end
       redirect "/admin/mazes/formulas"
@@ -152,12 +152,12 @@ class AdminController < ApplicationController
       session[:success] = "The status for Maze Formula ID:#{params[:formula_id]} was updated to '#{params[:update_status_to]}'."
     elsif params['generate_formulas']
       # check if request is already in the queue
-      BackgroundJob.new({ type: 'generate_maze_formulas', params: { 'maze_type' => params['maze_type'] } }).save!
+      BackgroundJob.new({ type: 'generate_maze_formulas', params: { 'maze_type' => params['maze_type'] } })
       session[:success] = "The task 'Generate Maze Formulas' was sent to the queue. You will be notified when it's complete."
       if (worker = BackgroundWorker.active_worker).nil?
         BackgroundWorker.new
       else
-        worker.enqueue_job(BackgroundJob.last_job_added.first)
+        worker.enqueue_job(BackgroundJob.all.last)
         BackgroundWorker.new unless worker.still_active?
       end
     end

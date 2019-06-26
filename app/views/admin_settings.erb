@@ -11,7 +11,8 @@
   <form action="/admin/settings" method="post">
     <h3>Background Workers</h3>
     <div class="form-group">
-      <label for="number_of_threads">Number of Workers (threads)</label>
+      <label for="number_of_threads"><strong>Number of Threads</strong></label>
+        <p>If you change the number of threads, all current jobs will be killed and will start over.</p>
         <select class="custom-select" name="number_of_threads" id="number_of_threads">
           <% @min_max_threads[:min].upto(@min_max_threads[:max]) do |number| %>
             <% if number == @number_of_threads %>
