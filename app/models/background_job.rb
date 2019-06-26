@@ -85,12 +85,6 @@ class BackgroundJob
                   JOB_TYPES.include?(type)
   end
 
-  # def undo
-  #   method_name = 'undo_' + type
-  #   send(method_name) if respond_to?(method_name.to_sym, :include_private) &&
-  #                        JOB_TYPES.include?(type)
-  # end
-
   def undo
     table_name = case type
                  when 'generate_maze_formulas'
@@ -134,15 +128,4 @@ class BackgroundJob
 
   def generate_maze_candidates
   end
-
-  # def undo_generate_maze_formulas
-  #   sql = 'DELETE FROM maze_formulas WHERE background_job_id = $1;'
-  #   query(sql, id)
-  # end
-
-  # def undo_generate_maze_permutations
-  # end
-
-  # def undo_generate_maze_candidates
-  # end
 end
