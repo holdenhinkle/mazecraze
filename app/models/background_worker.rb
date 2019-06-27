@@ -98,6 +98,7 @@ class BackgroundWorker
 
   def kill_job(background_thread, job_id)
     Thread.kill(background_thread.thread)
+    background_thread.update_thread_status('dead')
     BackgroundThread.all.delete(background_thread)
     job = BackgroundJob.job_from_id(job_id)
     job.update_job_status('queued')
