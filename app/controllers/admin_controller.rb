@@ -33,11 +33,11 @@ class AdminController < ApplicationController
     worker = BackgroundWorker.worker_from_id(params['background_worker_id'])
     if params['delete']
       if params['background_worker_id'] != ''
-        worker.delete_job(params[:job_id])
+        worker.delete_job(params['id'])
       end
       BackgroundJob.delete_job_from_db(params['id'])
     elsif params['cancel']
-      worker.kill_one_job(params['background_thread_id'], params['id'])
+      worker.kill_specific_job(params['background_thread_id'], params['id'])
     elsif params['queue']
     end
     redirect "/admin/background-jobs"

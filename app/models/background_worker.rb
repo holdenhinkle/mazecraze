@@ -79,12 +79,11 @@ class BackgroundWorker
     deleted_jobs << job_id
   end
 
-  def kill_one_job(thread_id, job_id)
+  def kill_specific_job(thread_id, job_id)
     BackgroundThread.all.each do |background_thread|
       if background_thread.id == thread_id
-        thread = background_thread.thread
-        kill_job(thread, job_id) # kill thread job is running on
-        threads.delete(thread) # delete thread from threads array
+        kill_job(background_thread, job_id) # kill thread job is running on
+        threads.delete(background_thread.thread) # delete thread from threads array
         new_thread # replace killed thread with new thread
         break
       end
@@ -97,8 +96,9 @@ class BackgroundWorker
     stop!
   end
 
-  def kill_job(thread, job_id)
-    Thread.kill(thread)
+  def kill_job(background_thread, job_id)
+    Thread.kill(background_thread.thread)
+    BackgroundThread.all.delete(background_thread)
     job = BackgroundJob.job_from_id(job_id)
     job.update_job_status('queued')
     job.update_job_thread_id(nil)
