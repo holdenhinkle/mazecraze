@@ -8,6 +8,20 @@
   <h1>All Background Jobs</h1>
 </header>
 <section>
+  <% if @background_workers_status %>
+    <h3>Background Jobs System Status: Running</h3>
+    <p>Shutdown</p>
+    <p>If you press 'Shutdown', all jobs that are running will be killed and be put back in the queue.</p>
+    <h5>Thread Status</h5>
+    <p>Maximum number of threads possible (<a href="/admin/settings">see settings</a>): <%= @number_of_threads %></p>
+    <% @thread_stats.each_with_index do |thread_stat, index| %>
+      <p>Thread <%= index + 1 %>, ID #<%= thread_stat[:id] %>: <%= thread_stat[:status] ? 'Alive' : 'Dead' %> and <%= thread_stat[:mode].capitalize %>
+    <% end %>
+  <% else %>
+
+  <% end %>
+</section>
+<section>
   <% @job_statuses.each do |status| %>
     <h2><%= status.capitalize %></h2>
     <table class="table table-hover table-sm">

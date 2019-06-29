@@ -7,14 +7,15 @@ class BackgroundThread
   end
 
   attr_reader :thread, :background_worker_id
-  attr_accessor :id, :status
+  attr_accessor :id, :status, :mode
 
   def initialize(background_worker_id, thread)
     self.class.all << self
     @id = nil
     @thread = thread
     @background_worker_id = background_worker_id
-    @status = 'alive'
+    @status = thread.alive? ? 'alive' : 'dead'
+    @mode = 'waiting'
     save!
   end
 
@@ -24,6 +25,17 @@ class BackgroundThread
 
   def self.background_thread_from_id(thread_id)
     each_background_thread { |background_thread| return background_thread if background_thread.id == thread_id }
+  end
+
+  def self.status_of_workers_threads(worker_id)
+    status = []
+    each_background_thread do |background_thread|
+      next unless background_thread.background_worker_id == worker_id
+      status << { id: background_thread.id,
+                  status: background_thread.thread.alive?,
+                  mode: background_thread.mode }
+    end
+    status
   end
 
   def self.kill_all_threads

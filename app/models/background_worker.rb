@@ -34,14 +34,28 @@ class BackgroundWorker
     all.each { |worker| yield(worker) }
   end
 
-  def self.active_worker
+  def self.active_workers
+    active_workers = []
     each_worker do |worker|
       worker.threads.each do |thread|
-        return worker if thread.alive? && worker.job_queue_open?
+        if thread.alive? && worker.job_queue_open?
+          active_workers << worker
+          break
+        end
+        # active_workers << worker && break if thread.alive? && worker.job_queue_open?
       end
     end
-    nil
+    active_workers
   end
+
+  # def self.active_workers
+  #   each_worker do |worker|
+  #     worker.threads.each do |thread|
+  #       return worker if thread.alive? && worker.job_queue_open?
+  #     end
+  #   end
+  #   nil
+  # end
 
   def self.worker_from_id(worker_id)
     each_worker { |worker| return worker if worker.id == worker_id }
@@ -133,16 +147,18 @@ class BackgroundWorker
         next
       end
 
-      thread = BackgroundThread.new(id, thread)
+      background_thread = BackgroundThread.new(id, thread)
 
       while job_queue_open?
+        background_thread.mode = Thread.current[:mode] = 'waiting'
         job = wait_for_job
 
         if job && deleted_jobs.include?(job.id)
           deleted_jobs.delete(job.id)
           next
         elsif job
-          job.background_thread_id = thread.id
+          background_thread.mode = Thread.current[:mode] = 'processing'
+          job.background_thread_id = background_thread.id
           job.run
         end
       end

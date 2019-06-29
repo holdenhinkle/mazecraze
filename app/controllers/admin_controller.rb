@@ -19,15 +19,31 @@ class AdminController < ApplicationController
       BackgroundWorker.update_number_of_threads(params['number_of_threads'].to_i)
       session[:success] = "The settings have been updated."
     end
+
     redirect '/admin/settings'
   end
+
+
+
+
+
 
   get '/admin/background-jobs' do
     @title = "Background Jobs - Maze Craze Admin"
     @job_statuses = BackgroundJob::JOB_STATUSES
     @jobs = BackgroundJob.all_jobs
+    if @background_workers_status = BackgroundWorker.active_workers.any?
+      @workers = BackgroundWorker.active_workers
+      @worker = @workers.first
+      @number_of_threads = BackgroundWorker.number_of_threads
+      @thread_stats = BackgroundThread.status_of_workers_threads(@worker.id)
+    end
     erb :background_jobs
   end
+
+
+
+
 
   post '/admin/background-jobs' do
     job_id = params['id']
@@ -44,9 +60,10 @@ class AdminController < ApplicationController
         worker.new_thread
       end
       BackgroundJob.job_from_id(job_id).delete
+      session[:success] = "Job ID \##{job_id} was deleted."
     elsif params['cancel']
       worker.kill_specific_job(thread_id, job_id)
-    elsif params['queue']
+      session[:success] = "Job ID \##{job_id} was cancelled and re-queued."
     end
 
     redirect "/admin/background-jobs"
@@ -58,6 +75,7 @@ class AdminController < ApplicationController
       session[:error] = "The page you requested doesn't exist."
       redirect '/admin'
     end
+
     @title = "#{status.capitalize} Background Jobs - Maze Craze Admin"
     @jobs = BackgroundJob.all_jobs_of_status_type(status)
     erb :background_jobs_status
@@ -83,6 +101,7 @@ class AdminController < ApplicationController
     @maze_types = Maze::MAZE_TYPE_CLASS_NAMES.keys
     @formula_status_list = MazeFormula.status_list #RENAME THIS METHOD
     @maze_status_counts = {}
+
     @maze_types.each do |type|
       status_counts_by_maze_type = {}
       @formula_status_list.each do |status|
@@ -90,19 +109,23 @@ class AdminController < ApplicationController
       end
       @maze_status_counts[type] = status_counts_by_maze_type
     end
+
     erb :mazes_formulas
   end
 
   post '/admin/mazes/formulas' do
     redirect "/admin/mazes/formulas" unless params['generate_formulas']
+
     job_type = 'generate_maze_formulas'
     job_params = []
+
     if BackgroundJob.duplicate_job?(job_type, job_params)
       session[:error] = duplicate_jobs_error_message(job_type, job_params)
     else
       new_background_job(job_type, job_params)
       session[:success] = "The task 'Generate Maze Formulas' was sent to the queue. You will be notified when it's complete."
     end
+
     redirect "/admin/mazes/formulas"
   end
 
@@ -115,6 +138,7 @@ class AdminController < ApplicationController
 
   post '/admin/mazes/formulas/new' do
     @formula = MazeFormula.maze_formula_type_to_class(params[:maze_type]).new(params)
+
     if @formula.exists?
       session[:error] = "That maze formula already exists."
     elsif @formula.experiment? && @formula.experiment_valid? || @formula.valid?
@@ -125,6 +149,7 @@ class AdminController < ApplicationController
       add_hashes_to_session_hash(@formula.validation)
       session[:error] = "That maze formula is invalid."
     end
+
     @maze_types = Maze::MAZE_TYPE_CLASS_NAMES.keys
     @popovers = MazeFormula.form_popovers
     erb :mazes_formulas_new
@@ -132,6 +157,7 @@ class AdminController < ApplicationController
 
   get '/admin/mazes/formulas/:type' do
     @maze_type = params[:type]
+
     if Maze::MAZE_TYPE_CLASS_NAMES.keys.include?(@maze_type)
       @title = "#{@maze_type} Maze Formulas - Maze Craze Admin"
       @formula_status_list = MazeFormula.status_list #RENAME THIS METHOD
@@ -146,12 +172,22 @@ class AdminController < ApplicationController
   def new_background_job(job_type, job_params)
     BackgroundJob.new({ type: job_type, params: job_params })
 
-    if (worker = BackgroundWorker.active_worker).nil?
+    workers = BackgroundWorker.active_workers
+
+    if workers.none?
       BackgroundWorker.new
     else
+      worker = workers[0]
       worker.enqueue_job(BackgroundJob.all.last)
       BackgroundWorker.new if worker.dead?
     end
+
+    # if (worker = BackgroundWorker.active_worker).nil? # I DON'T LIKE THIS!
+    #   BackgroundWorker.new
+    # else
+    #   worker.enqueue_job(BackgroundJob.all.last)
+    #   BackgroundWorker.new if worker.dead?
+    # end
   end
 
   def duplicate_jobs_error_message(job, params)
