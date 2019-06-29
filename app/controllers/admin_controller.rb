@@ -30,7 +30,6 @@ class AdminController < ApplicationController
   end
 
   post '/admin/background-jobs' do
-    params
     job_id = params['id']
     worker_id = params['background_worker_id']
     thread_id = params['background_thread_id']
@@ -95,20 +94,16 @@ class AdminController < ApplicationController
   end
 
   post '/admin/mazes/formulas' do
-    if params['generate_formulas']
-      # check if request is already in the queue
-      BackgroundJob.new({ type: 'generate_maze_formulas', params: [] })
+    redirect "/admin/mazes/formulas" unless params['generate_formulas']
+    job_type = 'generate_maze_formulas'
+    job_params = []
+    if BackgroundJob.duplicate_job?(job_type, job_params)
+      session[:error] = duplicate_jobs_error_message(job_type, job_params)
+    else
+      new_background_job(job_type, job_params)
       session[:success] = "The task 'Generate Maze Formulas' was sent to the queue. You will be notified when it's complete."
-      if (worker = BackgroundWorker.active_worker).nil?
-        BackgroundWorker.new
-      else
-        worker.enqueue_job(BackgroundJob.all.last)
-        BackgroundWorker.new if worker.dead?
-      end
-      redirect "/admin/mazes/formulas"
     end
-    session[:error] = "The page you requested doesn't exist."
-    redirect '/admin'
+    redirect "/admin/mazes/formulas"
   end
 
   get '/admin/mazes/formulas/new' do
@@ -148,12 +143,37 @@ class AdminController < ApplicationController
     end
   end
 
+  def new_background_job(job_type, job_params)
+    BackgroundJob.new({ type: job_type, params: job_params })
+
+    if (worker = BackgroundWorker.active_worker).nil?
+      BackgroundWorker.new
+    else
+      worker.enqueue_job(BackgroundJob.all.last)
+      BackgroundWorker.new if worker.dead?
+    end
+  end
+
+  def duplicate_jobs_error_message(job, params)
+    duplicate_jobs = BackgroundJob.duplicate_jobs(job, params)
+
+    message = if duplicate_jobs.values.length > 1
+                "#{duplicate_jobs.values.length} duplicate jobs exist: "
+              else
+                "1 duplicate job exists: "
+              end
+
+    jobs = []
+
+    duplicate_jobs.each do |duplicate_job|
+      jobs << "Job ID \##{duplicate_job['id']} (Status: #{duplicate_job['status'].capitalize})"
+    end
+
+    message << jobs.join(', ') + '.'
+  end
+
   post '/admin/mazes/formulas/:type' do
     if params[:update_status_to] == 'approved'
-
-
-
-
       formula_values = MazeFormula.retrieve_formula_values(params[:formula_id])
       @formula = MazeFormula.maze_formula_type_to_class(formula_values['maze_type']).new(formula_values)
       @formula.generate_permutations(params[:formula_id])
@@ -161,14 +181,13 @@ class AdminController < ApplicationController
       MazeFormula.update_status(params[:formula_id], params[:update_status_to]) # change to instance method
       session[:success] = "The status for Maze Formula ID:#{params[:formula_id]} was updated to '#{params[:update_status_to]}'."
     elsif params['generate_formulas']
-      # check if request is already in the queue
-      BackgroundJob.new({ type: 'generate_maze_formulas', params: { 'maze_type' => params['maze_type'] } })
-      session[:success] = "The task 'Generate Maze Formulas' was sent to the queue. You will be notified when it's complete."
-      if (worker = BackgroundWorker.active_worker).nil?
-        BackgroundWorker.new
+      job_type = 'generate_maze_formulas'
+      job_params = { 'maze_type' => params['maze_type'] }
+      if BackgroundJob.duplicate_job?(job_type, job_params)
+        session[:error] = duplicate_jobs_error_message(job_type, job_params)
       else
-        worker.enqueue_job(BackgroundJob.all.last)
-        BackgroundWorker.new if worker.dead?
+        new_background_job(job_type, job_params)
+        session[:success] = "The task 'Generate #{params['maze_type'].capitalize} Maze Formulas' was sent to the queue. You will be notified when it's complete."
       end
     end
     redirect "/admin/mazes/formulas/#{params['maze_type']}"

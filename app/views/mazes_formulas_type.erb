@@ -1,15 +1,5 @@
-<nav aria-label="breadcrumb" class="mt-3">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="/admin">Home</a></li>
-    <li class="breadcrumb-item"><a href="/admin/mazes">Mazes</a></li>
-    <li class="breadcrumb-item active" aria-current="page">Formulas</li>
-  </ol>
-</nav>
-<header>
-  <h1><%= @maze_type.capitalize %> Maze Formulas</h1>
-</header>
 <section>
-  <form action="/admin/mazes/formulas/:type" method="post">
+  <form form action="/admin/mazes/formulas/<%= @maze_type %>" method="post">
     <input type="hidden" name="maze_type" value="<%= @maze_type %>">
     <input type="hidden" name="generate_formulas" value="true">
     <button type="type" class="btn btn-primary">Generate <%= @maze_type.capitalize %> Maze Formulas</button>

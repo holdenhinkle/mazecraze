@@ -67,6 +67,15 @@ class BackgroundJob
     query(sql, status)
   end
 
+  def self.duplicate_job?(type, params = nil)
+    duplicate_jobs(type, params).any?
+  end
+
+  def self.duplicate_jobs(type, params = nil)
+    sql = 'SELECT * FROM background_jobs WHERE job_type = $1 AND params = $2;'
+    query(sql, type, params.to_json)
+  end
+
   def save!
     sql = "INSERT INTO background_jobs (job_type, params, status) VALUES ($1, $2, $3) RETURNING id;"
     self.id = query(sql, type, params.to_json, status).first['id']
