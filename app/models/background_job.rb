@@ -33,8 +33,24 @@ class BackgroundJob
     results
   end
 
+  def self.each_job
+    all.each { |job| yield(job) }
+  end
+
   def self.job_from_id(job_id)
-    all.each { |job| return job if job.id == job_id }
+    each_job { |job| return job if job.id == job_id }
+  end
+
+  def self.each_running_job
+    each_job { |job| yield(job) if job.status == 'running'}
+  end
+
+  def self.undo_running_jobs
+    each_running_job(&:undo)
+  end
+
+  def self.reset_running_jobs
+    each_running_job(&:reset)
   end
 
   def self.all_jobs
@@ -49,12 +65,6 @@ class BackgroundJob
   def self.all_jobs_of_status_type(status)
     sql = "SELECT * FROM background_jobs WHERE status = $1 ORDER BY created DESC;"
     query(sql, status)
-  end
-
-  def self.delete_job_from_db(job_id)
-    # all results from running this job will be deleted when job is deleted from database
-    sql = "DELETE FROM background_jobs WHERE id = $1;"
-    query(sql, job_id)
   end
 
   def save!
@@ -85,6 +95,11 @@ class BackgroundJob
                   JOB_TYPES.include?(type)
   end
 
+  def reset
+    update_job_status('queued')
+    update_job_thread_id(nil)
+  end
+
   def undo
     table_name = case type
                  when 'generate_maze_formulas'
@@ -96,6 +111,12 @@ class BackgroundJob
                  end
 
     sql = "DELETE FROM #{table_name} WHERE background_job_id = $1;"
+    query(sql, id)
+  end
+
+  def delete
+    BackgroundJob.all.delete(self)
+    sql = "DELETE FROM background_jobs WHERE id = $1;"
     query(sql, id)
   end
 

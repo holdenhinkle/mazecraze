@@ -30,16 +30,26 @@ class AdminController < ApplicationController
   end
 
   post '/admin/background-jobs' do
-    worker = BackgroundWorker.worker_from_id(params['background_worker_id'])
+    params
+    job_id = params['id']
+    worker_id = params['background_worker_id']
+    thread_id = params['background_thread_id']
+    worker = BackgroundWorker.worker_from_id(worker_id)
+
     if params['delete']
-      if params['background_worker_id'] != ''
-        worker.delete_job(params['id'])
+      if worker_id != ''
+        worker.delete_job(job_id) # skip job in queue - rename
       end
-      BackgroundJob.delete_job_from_db(params['id'])
+      if thread_id != ''
+        BackgroundThread.background_thread_from_id(thread_id).kill_thread
+        worker.new_thread
+      end
+      BackgroundJob.job_from_id(job_id).delete
     elsif params['cancel']
-      worker.kill_specific_job(params['background_thread_id'], params['id'])
+      worker.kill_specific_job(thread_id, job_id)
     elsif params['queue']
     end
+
     redirect "/admin/background-jobs"
   end
 
@@ -93,7 +103,7 @@ class AdminController < ApplicationController
         BackgroundWorker.new
       else
         worker.enqueue_job(BackgroundJob.all.last)
-        BackgroundWorker.new unless worker.still_active?
+        BackgroundWorker.new if worker.dead?
       end
       redirect "/admin/mazes/formulas"
     end
@@ -158,7 +168,7 @@ class AdminController < ApplicationController
         BackgroundWorker.new
       else
         worker.enqueue_job(BackgroundJob.all.last)
-        BackgroundWorker.new unless worker.still_active?
+        BackgroundWorker.new if worker.dead?
       end
     end
     redirect "/admin/mazes/formulas/#{params['maze_type']}"

@@ -55,6 +55,7 @@
                   <input type="hidden" name="delete" value="true">
                   <input type="hidden" name="id" value="<%= job['id'] %>">
                   <input type="hidden" name="background_worker_id" value="<%= job['background_worker_id'] %>">
+                  <input type="hidden" name="background_thread_id" value="<%= job['background_thread_id'] %>">
                   <button type="type" class="btn btn-danger btn-sm">Delete</button>
                 </form>
               </td>
@@ -67,6 +68,13 @@
                   <input type="hidden" name="background_worker_id" value="<%= job['background_worker_id'] %>">
                   <input type="hidden" name="background_thread_id" value="<%= job['background_thread_id'] %>">
                   <button type="type" class="btn btn-danger btn-sm">Cancel</button>
+                </form>
+                <form action="/admin/background-jobs" method="post">
+                  <input type="hidden" name="delete" value="true">
+                  <input type="hidden" name="id" value="<%= job['id'] %>">
+                  <input type="hidden" name="background_worker_id" value="<%= job['background_worker_id'] %>">
+                  <input type="hidden" name="background_thread_id" value="<%= job['background_thread_id'] %>">
+                  <button type="type" class="btn btn-danger btn-sm">Delete</button>
                 </form>
               </td>
             <% end %>

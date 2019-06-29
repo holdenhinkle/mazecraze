@@ -6,18 +6,38 @@ class BackgroundThread
     attr_accessor :all
   end
 
-  attr_reader :thread
+  attr_reader :thread, :background_worker_id
   attr_accessor :id, :status
 
   def initialize(background_worker_id, thread)
     self.class.all << self
     @id = nil
     @thread = thread
+    @background_worker_id = background_worker_id
     @status = 'alive'
-    save!(background_worker_id)
+    save!
   end
 
-  def save!(background_worker_id)
+  def self.each_background_thread
+    all.each { |background_thread| yield(background_thread) }
+  end
+
+  def self.background_thread_from_id(thread_id)
+    each_background_thread { |background_thread| return background_thread if background_thread.id == thread_id }
+  end
+
+  def self.kill_all_threads
+    each_background_thread(&:kill_thread)
+  end
+
+  def kill_thread
+    Thread.kill(thread)
+    update_thread_status('dead')
+    BackgroundWorker.worker_from_id(background_worker_id).threads.delete(thread)
+    self.class.all.delete(self)
+  end
+
+  def save!
     sql = 'INSERT INTO background_threads (background_worker_id, status) VALUES ($1, $2) RETURNING id;'
     self.id = query(sql, background_worker_id, status).first['id']
   end

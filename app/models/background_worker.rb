@@ -8,8 +8,8 @@ class BackgroundWorker
     attr_accessor :all
   end
 
-  attr_reader :number_of_threads, :jobs
-  attr_accessor :id, :threads, :deleted_jobs
+  attr_reader :job_queue
+  attr_accessor :id, :number_of_threads, :threads, :deleted_jobs
 
   def initialize
     self.class.all << self
@@ -17,7 +17,7 @@ class BackgroundWorker
     @number_of_threads = self.class.number_of_threads
     @threads = []
     @deleted_jobs = []
-    @jobs = Queue.new
+    @job_queue = Queue.new
     save!
     enqueue_jobs
     work
@@ -30,8 +30,21 @@ class BackgroundWorker
     results
   end
 
+  def self.each_worker
+    all.each { |worker| yield(worker) }
+  end
+
+  def self.active_worker
+    each_worker do |worker|
+      worker.threads.each do |thread|
+        return worker if thread.alive? && worker.job_queue_open?
+      end
+    end
+    nil
+  end
+
   def self.worker_from_id(worker_id)
-    all.each { |worker| return worker if worker.id == worker_id }
+    each_worker { |worker| return worker if worker.id == worker_id }
   end
 
   def self.number_of_threads
@@ -39,72 +52,103 @@ class BackgroundWorker
     query(sql, 'number_of_threads').first['integer_value'].to_i
   end
 
+  # REFACTOR THIS
   def self.update_number_of_threads(number)
     sql = 'UPDATE settings SET integer_value = $1, updated = $2 WHERE name = $3;'
     query(sql, number, 'NOW()', 'number_of_threads')
-    # kill current threads
-    # stop worker
-    # start new worker
+
+    # MOVE THE FOLLOWING
+    BackgroundThread.kill_all_threads
+    BackgroundJob.undo_running_jobs
+    BackgroundJob.reset_running_jobs
+    BackgroundWorker.kill_all_workers
+    BackgroundWorker.new
   end
 
   def enqueue_jobs
-    BackgroundJob.all.each { |job| enqueue_job(job) if job.status == 'queued' }
+    BackgroundJob.each_job { |job| enqueue_job(job) if job.status == 'queued' }
   end
 
   def enqueue_job(job)
-    jobs << job
+    job_queue << job
     sql = 'UPDATE background_jobs SET background_worker_id = $1, updated = $2 WHERE id = $3;'
     query(sql, id, 'NOW()', job.id)
   end
 
-  def self.active_worker
-    all.each do |worker|
-      worker.threads.each do |thread|
-        return worker if thread.alive? && worker.queue_open?
-      end
-    end
-    nil
+  def dead?
+    return false if threads.any?(&:alive?) && job_queue_open?
+    true
   end
 
-  def still_active?
-    return true if threads.any?(&:alive?) && queue_open?
-    false
-  end
-
-  def queue_open?
-    !jobs.closed?
+  def job_queue_open?
+    !job_queue.closed?
   end
 
   def delete_job(job_id)
     deleted_jobs << job_id
   end
 
+  # REFACTOR THIS
   def kill_specific_job(thread_id, job_id)
-    BackgroundThread.all.each do |background_thread|
-      if background_thread.id == thread_id
-        kill_job(background_thread, job_id) # kill thread job is running on
-        threads.delete(background_thread.thread) # delete thread from threads array
-        new_thread # replace killed thread with new thread
-        break
+    BackgroundThread.background_thread_from_id(thread_id).kill_thread
+
+    job = BackgroundJob.job_from_id(job_id)
+    job.reset
+    job.undo
+    enqueue_job(job)
+    new_thread
+  end
+
+  def self.kill_all_workers
+    each_worker(&:kill_worker)
+    all.clear
+  end
+
+  def kill_worker
+    job_queue.close
+    yield if block_given?
+    update_worker_status('dead')
+    self.class.all.delete(self)
+  end
+
+  def retire_worker
+    kill_worker do
+      threads.each(&:join)
+      threads.each do |thread|
+        BackgroundThread.each_background_thread do |background_thread|
+          if background_thread.thread == thread
+            background_thread.kill_thread
+          end
+        end
+        threads.delete(thread)
       end
     end
   end
 
-  def kill_all_jobs
-    # UPDATE THIS - MUST SEND job_id TO kill_job
-    BackgroundThread.all.each { |thread| kill_job(thread) }
-    stop!
-  end
+  # REFACTOR THIS
+  def new_thread
+    threads << thread = Thread.new do
+      if thread.nil?
+        threads.delete(nil)
+        next
+      end
 
-  def kill_job(background_thread, job_id)
-    Thread.kill(background_thread.thread)
-    background_thread.update_thread_status('dead')
-    BackgroundThread.all.delete(background_thread)
-    job = BackgroundJob.job_from_id(job_id)
-    job.update_job_status('queued')
-    job.update_job_thread_id(nil)
-    job.undo
-    enqueue_job(job)
+      thread = BackgroundThread.new(id, thread)
+
+      while job_queue_open?
+        job = wait_for_job
+
+        if job && deleted_jobs.include?(job.id)
+          deleted_jobs.delete(job.id)
+          next
+        elsif job
+          job.background_thread_id = thread.id
+          job.run
+        end
+      end
+    end
+
+    retire_worker unless job_queue_open?
   end
 
   private
@@ -130,35 +174,11 @@ class BackgroundWorker
     number_of_threads.times { new_thread }
   end
 
-  def new_thread
-    threads << thread = Thread.new do
-      thread = BackgroundThread.new(id, thread)
-      while queue_open? || jobs?
-        job = wait_for_job
-        if job && deleted_jobs.include?(job.id)
-          deleted_jobs.delete(job.id)
-          next
-        elsif job
-          job.background_thread_id = thread.id
-          job.run
-        end
-      end
-    end
-    stop! unless queue_open? || jobs?
-  end
-
-  def jobs?
-    !jobs.empty?
+  def jobs_in_job_queue?
+    !job_queue.empty?
   end
 
   def wait_for_job
-    jobs.pop(false)
-  end
-
-  def stop!
-    jobs.close
-    threads.each(&:join).each(&:exit).clear
-    update_worker_status('dead')
-    self.class.all.delete(self)
+    job_queue.pop(false)
   end
 end
