@@ -25,7 +25,6 @@
             <th scope="col">Worker ID</th>
             <th scope="col">Thread ID</th>
           <% end %>                      
-          <th scope="col">Created</th>
           <th scope="col">Updated</th>
           <% unless status == 'completed' %>
             <th scope="col"></th>
@@ -37,9 +36,9 @@
           <tr>
             <th scope='row'><%= index + 1 %></th>
             <td><%= job['id'] %></td>
-            <td><%= job['job_type'] %></td>
-            <td><%= job['params'] %></td>
-            <td><%= job['status'] %></td>
+            <td><%= capitalize_words(underscores_to_spaces(job['job_type'])) %></td>
+            <td><%= format_background_job_params(job['params']) %></td>
+            <td><%= job['status'].capitalize %></td>
             <% if status == 'queued' %>
               <td><%= job['background_worker_id'] %></td>
             <% end %>  
@@ -47,7 +46,6 @@
               <td><%= job['background_worker_id'] %></td>          
               <td><%= job['background_thread_id'] %></td>
             <% end %>
-            <td><%= job['created'] %></td>
             <td><%= job['updated'] %></td>
             <% if status == 'queued' %>
               <td scope="col">
