@@ -71,7 +71,10 @@ class BackgroundWorker
     sql = 'UPDATE settings SET integer_value = $1, updated = $2 WHERE name = $3;'
     query(sql, number, 'NOW()', 'number_of_threads')
 
-    # MOVE THE FOLLOWING
+    restart
+  end
+
+  def self.restart
     BackgroundThread.kill_all_threads
     BackgroundJob.undo_running_jobs
     BackgroundJob.reset_running_jobs

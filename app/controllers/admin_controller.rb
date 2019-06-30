@@ -51,7 +51,7 @@ class AdminController < ApplicationController
     thread_id = params['background_thread_id']
     worker = BackgroundWorker.worker_from_id(worker_id)
 
-    if params['delete']
+    if params['delete_job']
       if worker_id != ''
         worker.delete_job(job_id) # skip job in queue - rename
       end
@@ -61,9 +61,15 @@ class AdminController < ApplicationController
       end
       BackgroundJob.job_from_id(job_id).delete
       session[:success] = "Job ID \##{job_id} was deleted."
-    elsif params['cancel']
+    elsif params['cancel_job']
       worker.kill_specific_job(thread_id, job_id)
       session[:success] = "Job ID \##{job_id} was cancelled and re-queued."
+    elsif params['start_worker']
+      BackgroundWorker.new
+    elsif params['stop_worker']
+      # code
+    elsif params['restart_threads']
+      BackgroundWorker.restart
     end
 
     redirect "/admin/background-jobs"

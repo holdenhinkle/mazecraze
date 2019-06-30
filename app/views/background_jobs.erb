@@ -1,25 +1,44 @@
 <nav aria-label="breadcrumb" class="mt-3">
   <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="/admin">Home</a></li>
-    <li class="breadcrumb-item active" aria-current="page">All Background Jobs</li>
+    <li class="breadcrumb-item active" aria-current="page">Background Jobs</li>
   </ol>
 </nav>
 <header>
-  <h1>All Background Jobs</h1>
+  <h1>Background Jobs</h1>
 </header>
 <section>
-  <% if @background_workers_status %>
-    <h3>Background Jobs System Status: Running</h3>
-    <p>Shutdown</p>
-    <p>If you press 'Shutdown', all jobs that are running will be killed and be put back in the queue.</p>
-    <h5>Thread Status</h5>
-    <p>Maximum number of threads possible (<a href="/admin/settings">see settings</a>): <%= @number_of_threads %></p>
-    <% @thread_stats.each_with_index do |thread_stat, index| %>
-      <p>Thread <%= index + 1 %>, ID #<%= thread_stat[:id] %>: <%= thread_stat[:status] ? 'Alive' : 'Dead' %> and <%= thread_stat[:mode].capitalize %>
+  <div class="p-4 bg-light text-dark border border-dark rounded-sm" role="alert">
+    <% if @background_workers_status %>
+      <p class='h2'>Status: <span class="badge badge-success">Running</span></p>
+      <div class="card">
+        <p class="h4 card-header">Number of Threads: <%= @number_of_threads %></p>
+        <div class="card-body">
+          <% @thread_stats.each_with_index do |thread_stat, index| %>
+            <p class="mb-2"><strong>Thread <%= index + 1 %></strong> (ID #<%= thread_stat[:id] %>): <%= thread_stat[:status] ? 'Alive' : 'Dead' %> and <%= thread_stat[:mode].capitalize %>...</p>
+          <% end %>
+          <hr>
+          <p>Change the number of threads on the <a href="/admin/settings" class="text-primary">settings</a> page.</p>
+          <form action="/admin/background-jobs" method="post">
+            <input type="hidden" name="restart_threads" value="true">
+            <button type="type" class="btn btn-primary">Restart Threads</button>
+          </form>
+        </div>
+      </div>
+      <p class='pt-3'>If you press 'Shutdown', all jobs that are running will be killed and put back in the queue.</p>
+      <form action="/admin/background-jobs" method="post">
+        <input type="hidden" name="stop_worker" value="true">
+        <button type="type" class="btn btn-primary btn-lg">Stop</button>
+      </form>
+    <% else %>
+      <p class='h2'>Status: <span class="badge badge-danger">Not Running</span></p>
+      <hr>
+      <form action="/admin/background-jobs" method="post">
+        <input type="hidden" name="start_wroker" value="true">
+        <button type="type" class="btn btn-primary btn-lg">Start</button>
+      </form>
     <% end %>
-  <% else %>
-
-  <% end %>
+  </div>
 </section>
 <section>
   <% @job_statuses.each do |status| %>
@@ -64,7 +83,7 @@
             <% if status == 'queued' %>
               <td scope="col">
                 <form action="/admin/background-jobs" method="post">
-                  <input type="hidden" name="delete" value="true">
+                  <input type="hidden" name="delete_job" value="true">
                   <input type="hidden" name="id" value="<%= job['id'] %>">
                   <input type="hidden" name="background_worker_id" value="<%= job['background_worker_id'] %>">
                   <input type="hidden" name="background_thread_id" value="<%= job['background_thread_id'] %>">
@@ -75,14 +94,14 @@
             <% if status == 'running' %>
               <td scope="col">
                 <form action="/admin/background-jobs" method="post">
-                  <input type="hidden" name="cancel" value="true">
+                  <input type="hidden" name="cancel_job" value="true">
                   <input type="hidden" name="id" value="<%= job['id'] %>">
                   <input type="hidden" name="background_worker_id" value="<%= job['background_worker_id'] %>">
                   <input type="hidden" name="background_thread_id" value="<%= job['background_thread_id'] %>">
                   <button type="type" class="btn btn-danger btn-sm">Cancel</button>
                 </form>
                 <form action="/admin/background-jobs" method="post">
-                  <input type="hidden" name="delete" value="true">
+                  <input type="hidden" name="delete_job" value="true">
                   <input type="hidden" name="id" value="<%= job['id'] %>">
                   <input type="hidden" name="background_worker_id" value="<%= job['background_worker_id'] %>">
                   <input type="hidden" name="background_thread_id" value="<%= job['background_thread_id'] %>">
@@ -94,7 +113,7 @@
               <td scope="col">
                 <form action="/admin/background-jobs" method="post">
                   <input type="hidden" name="id" value="<%= job['id'] %>">
-                  <input type="hidden" name="queue" value="true">
+                  <input type="hidden" name="queue_job" value="true">
                   <button type="type" class="btn btn-success btn-sm">Try again</button>
                 </form>
               </td>
