@@ -1,19 +1,21 @@
-class AdminNotification
-  include MazeCraze::Queryable
-  
-  attr_reader :notification
+module MazeCraze
+  class AdminNotification
+    include MazeCraze::Queryable
 
-  def initialize(notification)
-    @notification = notification
-  end
+    attr_reader :notification
 
-  def save!
-    sql = "INSERT INTO admin_notifications (notification) VALUES ($1);"
-    query(sql, notification)
-  end
+    def initialize(notification)
+      @notification = notification
+    end
 
-  def delivered!(id)
-    sql = "UPDATE table admin_notifications SET delivered = $1, updated = $2 WHERE id = $3;"
-    query(sql, TRUE, NOW, id)
+    def save!
+      sql = "INSERT INTO admin_notifications (notification) VALUES ($1);"
+      query(sql, notification)
+    end
+
+    def delivered!(id)
+      sql = "UPDATE table admin_notifications SET delivered = $1, updated = $2 WHERE id = $3;"
+      query(sql, TRUE, NOW, id)
+    end
   end
 end

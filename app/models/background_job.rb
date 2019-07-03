@@ -4,8 +4,8 @@ module MazeCraze
     include MazeCraze::Queryable
 
     JOB_TYPES = %w(generate_maze_formulas
-                  generate_maze_permutations
-                  generate_maze_candidates).freeze
+                   generate_maze_permutations
+                   generate_maze_candidates).freeze
 
     JOB_STATUSES = %w(running queued completed failed).freeze
 
@@ -138,7 +138,7 @@ module MazeCraze
       end
       new_message = "#{generated_formula_stats[:new]} new maze formulas were created."
       existed_message = "#{generated_formula_stats[:existed]} formulas already existed."
-      AdminNotification.new(new_message + ' ' + existed_message).save!
+      MazeCraze::AdminNotification.new(new_message + ' ' + existed_message).save!
       update_job_status('completed')
       # remove job from jobs array - doesn't need to exist in memory anymore because it will never be used again
     end
