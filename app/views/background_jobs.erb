@@ -53,9 +53,11 @@
         <tr>
           <th scope="col">#</th>
           <th scope="col">ID</th>
+          <% if status == 'queued' %>
+            <th scope="col">Queue Order</th>
+          <% end %>
           <th scope="col">Job Type</th>
           <th scope="col">Params</th>
-          <th scope="col">Status</th>
           <% if status == 'queued' %>
             <th scope="col">Assigned to Worker ID</th>
           <% end %>  
@@ -74,9 +76,11 @@
           <tr>
             <th scope='row'><%= index + 1 %></th>
             <td><%= job['id'] %></td>
+            <% if status == 'queued' %>
+              <th scope="col"><%= job['queue_order'] %></th>
+            <% end %>
             <td><%= capitalize_words(underscores_to_spaces(job['job_type'])) %></td>
             <td><%= format_background_job_params(job['params']) %></td>
-            <td><%= job['status'].capitalize %></td>
             <% if status == 'queued' %>
               <td><%= job['background_worker_id'] %></td>
             <% end %>  
