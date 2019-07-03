@@ -46,7 +46,7 @@ class BackgroundThread
   def kill_thread
     Thread.kill(thread)
     update_thread_status('dead')
-    worker = BackgroundWorker.worker_from_id(background_worker_id)
+    worker = MazeCraze::BackgroundWorker.worker_from_id(background_worker_id)
     worker = worker.first if worker.is_a?(Array) # sometimes worker is an array -- i can't track this bug down
     worker.threads.delete(thread)
     self.class.all.delete(self)
