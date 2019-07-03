@@ -5,6 +5,8 @@ Bundler.require(:default, ENV['SINATRA_ENV'])
 
 # model files must be required in a specific order
 model_file_names = ["./app/models/database_connection.rb",
+                    "./app/models/queryable.rb",
+                    "./app/models/sort_order.rb",
                     "./app/models/background_worker.rb",
                     "./app/models/background_thread.rb",
                     "./app/models/background_job.rb",

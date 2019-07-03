@@ -18,6 +18,8 @@ class AdminController < ApplicationController
     if params['number_of_threads']
       BackgroundWorker.update_number_of_threads(params['number_of_threads'].to_i)
       session[:success] = "The settings have been updated."
+      BackgroundWorker.stop
+      BackgroundWorker.start
     end
 
     redirect '/admin/settings'
@@ -67,9 +69,9 @@ class AdminController < ApplicationController
     elsif params['start_worker']
       BackgroundWorker.new
     elsif params['stop_worker']
-      # code
+      BackgroundWorker.stop
     elsif params['restart_threads']
-      BackgroundWorker.restart
+      BackgroundWorker.start
     end
 
     redirect "/admin/background-jobs"
@@ -85,6 +87,10 @@ class AdminController < ApplicationController
     @title = "#{status.capitalize} Background Jobs - Maze Craze Admin"
     @jobs = BackgroundJob.all_jobs_of_status_type(status)
     erb :background_jobs_status
+  end
+
+  get '/admin/background-jobs/queued/sort' do
+    erb :background_jobs_sort_queue
   end
 
   get '/admin/mazes' do

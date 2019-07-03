@@ -1,4 +1,7 @@
 class BackgroundWorker
+  extend MazeCraze::Queryable
+  include MazeCraze::Queryable
+
   MIN_THREADS = 1
   MAX_THREADS = 10
 
@@ -23,13 +26,6 @@ class BackgroundWorker
     work
   end
 
-  def self.query(sql, *params)
-    db = DatabaseConnection.new
-    results = db.query(sql, *params)
-    db.disconnect
-    results
-  end
-
   def self.each_worker
     all.each { |worker| yield(worker) }
   end
@@ -42,20 +38,10 @@ class BackgroundWorker
           active_workers << worker
           break
         end
-        # active_workers << worker && break if thread.alive? && worker.job_queue_open?
       end
     end
     active_workers
   end
-
-  # def self.active_workers
-  #   each_worker do |worker|
-  #     worker.threads.each do |thread|
-  #       return worker if thread.alive? && worker.job_queue_open?
-  #     end
-  #   end
-  #   nil
-  # end
 
   def self.worker_from_id(worker_id)
     each_worker { |worker| return worker if worker.id == worker_id }
@@ -66,20 +52,20 @@ class BackgroundWorker
     query(sql, 'number_of_threads').first['integer_value'].to_i
   end
 
-  # REFACTOR THIS
   def self.update_number_of_threads(number)
     sql = 'UPDATE settings SET integer_value = $1, updated = $2 WHERE name = $3;'
     query(sql, number, 'NOW()', 'number_of_threads')
-
-    restart
   end
 
-  def self.restart
+  def self.start
+    BackgroundWorker.new
+  end
+
+  def self.stop
     BackgroundThread.kill_all_threads
     BackgroundJob.undo_running_jobs
     BackgroundJob.reset_running_jobs
     BackgroundWorker.kill_all_workers
-    BackgroundWorker.new
   end
 
   def enqueue_jobs
@@ -171,13 +157,6 @@ class BackgroundWorker
   end
 
   private
-
-  def query(sql, *params)
-    db = DatabaseConnection.new
-    results = db.query(sql, *params)
-    db.disconnect
-    results
-  end
 
   def save!
     sql = "INSERT INTO background_workers DEFAULT VALUES RETURNING id;"

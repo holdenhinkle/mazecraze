@@ -1,4 +1,7 @@
 class BackgroundJob
+  extend MazeCraze::Queryable
+  include MazeCraze::Queryable
+
   JOB_TYPES = %w(generate_maze_formulas
                  generate_maze_permutations
                  generate_maze_candidates).freeze
@@ -24,13 +27,6 @@ class BackgroundJob
     @params = job[:params]
     @status = 'queued'
     save!
-  end
-
-  def self.query(sql, *params)
-    db = DatabaseConnection.new
-    results = db.query(sql, *params)
-    db.disconnect
-    results
   end
 
   def self.each_job
@@ -130,13 +126,6 @@ class BackgroundJob
   end
 
   private
-
-  def query(sql, *params)
-    db = DatabaseConnection.new
-    results = db.query(sql, *params)
-    db.disconnect
-    results
-  end
 
   def generate_maze_formulas
     update_job_is_running

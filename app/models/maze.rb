@@ -1,11 +1,12 @@
 class Maze
+  include MazeNavigate
+  include MazeSolve
+  include MazeCraze::Queryable
+  
   MAZE_TYPE_CLASS_NAMES = { 'simple' => 'SimpleMaze',
                             'bridge' => 'BridgeMaze',
                             'tunnel' => 'TunnelMaze',
                             'portal' => 'PortalMaze' }
-
-  include MazeNavigate
-  include MazeSolve
 
   attr_reader :maze_type, :level, :x, :y, :squares, :valid, :solutions
 
@@ -21,13 +22,6 @@ class Maze
     elsif valid_maze?
       solve([{ path: [start_square_index], maze: self }])
     end
-  end
-
-  def query(sql, *params)
-    db = DatabaseConnection.new
-    results = db.query(sql, *params)
-    db.disconnect
-    results
   end
 
   def save_candidate!(id)

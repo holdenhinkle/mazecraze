@@ -1,4 +1,5 @@
 class BackgroundThread
+  include MazeCraze::Queryable
 
   @all = []
 
@@ -45,7 +46,9 @@ class BackgroundThread
   def kill_thread
     Thread.kill(thread)
     update_thread_status('dead')
-    BackgroundWorker.worker_from_id(background_worker_id).threads.delete(thread)
+    worker = BackgroundWorker.worker_from_id(background_worker_id)
+    worker = worker.first if worker.is_a?(Array) # sometimes worker is an array -- i can't track this bug down
+    worker.threads.delete(thread)
     self.class.all.delete(self)
   end
 
@@ -58,14 +61,5 @@ class BackgroundThread
     self.status = thread_status
     sql = "UPDATE background_threads SET status = $1, updated = $2 WHERE id = $3;"
     query(sql, status, 'NOW()', id)
-  end
-
-  private
-
-  def query(sql, *params)
-    db = DatabaseConnection.new
-    results = db.query(sql, *params)
-    db.disconnect
-    results
   end
 end

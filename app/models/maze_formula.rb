@@ -1,4 +1,7 @@
 class MazeFormula
+  extend MazeCraze::Queryable
+  include MazeCraze::Queryable
+
   MAZE_FORMULA_CLASS_NAMES = { 'simple' => 'SimpleMazeFormula',
                                'bridge' => 'BridgeMazeFormula',
                                'tunnel' => 'TunnelMazeFormula',
@@ -34,20 +37,6 @@ class MazeFormula
                          else
                            create_unique_square_set
                          end
-  end
-
-  def self.query(sql, *params)
-    db = DatabaseConnection.new
-    results = db.query(sql, *params)
-    db.disconnect
-    results
-  end
-
-  def query(sql, *params)
-    db = DatabaseConnection.new
-    results = db.query(sql, *params)
-    db.disconnect
-    results
   end
 
   def self.maze_formula_classes

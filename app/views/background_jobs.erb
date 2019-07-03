@@ -21,11 +21,11 @@
           <p>Change the number of threads on the <a href="/admin/settings" class="text-primary">settings</a> page.</p>
           <form action="/admin/background-jobs" method="post">
             <input type="hidden" name="restart_threads" value="true">
-            <button type="type" class="btn btn-primary">Restart Threads</button>
+            <button type="type" class="btn btn-secondary">Restart Threads</button>
           </form>
         </div>
       </div>
-      <p class='pt-3'>If you press 'Shutdown', all jobs that are running will be killed and put back in the queue.</p>
+      <p class='pt-3'>If you press 'Stop', all jobs that are running will be cancelled and put back in the queue.</p>
       <form action="/admin/background-jobs" method="post">
         <input type="hidden" name="stop_worker" value="true">
         <button type="type" class="btn btn-primary btn-lg">Stop</button>
@@ -33,8 +33,9 @@
     <% else %>
       <p class='h2'>Status: <span class="badge badge-danger">Not Running</span></p>
       <hr>
+      <p>There are no jobs in the queue. The system will start when you add a job.</p>
       <form action="/admin/background-jobs" method="post">
-        <input type="hidden" name="start_wroker" value="true">
+        <input type="hidden" name="start_worker" value="true">
         <button type="type" class="btn btn-primary btn-lg">Start</button>
       </form>
     <% end %>
@@ -43,6 +44,10 @@
 <section>
   <% @job_statuses.each do |status| %>
     <h2><%= status.capitalize %></h2>
+    <% if status == 'queued' && @jobs[status].values.length > 1 %>
+      <p>If you press 'Sort Queue', the job(s) that are running will finish, then the background jobs system will stop so you can sort the jobs in the queue.</p>
+      <a href="/admin/background-jobs/queued/sort" class="btn btn-secondary mb-3" role="button" aria-pressed="true">Sort Queue</a>
+    <% end %>
     <table class="table table-hover table-sm">
       <thead class="thead-dark">
         <tr>
