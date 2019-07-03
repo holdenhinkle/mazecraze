@@ -63,7 +63,7 @@ module MazeCraze
     end
 
     def self.stop
-      BackgroundThread.kill_all_threads
+      MazeCraze::BackgroundThread.kill_all_threads
       MazeCraze::BackgroundJob.undo_running_jobs
       MazeCraze::BackgroundJob.reset_running_jobs
       BackgroundWorker.kill_all_workers
@@ -94,7 +94,7 @@ module MazeCraze
 
     # REFACTOR THIS
     def kill_specific_job(thread_id, job_id)
-      BackgroundThread.background_thread_from_id(thread_id).kill_thread
+      MazeCraze::BackgroundThread.background_thread_from_id(thread_id).kill_thread
 
       job = MazeCraze::BackgroundJob.job_from_id(job_id)
       job.reset
@@ -119,7 +119,7 @@ module MazeCraze
       kill_worker do
         threads.each(&:join)
         threads.each do |thread|
-          BackgroundThread.each_background_thread do |background_thread|
+          MazeCraze::BackgroundThread.each_background_thread do |background_thread|
             if background_thread.thread == thread
               background_thread.kill_thread
             end
@@ -137,7 +137,7 @@ module MazeCraze
           next
         end
 
-        background_thread = BackgroundThread.new(id, thread)
+        background_thread = MazeCraze::BackgroundThread.new(id, thread)
 
         while job_queue_open?
           background_thread.mode = Thread.current[:mode] = 'waiting'

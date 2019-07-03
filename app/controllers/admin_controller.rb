@@ -38,7 +38,7 @@ class AdminController < ApplicationController
       @workers = MazeCraze::BackgroundWorker.active_workers
       @worker = @workers.first
       @number_of_threads = MazeCraze::BackgroundWorker.number_of_threads
-      @thread_stats = BackgroundThread.status_of_workers_threads(@worker.id)
+      @thread_stats = MazeCraze::BackgroundThread.status_of_workers_threads(@worker.id)
     end
     erb :background_jobs
   end
@@ -58,7 +58,7 @@ class AdminController < ApplicationController
         worker.delete_job(job_id) # skip job in queue - rename
       end
       if thread_id != ''
-        BackgroundThread.background_thread_from_id(thread_id).kill_thread
+        MazeCraze::BackgroundThread.background_thread_from_id(thread_id).kill_thread
         worker.new_thread
       end
       MazeCraze::BackgroundJob.job_from_id(job_id).delete
