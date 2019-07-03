@@ -10,13 +10,14 @@ module MazeCraze
     JOB_STATUSES = %w(running queued completed failed).freeze
 
     @all = []
+    @queued_count = 0
 
     class << self
-      attr_accessor :all
+      attr_accessor :all, :queued_count
     end
 
     attr_reader :type, :params, :thread_id
-    attr_accessor :id, :background_worker_id,
+    attr_accessor :id, :queue_order, :background_worker_id,
                   :background_thread_id, :status
 
     def initialize(job)
@@ -27,6 +28,8 @@ module MazeCraze
       @type = job[:type]
       @params = job[:params]
       @status = 'queued'
+      self.class.queued_count += 1
+      @queue_order = self.class.queued_count
       save!
     end
 
@@ -74,8 +77,8 @@ module MazeCraze
     end
 
     def save!
-      sql = "INSERT INTO background_jobs (job_type, params, status) VALUES ($1, $2, $3) RETURNING id;"
-      self.id = query(sql, type, params.to_json, status).first['id']
+      sql = "INSERT INTO background_jobs (job_type, params, status, queue_order) VALUES ($1, $2, $3, $4) RETURNING id;"
+      self.id = query(sql, type, params.to_json, status, queue_order).first['id']
     end
 
     def update_job_is_running
