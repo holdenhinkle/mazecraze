@@ -111,13 +111,13 @@ class AdminController < ApplicationController
   get '/admin/mazes/formulas' do
     @title = "Maze Formulas - Maze Craze Admin"
     @maze_types = Maze::MAZE_TYPE_CLASS_NAMES.keys
-    @formula_status_list = MazeFormula.status_list #RENAME THIS METHOD
+    @formula_status_list = MazeCraze::MazeFormula.status_list #RENAME THIS METHOD
     @maze_status_counts = {}
 
     @maze_types.each do |type|
       status_counts_by_maze_type = {}
       @formula_status_list.each do |status|
-        status_counts_by_maze_type[status] = MazeFormula.count_by_type_and_status(type, status)
+        status_counts_by_maze_type[status] = MazeCraze::MazeFormula.count_by_type_and_status(type, status)
       end
       @maze_status_counts[type] = status_counts_by_maze_type
     end
@@ -144,12 +144,12 @@ class AdminController < ApplicationController
   get '/admin/mazes/formulas/new' do
     @title = "New Maze Formula - Maze Craze Admin"
     @maze_types = Maze::MAZE_TYPE_CLASS_NAMES.keys
-    @popovers = MazeFormula.form_popovers
+    @popovers = MazeCraze::MazeFormula.form_popovers
     erb :mazes_formulas_new
   end
 
   post '/admin/mazes/formulas/new' do
-    @formula = MazeFormula.maze_formula_type_to_class(params[:maze_type]).new(params)
+    @formula = MazeCraze::MazeFormula.maze_formula_type_to_class(params[:maze_type]).new(params)
 
     if @formula.exists?
       session[:error] = "That maze formula already exists."
@@ -163,7 +163,7 @@ class AdminController < ApplicationController
     end
 
     @maze_types = Maze::MAZE_TYPE_CLASS_NAMES.keys
-    @popovers = MazeFormula.form_popovers
+    @popovers = MazeCraze::MazeFormula.form_popovers
     erb :mazes_formulas_new
   end
 
@@ -172,8 +172,8 @@ class AdminController < ApplicationController
 
     if Maze::MAZE_TYPE_CLASS_NAMES.keys.include?(@maze_type)
       @title = "#{@maze_type} Maze Formulas - Maze Craze Admin"
-      @formula_status_list = MazeFormula.status_list #RENAME THIS METHOD
-      @formulas = MazeFormula.status_list_by_maze_type(@maze_type)
+      @formula_status_list = MazeCraze::MazeFormula.status_list #RENAME THIS METHOD
+      @formulas = MazeCraze::MazeFormula.status_list_by_maze_type(@maze_type)
       erb :mazes_formulas_type
     else
       session[:error] = "Invalid maze type."
@@ -222,11 +222,11 @@ class AdminController < ApplicationController
 
   post '/admin/mazes/formulas/:type' do
     if params[:update_status_to] == 'approved'
-      formula_values = MazeFormula.retrieve_formula_values(params[:formula_id])
-      @formula = MazeFormula.maze_formula_type_to_class(formula_values['maze_type']).new(formula_values)
+      formula_values = MazeCraze::MazeFormula.retrieve_formula_values(params[:formula_id])
+      @formula = MazeCraze::MazeFormula.maze_formula_type_to_class(formula_values['maze_type']).new(formula_values)
       @formula.generate_permutations(params[:formula_id])
       @formula.generate_candidates(params[:formula_id])
-      MazeFormula.update_status(params[:formula_id], params[:update_status_to]) # change to instance method
+      MazeCraze::MazeFormula.update_status(params[:formula_id], params[:update_status_to]) # change to instance method
       session[:success] = "The status for Maze Formula ID:#{params[:formula_id]} was updated to '#{params[:update_status_to]}'."
     elsif params['generate_formulas']
       job_type = 'generate_maze_formulas'
@@ -245,7 +245,7 @@ class AdminController < ApplicationController
     # add :type validation
     @title = "Mazes - maze Craze Admin"
     @maze_types = Maze::MAZE_TYPE_CLASS_NAMES.keys
-    @formula_status_list = MazeFormula.status_list #RENAME THIS METHOD
+    @formula_status_list = MazeCraze::MazeFormula.status_list #RENAME THIS METHOD
     erb :mazes_formulas_id
   end
 end

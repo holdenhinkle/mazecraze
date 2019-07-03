@@ -131,10 +131,10 @@ module MazeCraze
     def generate_maze_formulas
       update_job_is_running
       if params.empty?
-        generated_formula_stats = MazeFormula.generate_formulas(id.to_i)
+        generated_formula_stats = MazeCraze::MazeFormula.generate_formulas(id.to_i)
       else
-        maze_formula_class = MazeFormula.maze_formula_type_to_class(params['maze_type'])
-        generated_formula_stats = MazeFormula.generate_formulas(id.to_i, [maze_formula_class]) # refactor - i don't like that I have to pass a one element array
+        maze_formula_class = MazeCraze::MazeFormula.maze_formula_type_to_class(params['maze_type'])
+        generated_formula_stats = MazeCraze::MazeFormula.generate_formulas(id.to_i, [maze_formula_class]) # refactor - i don't like that I have to pass a one element array
       end
       new_message = "#{generated_formula_stats[:new]} new maze formulas were created."
       existed_message = "#{generated_formula_stats[:existed]} formulas already existed."
