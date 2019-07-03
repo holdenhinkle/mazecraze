@@ -249,7 +249,7 @@ module MazeCraze
 
     def save_permutations(permutations, id)
       permutations.each do |permutation|
-        permutation = MazePermutation.new(permutation, x, y)
+        permutation = MazeCraze::MazePermutation.new(permutation, x, y)
         permutation.save!(id) unless permutation.exists?
       end
     end
