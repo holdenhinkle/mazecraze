@@ -126,7 +126,7 @@ module MazeCraze
     end
 
     def self.build_popovers
-      maze_types_popover = Maze.types_popover
+      maze_types_popover = MazeCraze::Maze.types_popover
       maze_square_types_popovers = MazeSquare.types_popovers
       maze_types_popover.merge(maze_dimensions_popovers).merge(maze_square_types_popovers)
     end
@@ -265,7 +265,7 @@ module MazeCraze
       results = query(sql.gsub!("\n", ""), id)
 
       results.each do |tuple|
-        maze = Maze.maze_type_to_class(tuple["maze_type"]).new(tuple)
+        maze = MazeCraze::Maze.maze_type_to_class(tuple["maze_type"]).new(tuple)
         maze.save_candidate!(tuple['id']) if maze.solutions.any?
       end
     end

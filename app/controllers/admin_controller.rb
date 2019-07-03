@@ -110,7 +110,7 @@ class AdminController < ApplicationController
 
   get '/admin/mazes/formulas' do
     @title = "Maze Formulas - Maze Craze Admin"
-    @maze_types = Maze::MAZE_TYPE_CLASS_NAMES.keys
+    @maze_types = MazeCraze::Maze::MAZE_TYPE_CLASS_NAMES.keys
     @formula_status_list = MazeCraze::MazeFormula.status_list #RENAME THIS METHOD
     @maze_status_counts = {}
 
@@ -143,7 +143,7 @@ class AdminController < ApplicationController
 
   get '/admin/mazes/formulas/new' do
     @title = "New Maze Formula - Maze Craze Admin"
-    @maze_types = Maze::MAZE_TYPE_CLASS_NAMES.keys
+    @maze_types = MazeCraze::Maze::MAZE_TYPE_CLASS_NAMES.keys
     @popovers = MazeCraze::MazeFormula.form_popovers
     erb :mazes_formulas_new
   end
@@ -162,7 +162,7 @@ class AdminController < ApplicationController
       session[:error] = "That maze formula is invalid."
     end
 
-    @maze_types = Maze::MAZE_TYPE_CLASS_NAMES.keys
+    @maze_types = MazeCraze::Maze::MAZE_TYPE_CLASS_NAMES.keys
     @popovers = MazeCraze::MazeFormula.form_popovers
     erb :mazes_formulas_new
   end
@@ -170,7 +170,7 @@ class AdminController < ApplicationController
   get '/admin/mazes/formulas/:type' do
     @maze_type = params[:type]
 
-    if Maze::MAZE_TYPE_CLASS_NAMES.keys.include?(@maze_type)
+    if MazeCraze::Maze::MAZE_TYPE_CLASS_NAMES.keys.include?(@maze_type)
       @title = "#{@maze_type} Maze Formulas - Maze Craze Admin"
       @formula_status_list = MazeCraze::MazeFormula.status_list #RENAME THIS METHOD
       @formulas = MazeCraze::MazeFormula.status_list_by_maze_type(@maze_type)
@@ -244,7 +244,7 @@ class AdminController < ApplicationController
   get '/admin/mazes/formulas/:type/:id' do
     # add :type validation
     @title = "Mazes - maze Craze Admin"
-    @maze_types = Maze::MAZE_TYPE_CLASS_NAMES.keys
+    @maze_types = MazeCraze::Maze::MAZE_TYPE_CLASS_NAMES.keys
     @formula_status_list = MazeCraze::MazeFormula.status_list #RENAME THIS METHOD
     erb :mazes_formulas_id
   end
