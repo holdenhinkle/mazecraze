@@ -1,6 +1,6 @@
 class Maze
-  include MazeNavigate
-  include MazeSolve
+  include MazeCraze::MazeNavigate
+  include MazeCraze::MazeSolve
   include MazeCraze::Queryable
   
   MAZE_TYPE_CLASS_NAMES = { 'simple' => 'SimpleMaze',
@@ -152,8 +152,8 @@ class SimpleMaze < Maze
 end
 
 class BridgeMaze < Maze
-  include NavigateBridgeMaze
-  include SolveBridgeMaze
+  include MazeCraze::NavigateBridgeMaze
+  include MazeCraze::SolveBridgeMaze
 
   def self.to_string
     'bridge'
@@ -183,8 +183,8 @@ class BridgeMaze < Maze
 end
 
 class TunnelMaze < Maze
-  include NavigateTunnelMaze
-  include SolveTunnelMaze
+  include MazeCraze::NavigateTunnelMaze
+  include MazeCraze::SolveTunnelMaze
 
   def self.to_string
     'tunnel'
@@ -208,8 +208,8 @@ class TunnelMaze < Maze
 end
 
 class PortalMaze < Maze
-  include NavigatePortalMaze
-  include SolvePortalMaze
+  include MazeCraze::NavigatePortalMaze
+  include MazeCraze::SolvePortalMaze
 
   def self.to_string
     'portal'
