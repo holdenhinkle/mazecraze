@@ -64,13 +64,13 @@ module MazeCraze
 
     def self.stop
       BackgroundThread.kill_all_threads
-      BackgroundJob.undo_running_jobs
-      BackgroundJob.reset_running_jobs
+      MazeCraze::BackgroundJob.undo_running_jobs
+      MazeCraze::BackgroundJob.reset_running_jobs
       BackgroundWorker.kill_all_workers
     end
 
     def enqueue_jobs
-      BackgroundJob.each_job { |job| enqueue_job(job) if job.status == 'queued' }
+      MazeCraze::BackgroundJob.each_job { |job| enqueue_job(job) if job.status == 'queued' }
     end
 
     def enqueue_job(job)
@@ -96,7 +96,7 @@ module MazeCraze
     def kill_specific_job(thread_id, job_id)
       BackgroundThread.background_thread_from_id(thread_id).kill_thread
 
-      job = BackgroundJob.job_from_id(job_id)
+      job = MazeCraze::BackgroundJob.job_from_id(job_id)
       job.reset
       job.undo
       enqueue_job(job)

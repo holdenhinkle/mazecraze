@@ -32,8 +32,8 @@ class AdminController < ApplicationController
 
   get '/admin/background-jobs' do
     @title = "Background Jobs - Maze Craze Admin"
-    @job_statuses = BackgroundJob::JOB_STATUSES
-    @jobs = BackgroundJob.all_jobs
+    @job_statuses = MazeCraze::BackgroundJob::JOB_STATUSES
+    @jobs = MazeCraze::BackgroundJob.all_jobs
     if @background_workers_status = MazeCraze::BackgroundWorker.active_workers.any?
       @workers = MazeCraze::BackgroundWorker.active_workers
       @worker = @workers.first
@@ -61,7 +61,7 @@ class AdminController < ApplicationController
         BackgroundThread.background_thread_from_id(thread_id).kill_thread
         worker.new_thread
       end
-      BackgroundJob.job_from_id(job_id).delete
+      MazeCraze::BackgroundJob.job_from_id(job_id).delete
       session[:success] = "Job ID \##{job_id} was deleted."
     elsif params['cancel_job']
       worker.kill_specific_job(thread_id, job_id)
@@ -79,13 +79,13 @@ class AdminController < ApplicationController
 
   get '/admin/background-jobs/:status' do
     status = params[:status]
-    if BackgroundJob::JOB_STATUSES.none?(status)
+    if MazeCraze::BackgroundJob::JOB_STATUSES.none?(status)
       session[:error] = "The page you requested doesn't exist."
       redirect '/admin'
     end
 
     @title = "#{status.capitalize} Background Jobs - Maze Craze Admin"
-    @jobs = BackgroundJob.all_jobs_of_status_type(status)
+    @jobs = MazeCraze::BackgroundJob.all_jobs_of_status_type(status)
     erb :background_jobs_status
   end
 
@@ -131,7 +131,7 @@ class AdminController < ApplicationController
     job_type = 'generate_maze_formulas'
     job_params = []
 
-    if BackgroundJob.duplicate_job?(job_type, job_params)
+    if MazeCraze::BackgroundJob.duplicate_job?(job_type, job_params)
       session[:error] = duplicate_jobs_error_message(job_type, job_params)
     else
       new_background_job(job_type, job_params)
@@ -182,7 +182,7 @@ class AdminController < ApplicationController
   end
 
   def new_background_job(job_type, job_params)
-    BackgroundJob.new({ type: job_type, params: job_params })
+    MazeCraze::BackgroundJob.new({ type: job_type, params: job_params })
 
     workers = MazeCraze::BackgroundWorker.active_workers
 
@@ -190,20 +190,20 @@ class AdminController < ApplicationController
       MazeCraze::BackgroundWorker.new
     else
       worker = workers[0]
-      worker.enqueue_job(BackgroundJob.all.last)
+      worker.enqueue_job(MazeCraze::BackgroundJob.all.last)
       MazeCraze::BackgroundWorker.new if worker.dead?
     end
 
     # if (worker = MazeCraze::BackgroundWorker.active_worker).nil? # I DON'T LIKE THIS!
     #   MazeCraze::BackgroundWorker.new
     # else
-    #   worker.enqueue_job(BackgroundJob.all.last)
+    #   worker.enqueue_job(MazeCraze::BackgroundJob.all.last)
     #   MazeCraze::BackgroundWorker.new if worker.dead?
     # end
   end
 
   def duplicate_jobs_error_message(job, params)
-    duplicate_jobs = BackgroundJob.duplicate_jobs(job, params)
+    duplicate_jobs = MazeCraze::BackgroundJob.duplicate_jobs(job, params)
 
     message = if duplicate_jobs.values.length > 1
                 "#{duplicate_jobs.values.length} duplicate jobs exist: "
@@ -231,7 +231,7 @@ class AdminController < ApplicationController
     elsif params['generate_formulas']
       job_type = 'generate_maze_formulas'
       job_params = { 'maze_type' => params['maze_type'] }
-      if BackgroundJob.duplicate_job?(job_type, job_params)
+      if MazeCraze::BackgroundJob.duplicate_job?(job_type, job_params)
         session[:error] = duplicate_jobs_error_message(job_type, job_params)
       else
         new_background_job(job_type, job_params)
