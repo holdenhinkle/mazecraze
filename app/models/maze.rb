@@ -105,20 +105,20 @@ module MazeCraze
           group = square_group(square)
           subgroup = square_subgroup(square)
           if subgroup == 'a' && number_of_endpoints == 1
-            EndpointSquare.new(:endpoint, :taken, group, subgroup, index)
+            MazeCraze::EndpointSquare.new(:endpoint, :taken, group, subgroup, index)
           else
-            EndpointSquare.new(:endpoint, :not_taken, group, subgroup, index)
+            MazeCraze::EndpointSquare.new(:endpoint, :not_taken, group, subgroup, index)
           end
         elsif square =~ /portal/
-          PortalSquare.new(:portal, :not_taken, square_group(square),square_subgroup(square), index)
+          MazeCraze::PortalSquare.new(:portal, :not_taken, square_group(square),square_subgroup(square), index)
         elsif square =~ /tunnel/
-          TunnelSquare.new(:tunnel, :not_taken, square_group(square), square_subgroup(square), index)
+          MazeCraze::TunnelSquare.new(:tunnel, :not_taken, square_group(square), square_subgroup(square), index)
         elsif square == 'bridge'
-          BridgeSquare.new(:bridge, :not_taken, index)
+          MazeCraze::BridgeSquare.new(:bridge, :not_taken, index)
         elsif square == 'barrier'
-          MazeSquare.new(:barrier, :taken, index)
+          MazeCraze::MazeSquare.new(:barrier, :taken, index)
         else
-          MazeSquare.new(:normal, :not_taken, index)
+          MazeCraze::MazeSquare.new(:normal, :not_taken, index)
         end
       end
     end

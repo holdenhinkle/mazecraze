@@ -127,7 +127,7 @@ module MazeCraze
 
     def self.build_popovers
       maze_types_popover = MazeCraze::Maze.types_popover
-      maze_square_types_popovers = MazeSquare.types_popovers
+      maze_square_types_popovers = MazeCraze::MazeSquare.types_popovers
       maze_types_popover.merge(maze_dimensions_popovers).merge(maze_square_types_popovers)
     end
 
