@@ -148,7 +148,9 @@ module MazeCraze
             next
           elsif job
             background_thread.mode = Thread.current[:mode] = 'processing'
-            job.background_thread_id = background_thread.id
+            job.update_job_is_running(background_thread.id)
+            MazeCraze::BackgroundJob.queued_count -= 1
+            MazeCraze::BackgroundJob.update_queue_orders
             job.run
           end
         end

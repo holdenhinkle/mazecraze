@@ -72,6 +72,8 @@ class AdminController < ApplicationController
       MazeCraze::BackgroundWorker.stop
     elsif params['restart_threads']
       MazeCraze::BackgroundWorker.start
+    elsif params['sort_queue']
+      binding.pry
     end
 
     redirect "/admin/background-jobs"

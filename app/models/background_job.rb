@@ -76,15 +76,30 @@ module MazeCraze
       query(sql, type, params.to_json)
     end
 
+    def self.update_queue_orders
+      each_job do |job|
+        next unless job.status == 'queued'
+        job.queue_order -= 1
+        job.update_queue_order
+      end
+    end
+
     def save!
       sql = "INSERT INTO background_jobs (job_type, params, status, queue_order) VALUES ($1, $2, $3, $4) RETURNING id;"
       self.id = query(sql, type, params.to_json, status, queue_order).first['id']
     end
 
-    def update_job_is_running
+    def update_queue_order
+      sql = 'UPDATE background_jobs SET queue_order = $1 WHERE id = $2;'
+      query(sql, queue_order, id)
+    end
+
+    def update_job_is_running(thread_id)
+      self.background_thread_id = thread_id
       self.status = 'running'
-      sql = "UPDATE background_jobs SET status = $1, background_thread_id = $2, updated = $3 WHERE id = $4;"
-      query(sql, status, background_thread_id, 'NOW()', id)
+      self.queue_order = nil
+      sql = "UPDATE background_jobs SET background_thread_id = $1, status = $2, queue_order = $3, updated = $4 WHERE id = $5;"
+      query(sql, background_thread_id, status, queue_order, 'NOW()', id)
     end
 
     def update_job_status(job_status)
@@ -132,7 +147,6 @@ module MazeCraze
     private
 
     def generate_maze_formulas
-      update_job_is_running
       if params.empty?
         generated_formula_stats = MazeCraze::MazeFormula.generate_formulas(id.to_i)
       else

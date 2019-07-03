@@ -77,7 +77,7 @@
             <th scope='row'><%= index + 1 %></th>
             <td><%= job['id'] %></td>
             <% if status == 'queued' %>
-              <th scope="col"><%= job['queue_order'] %></th>
+              <td scope="col"><%= job['queue_order'] %></td>
             <% end %>
             <td><%= capitalize_words(underscores_to_spaces(job['job_type'])) %></td>
             <td><%= format_background_job_params(job['params']) %></td>
