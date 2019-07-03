@@ -62,6 +62,7 @@ CREATE TYPE job_status AS ENUM ('queued', 'running', 'completed', 'failed');
 
 CREATE TABLE background_jobs (
   id serial PRIMARY KEY,
+  queue_order integer,
   background_worker_id integer REFERENCES background_workers(id),
   background_thread_id integer REFERENCES background_threads(id),
   job_type job_type NOT NULL,
