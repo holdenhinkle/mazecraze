@@ -4,17 +4,9 @@ module MazeCraze
     include MazeCraze::Queryable
 
     MAZE_FORMULA_CLASS_NAMES = { 'simple' => 'SimpleMazeFormula',
-                                'bridge' => 'BridgeMazeFormula',
-                                'tunnel' => 'TunnelMazeFormula',
-                                'portal' => 'PortalMazeFormula' }
-    X_MIN = 3
-    X_MAX = 10
-    Y_MIN = 2
-    Y_MAX = 10
-    ENDPOINT_MIN = 1
-    ENDPOINT_MAX = 4
-    BARRIER_MIN = 0
-    BARRIER_MAX = 3
+                                 'bridge' => 'BridgeMazeFormula',
+                                 'tunnel' => 'TunnelMazeFormula',
+                                 'portal' => 'PortalMazeFormula' }
 
     attr_reader :background_job_id,
                 :maze_type, :x, :y,
@@ -56,9 +48,9 @@ module MazeCraze
       existed_formula_count = 0
 
       classes.each do |maze_class|
-        formulas = formula_dimensions.each_with_object([]) do |dimensions, formulas|
-          ENDPOINT_MIN.upto(ENDPOINT_MAX) do |num_endpoints|
-            BARRIER_MIN.upto(BARRIER_MAX) do |num_barriers|
+        formulas = maze_class.formula_dimensions.each_with_object([]) do |dimensions, formulas|
+          maze_class.endpoint_min.upto(maze_class.endpoint_max) do |num_endpoints|
+            maze_class.barrier_min.upto(maze_class.barrier_max) do |num_barriers|
               next if num_endpoints == 1 && num_barriers == 0
               maze_class.generate_formulas(dimensions, num_endpoints, num_barriers) do |formula|
                 formula['background_job_id'] = background_job_id
@@ -77,7 +69,7 @@ module MazeCraze
     end
 
     def self.formula_dimensions
-      (self::X_MIN..self::X_MAX).each_with_object([]) do |dimension, dimensions|
+      (self.x_min..self.x_max).each_with_object([]) do |dimension, dimensions|
         dimensions << { x: dimension, y: dimension -1 }
         dimensions << { x: dimension, y: dimension }
       end
@@ -102,33 +94,49 @@ module MazeCraze
 
     def self.form_popovers
       popovers = build_popovers
+
       popovers.keys.each do |element|
-        next if [:title, :body].include?(element)
-        range = case element
-                when :x
-                  x_range
-                when :y
-                  y_range
-                when :endpoint
-                  endpoint_range
-                when :barrier
-                  barrier_range
-                when :bridge
-                  bridge_range
-                when :tunnel
-                  bridge_range
-                when :portal
-                  bridge_range
-                end
-        popovers[element][:body] = popovers[element][:body].prepend(range)
+        next if element == :maze_types
+        popovers[element][:body] << "<p><strong>Valid Ranges:</strong></p>"
+
+        maze_formula_classes.each do |formula_class|
+          range = case element
+                  when :x
+                    formula_class.x_range
+                  when :y
+                    formula_class.y_range
+                  when :endpoint
+                    formula_class.endpoint_range
+                  when :barrier
+                    formula_class.barrier_range
+                  when :bridge
+                    formula_class.bridge_range
+                  when :tunnel
+                    formula_class.tunnel_range
+                  when :portal
+                    formula_class.portal_range
+                  end
+          
+          popovers[element][:body] << "<p><strong>#{formula_class.to_s}</strong> Maze: "
+          popovers[element][:body] << if range == [0, 0]
+                                        "not allowed"
+                                      else
+                                        "between #{range.first} and #{range.last}"
+                                      end
+          popovers[element][:body] << "</p>"
+        end
       end
+
       popovers
     end
 
     def self.build_popovers
-      maze_types_popover = MazeCraze::Maze.types_popover
-      maze_square_types_popovers = MazeCraze::MazeSquare.types_popovers
-      maze_types_popover.merge(maze_dimensions_popovers).merge(maze_square_types_popovers)
+      MazeCraze::Maze.types_popover.merge(MazeCraze::MazeSquare.types_popover).merge(maze_dimensions_popover)
+    end
+
+    def self.maze_dimensions_popover
+      { x: { title: 'Valid Widths', body: "<p>Here's a description of the width field.</p>" },
+        y: { title: 'Valid Heights', body: "<p>Here's a description of the height field.</p>" } }
     end
 
     def self.retrieve_formula_values(id)
@@ -282,64 +290,53 @@ module MazeCraze
       value == '' ? 0 : value.to_i
     end
 
-    def self.maze_dimensions_popovers
-      { x: { title: "Valid Widths",
-            body: "The width should be between #{self::X_MIN} and #{self::X_MAX} squares wide." },
-        y: { title: "Valid Heights",
-            body: "The width should be between #{self::Y_MIN} and #{self::Y_MAX} squares high." } }
-    end
-
     def self.x_range
-      range_message(self::X_MIN, self::X_MAX)
+      [x_min, x_max]
     end
 
     def self.y_range
-      range_message(self::Y_MIN, self::Y_MAX)
+      [y_min, y_max]
     end
 
     def self.endpoint_range
-      range_message(self::ENDPOINT_MIN, self::ENDPOINT_MAX)
+      [endpoint_min, endpoint_max]
     end
 
     def self.barrier_range
-      range_message(self::BARRIER_MIN, self::BARRIER_MAX)
+      [barrier_min, barrier_max]
     end
 
     def self.bridge_range
-      range_message(BridgeMazeFormula::BRIDGE_MIN, BridgeMazeFormula::BRIDGE_MAX)
+      [0, 0]
     end
 
     def self.tunnel_range
-      range_message(TunnelMazeFormula::TUNNEL_MIN, TunnelMazeFormula::TUNNEL_MAX)
+      [0, 0]
     end
 
     def self.portal_range
-      range_message(PortalMazeFormula::PORTAL_MIN, PortalMazeFormula::PORTAL_MAX)
-    end
-
-    def self.range_message(min, max)
-      "<p><strong>Valid input:</strong><br>Between #{min} and #{max}<p><hr>"
+      [0, 0]
     end
 
     def x_valid_input?
-      (self.class::X_MIN..self.class::X_MAX).cover?(x) || experiment? && x > 0
+      (self.class.x_min..self.class.x_max).cover?(x) || experiment? && x > 0
     end
 
     def y_valid_input?
-      (self.class::Y_MIN..self.class::Y_MAX).cover?(y) || experiment? && y > 0
+      (self.class.y_min..self.class.y_max).cover?(y) || experiment? && y > 0
     end
 
     def endpoints_valid_input?
-      (self.class::ENDPOINT_MIN..self.class::ENDPOINT_MAX).cover?(endpoints) || experiment? && endpoints > 1
+      (self.class.endpoint_min..self.class.endpoint_max).cover?(endpoints) || experiment? && endpoints > 1
     end
 
     def barriers_valid_input?
       if endpoints == 1
         return true if experiment? && barriers >= 1
-        (1..self.class::BARRIER_MAX).cover?(barriers)
+        (1..self.class.barrier_max).cover?(barriers)
       else
         return true if experiment? && barriers >= 0
-        (self.class::BARRIER_MIN..self.class::BARRIER_MAX).cover?(barriers)
+        (self.class.barrier_min..self.class.barrier_max).cover?(barriers)
       end
     end
 
@@ -363,7 +360,7 @@ module MazeCraze
       else
         validation[:x_validation_css] = 'is-invalid'
         validation[:x_validation_feedback_css] = 'invalid-feedback'
-        validation[:x_validation_feedback] = "Width must be between #{self.class::X_MIN} and #{self.class::X_MAX}."
+        validation[:x_validation_feedback] = "Width must be between #{self.class.x_min} and #{self.class.x_max}."
       end
     end
 
@@ -375,7 +372,7 @@ module MazeCraze
       else
         validation[:y_validation_css] = 'is-invalid'
         validation[:y_validation_feedback_css] = 'invalid-feedback'
-        validation[:y_validation_feedback] = "Height must be between #{self.class::Y_MIN} and #{self.class::Y_MAX}."
+        validation[:y_validation_feedback] = "Height must be between #{self.class.y_min} and #{self.class.y_max}."
       end
     end
 
@@ -390,7 +387,7 @@ module MazeCraze
         if experiment?
           validation[:endpoint_validation_feedback] = "Experiments must have at least 1 endpoint."
         else
-          validation[:endpoint_validation_feedback] = "Number of endpoints must be between #{self.class::ENDPOINT_MIN} and #{self.class::ENDPOINT_MAX}."
+          validation[:endpoint_validation_feedback] = "Number of endpoints must be between #{self.class.endpoint_min} and #{self.class.endpoint_max}."
         end
       end
     end
@@ -406,7 +403,7 @@ module MazeCraze
         if barriers == 0 && endpoints == 1
           validation[:barrier_validation_feedback] = "You must have at least 1 barrier if you have 1 endpoint."
         else
-          validation[:barrier_validation_feedback] = "Number of barriers must be between #{self.class::BARRIER_MIN} and #{self.class::BARRIER_MAX}."
+          validation[:barrier_validation_feedback] = "Number of barriers must be between #{self.class.barrier_min} and #{self.class.barrier_max}."
         end
       end
     end
@@ -465,6 +462,66 @@ module MazeCraze
   end
 
   class SimpleMazeFormula < MazeFormula
+    @x_min = nil
+    @x_max = nil
+    @y_min = nil
+    @y_max = nil
+    @endpoint_min = nil
+    @endpoint_max = nil
+    @barrier_min = nil
+    @barrier_max = nil
+                             
+    class << self
+      attr_accessor :x_min, :x_max, :y_min, :y_max,
+                    :endpoint_min, :endpoint_max,
+                    :barrier_min, :barrier_max
+    end
+
+    sql = <<~SQL
+      SELECT * 
+      FROM settings 
+      WHERE 
+      name = $1 OR 
+      name = $2 OR 
+      name = $3 OR 
+      name = $4 OR 
+      name = $5 OR 
+      name = $6 OR 
+      name = $7 OR 
+      name = $8;
+    SQL
+
+    settings = query(sql.gsub!("\n", ""),
+                    'simple_x_min', 'simple_x_max',
+                    'simple_y_min', 'simple_y_max',
+                    'simple_endpoint_min', 'simple_endpoint_max',
+                    'simple_barrier_min', 'simple_barrier_max')
+
+    settings.each do |setting|
+      case setting['name']
+      when 'simple_x_min'
+        self.x_min = setting['integer_value'].to_i
+      when 'simple_x_max'
+        self.x_max = setting['integer_value'].to_i
+      when 'simple_y_min'
+        self.y_min = setting['integer_value'].to_i
+      when 'simple_y_max'
+        self.y_max = setting['integer_value'].to_i
+      when 'simple_endpoint_min'
+        self.endpoint_min = setting['integer_value'].to_i
+      when 'simple_endpoint_max'
+        self.endpoint_max = setting['integer_value'].to_i
+      when 'simple_barrier_min'
+        self.barrier_min = setting['integer_value'].to_i
+      when 'simple_barrier_max'
+        self.barrier_max = setting['integer_value'].to_i
+      end
+    end
+
+    def self.to_s
+      'Simple'
+    end
+
     def self.generate_formulas(dimensions, num_endpoints, num_barriers)
       return if (num_endpoints * 2 + num_barriers) > dimensions[:x] * dimensions[:y] / 2
       yield({ 'maze_type' => 'simple',
@@ -479,11 +536,78 @@ module MazeCraze
   end
 
   class BridgeMazeFormula < MazeFormula
-    BRIDGE_MIN = 1
-    BRIDGE_MAX = 3
+    @x_min = nil
+    @x_max = nil
+    @y_min = nil
+    @y_max = nil
+    @endpoint_min = nil
+    @endpoint_max = nil
+    @barrier_min = nil
+    @barrier_max = nil
+    @bridge_min = nil
+    @bridge_max = nil
+                             
+    class << self
+      attr_accessor :x_min, :x_max, :y_min, :y_max,
+                    :endpoint_min, :endpoint_max,
+                    :barrier_min, :barrier_max,
+                    :bridge_min, :bridge_max
+    end
+
+    sql = <<~SQL
+      SELECT * 
+      FROM settings 
+      WHERE 
+      name = $1 OR 
+      name = $2 OR 
+      name = $3 OR 
+      name = $4 OR 
+      name = $5 OR 
+      name = $6 OR 
+      name = $7 OR 
+      name = $8 OR 
+      name = $9 OR 
+      name = $10;
+    SQL
+
+    settings = query(sql.gsub!("\n", ""),
+                    'bridge_x_min', 'bridge_x_max',
+                    'bridge_y_min', 'bridge_y_max',
+                    'bridge_endpoint_min', 'bridge_endpoint_max',
+                    'bridge_barrier_min', 'bridge_barrier_max',
+                    'bridge_min', 'bridge_max')
+
+    settings.each do |setting|
+      case setting['name']
+      when 'bridge_x_min'
+        self.x_min = setting['integer_value'].to_i
+      when 'bridge_x_max'
+        self.x_max = setting['integer_value'].to_i
+      when 'bridge_y_min'
+        self.y_min = setting['integer_value'].to_i
+      when 'bridge_y_max'
+        self.y_max = setting['integer_value'].to_i
+      when 'bridge_endpoint_min'
+        self.endpoint_min = setting['integer_value'].to_i
+      when 'bridge_endpoint_max'
+        self.endpoint_max = setting['integer_value'].to_i
+      when 'bridge_barrier_min'
+        self.barrier_min = setting['integer_value'].to_i
+      when 'bridge_barrier_max'
+        self.barrier_max = setting['integer_value'].to_i
+      when 'bridge_min'
+        self.bridge_min = setting['integer_value'].to_i
+      when 'bridge_max'
+        self.bridge_max = setting['integer_value'].to_i
+      end
+    end
+
+    def self.to_s
+      'Bridge'
+    end
 
     def self.generate_formulas(dimensions, num_endpoints, num_barriers)
-      BRIDGE_MIN.upto(BRIDGE_MAX) do |num_bridges|
+      BRIDGE_MIN.upto(bridge_max) do |num_bridges|
         next if (num_endpoints * 2 + num_barriers + num_bridges) > dimensions[:x] * dimensions[:y] / 2
         yield({ 'maze_type' => 'bridge',
                 'x' => dimensions[:x],
@@ -496,8 +620,12 @@ module MazeCraze
       end
     end
 
+    def self.bridge_range
+      [bridge_min, bridge_max]
+    end
+
     def bridges_valid_input?
-      (BRIDGE_MIN..BRIDGE_MAX).cover?(bridges) || experiment? && bridges > 0
+      (self.class.bridge_min..self.class.bridge_max).cover?(bridges) || experiment? && bridges > 0
     end
 
     def bridge_validation(validation)
@@ -511,22 +639,85 @@ module MazeCraze
         if experiment?
           validation[:bridge_validation_feedback] = "Bridge experiments must have at least 1 bridge."
         else
-          validation[:bridge_validation_feedback] = "Number of bridges must be between #{BRIDGE_MIN} and #{BRIDGE_MAX}."
+          validation[:bridge_validation_feedback] = "Number of bridges must be between #{self.class.bridge_min} and #{self.class.bridge_max}."
         end
       end
     end
   end
 
   class TunnelMazeFormula < MazeFormula
-    X_MIN = 5
-    X_MAX = 15
-    Y_MIN = 5
-    Y_MAX = 15
-    TUNNEL_MIN = 1
-    TUNNEL_MAX = 3
+    @x_min = nil
+    @x_max = nil
+    @y_min = nil
+    @y_max = nil
+    @endpoint_min = nil
+    @endpoint_max = nil
+    @barrier_min = nil
+    @barrier_max = nil
+    @tunnel_min = nil
+    @tunnel_max = nil
+                             
+    class << self
+      attr_accessor :x_min, :x_max, :y_min, :y_max,
+                    :endpoint_min, :endpoint_max,
+                    :barrier_min, :barrier_max,
+                    :tunnel_min, :tunnel_max
+    end
+
+    sql = <<~SQL
+      SELECT * 
+      FROM settings 
+      WHERE 
+      name = $1 OR 
+      name = $2 OR 
+      name = $3 OR 
+      name = $4 OR 
+      name = $5 OR 
+      name = $6 OR 
+      name = $7 OR 
+      name = $8 OR 
+      name = $9 OR 
+      name = $10;
+    SQL
+
+    settings = query(sql.gsub!("\n", ""),
+                    'bridge_x_min', 'bridge_x_max',
+                    'bridge_y_min', 'bridge_y_max',
+                    'bridge_endpoint_min', 'bridge_endpoint_max',
+                    'bridge_barrier_min', 'bridge_barrier_max',
+                    'tunnel_min', 'tunnel_max')
+
+    settings.each do |setting|
+      case setting['name']
+      when 'bridge_x_min'
+        self.x_min = setting['integer_value'].to_i
+      when 'bridge_x_max'
+        self.x_max = setting['integer_value'].to_i
+      when 'bridge_y_min'
+        self.y_min = setting['integer_value'].to_i
+      when 'bridge_y_max'
+        self.y_max = setting['integer_value'].to_i
+      when 'bridge_endpoint_min'
+        self.endpoint_min = setting['integer_value'].to_i
+      when 'bridge_endpoint_max'
+        self.endpoint_max = setting['integer_value'].to_i
+      when 'bridge_barrier_min'
+        self.barrier_min = setting['integer_value'].to_i
+      when 'bridge_barrier_max'
+        self.barrier_max = setting['integer_value'].to_i
+      when 'tunnel_min'
+        self.tunnel_min = setting['integer_value'].to_i
+      when 'tunnel_max'
+        self.tunnel_max = setting['integer_value'].to_i
+      end
+    end
+
+    def self.to_s
+      'Tunnel'
+    end
 
     def self.generate_formulas(dimensions, num_endpoints, num_barriers)
-      TUNNEL_MIN.upto(TUNNEL_MAX) do |num_tunnels|
+      tunnel_min.upto(tunnel_max) do |num_tunnels|
         next if (num_endpoints * 2 + num_barriers + num_tunnels * 2) > dimensions[:x] * dimensions[:y] / 2
         yield({ 'maze_type' => 'tunnel',
                 'x' => dimensions[:x],
@@ -539,8 +730,12 @@ module MazeCraze
       end
     end
 
+    def self.tunnel_range
+      [tunnel_min, tunnel_max]
+    end
+
     def tunnels_valid_input?
-      (TUNNEL_MIN..TUNNEL_MAX).cover?(tunnels) || experiment? && tunnels > 0
+      (self.class.tunnel_min..self.class.tunnel_max).cover?(tunnels) || experiment? && tunnels > 0
     end
 
     def tunnel_validation(validation)
@@ -554,18 +749,85 @@ module MazeCraze
         if experiment?
           validation[:tunnel_validation_feedback] = "Tunnel experiments must have at least 1 tunnel."
         else
-          validation[:tunnel_validation_feedback] = "Number of tunnels must be between #{TUNNEL_MIN} and #{TUNNEL_MAX}."
+          validation[:tunnel_validation_feedback] = "Number of tunnels must be between #{self.class.tunnel_min} and #{self.class.tunnel_max}."
         end
       end
     end
   end
 
   class PortalMazeFormula < MazeFormula
-    PORTAL_MIN = 1
-    PORTAL_MAX = 3
+    @x_min = nil
+    @x_max = nil
+    @y_min = nil
+    @y_max = nil
+    @endpoint_min = nil
+    @endpoint_max = nil
+    @barrier_min = nil
+    @barrier_max = nil
+    @portal_min = nil
+    @portal_max = nil
+                             
+    class << self
+      attr_accessor :x_min, :x_max, :y_min, :y_max,
+                    :endpoint_min, :endpoint_max,
+                    :barrier_min, :barrier_max,
+                    :portal_min, :portal_max
+    end
+
+    sql = <<~SQL
+      SELECT * 
+      FROM settings 
+      WHERE 
+      name = $1 OR 
+      name = $2 OR 
+      name = $3 OR 
+      name = $4 OR 
+      name = $5 OR 
+      name = $6 OR 
+      name = $7 OR 
+      name = $8 OR 
+      name = $9 OR 
+      name = $10;
+    SQL
+
+    settings = query(sql.gsub!("\n", ""),
+                    'bridge_x_min', 'bridge_x_max',
+                    'bridge_y_min', 'bridge_y_max',
+                    'bridge_endpoint_min', 'bridge_endpoint_max',
+                    'bridge_barrier_min', 'bridge_barrier_max',
+                    'portal_min', 'portal_max')
+
+    settings.each do |setting|
+      case setting['name']
+      when 'bridge_x_min'
+        self.x_min = setting['integer_value'].to_i
+      when 'bridge_x_max'
+        self.x_max = setting['integer_value'].to_i
+      when 'bridge_y_min'
+        self.y_min = setting['integer_value'].to_i
+      when 'bridge_y_max'
+        self.y_max = setting['integer_value'].to_i
+      when 'bridge_endpoint_min'
+        self.endpoint_min = setting['integer_value'].to_i
+      when 'bridge_endpoint_max'
+        self.endpoint_max = setting['integer_value'].to_i
+      when 'bridge_barrier_min'
+        self.barrier_min = setting['integer_value'].to_i
+      when 'bridge_barrier_max'
+        self.barrier_max = setting['integer_value'].to_i
+      when 'portal_min'
+        self.portal_min = setting['integer_value'].to_i
+      when 'portal_max'
+        self.portal_max = setting['integer_value'].to_i
+      end
+    end
+
+    def self.to_s
+      'Portal'
+    end
 
     def self.generate_formulas(dimensions, num_endpoints, num_barriers)
-      PORTAL_MIN.upto(PORTAL_MAX) do |num_portals|
+      portal_min.upto(portal_max) do |num_portals|
         next if (num_endpoints * 2 + num_barriers + num_portals * 2) > dimensions[:x] * dimensions[:y] / 2
         yield({ 'maze_type' => 'portal',
                 'x' => dimensions[:x],
@@ -578,8 +840,12 @@ module MazeCraze
       end
     end
 
+    def self.portal_range
+      [portal_min, portal_max]
+    end
+
     def portals_valid_input?
-      (PORTAL_MIN..PORTAL_MAX).cover?(portals) || experiment? && portals > 0
+      (self.class.portal_min..self.class.portal_max).cover?(portals) || experiment? && portals > 0
     end
 
     def portal_validation(validation)
@@ -593,7 +859,7 @@ module MazeCraze
         if experiment?
           validation[:portal_validation_feedback] = "Portal experiments must have at least 1 portal."
         else
-          validation[:portal_validation_feedback] = "Number of portals must be between #{PORTAL_MIN} and #{PORTAL_MAX}."
+          validation[:portal_validation_feedback] = "Number of portals must be between #{self.class.portal_min} and #{self.class.portal_max}."
         end
       end
     end

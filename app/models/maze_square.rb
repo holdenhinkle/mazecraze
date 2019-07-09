@@ -15,13 +15,12 @@ module MazeCraze
       @index = index
     end
 
-    def self.types_popovers
-      popover_content = {}
-      SQUARE_TYPE_CLASS_NAMES.each do |class_name|
+    def self.types_popover
+      SQUARE_TYPE_CLASS_NAMES.each_with_object({}) do |class_name, popover_content|
+        class_name = 'MazeCraze::' + class_name
         square_class = Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
         popover_content[square_class.to_symbol] = square_class.popover
       end
-      popover_content
     end
 
     def taken?
@@ -76,7 +75,7 @@ module MazeCraze
     end
 
     def self.popover
-      { title: "The Barrier Square", body: "Here's a description of barrier squares."}
+      { title: "The Barrier Square", body: "<p>Here's a description of barrier squares.</p>"}
     end
   end
 
@@ -94,7 +93,7 @@ module MazeCraze
     end
 
     def self.popover
-      { title: "The Bridge Square", body: "Here's a description of bridge squares."}
+      { title: "The Bridge Square", body: "<p>Here's a description of bridge squares.</p>"}
     end
 
     def vertical_taken?
@@ -138,7 +137,7 @@ module MazeCraze
     end
 
     def self.popover
-      { title: "The Endpoint Square", body: "Here's a description of endpoint squares."}
+      { title: "The Endpoint Square", body: "<p>Here's a description of endpoint squares.</p>"}
     end
   end
 
@@ -148,7 +147,7 @@ module MazeCraze
     end
 
     def self.popover
-      { title: "The Tunnel Square", body: "Here's a description of tunnel squares."}
+      { title: "The Tunnel Square", body: "<p>Here's a description of tunnel squares.</p>"}
     end
   end
 
@@ -158,7 +157,7 @@ module MazeCraze
     end
 
     def self.popover
-      { title: "The Portal Square", body: "Here's a description of portal squares."}
+      { title: "The Portal Square", body: "<p>Here's a description of portal squares.</p>"}
     end
   end
 end

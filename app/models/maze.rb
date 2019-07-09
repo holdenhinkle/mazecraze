@@ -41,16 +41,16 @@ module MazeCraze
     end
 
     def self.types_popover
-      popover_content = ""
+      popover = { maze_types: { title: 'Maze Types', body: '' } }
       types_popovers.values.each do |content|
-        popover_content << "<p><strong>#{content[:title]}</strong><br>#{content[:body]}</p>"
+        popover[:maze_types][:body] << "<p><strong>#{content[:title]}</strong><br>#{content[:body]}</p>"
       end
-      { title: "Maze Types", body: popover_content }
+      popover
     end
 
     def self.types_popovers
       MAZE_TYPE_CLASS_NAMES.values.each_with_object({}) do |class_name, popover_content|
-        maze_class = Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
+        maze_class = Kernel.const_get('MazeCraze::' + class_name) if Kernel.const_defined?('MazeCraze::' + class_name)
         popover_content[maze_class.to_symbol] = maze_class.popover
       end
     end

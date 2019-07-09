@@ -90,4 +90,45 @@ CREATE TABLE settings (
   updated timestamp NOT NULL DEFAULT NOW()
 );
 
-INSERT INTO settings (name, integer_value, updated_by) VALUES ('number_of_threads', 1, 'default setting');
+INSERT INTO settings (name, integer_value, updated_by) 
+  VALUES
+    ('number_of_threads', 1, 'default setting'),
+    ('simple_x_min', 3, 'default setting'),
+    ('simple_x_max', 10, 'default setting'),
+    ('simple_y_min', 2, 'default setting'),
+    ('simple_y_max', 10, 'default setting'),
+    ('simple_endpoint_min', 1, 'default setting'),
+    ('simple_endpoint_max', 4, 'default setting'),
+    ('simple_barrier_min', 0, 'default setting'),
+    ('simple_barrier_max', 3, 'default setting'),
+    ('bridge_x_min', 3, 'default setting'),
+    ('bridge_x_max', 10, 'default setting'),
+    ('bridge_y_min', 2, 'default setting'),
+    ('bridge_y_max', 10, 'default setting'),
+    ('bridge_endpoint_min', 1, 'default setting'),
+    ('bridge_endpoint_max', 4, 'default setting'),
+    ('bridge_barrier_min', 0, 'default setting'),
+    ('bridge_barrier_max', 3, 'default setting'),
+    ('bridge_min', 1, 'default setting'),
+    ('bridge_max', 3, 'default setting'),
+    ('tunnel_x_min', 3, 'default setting'),
+    ('tunnel_x_max', 10, 'default setting'),
+    ('tunnel_y_min', 2, 'default setting'),
+    ('tunnel_y_max', 10, 'default setting'),
+    ('tunnel_endpoint_min', 1, 'default setting'),
+    ('tunnel_endpoint_max', 4, 'default setting'),
+    ('tunnel_barrier_min', 0, 'default setting'),
+    ('tunnel_barrier_max', 3, 'default setting'),
+    ('tunnel_min', 1, 'default setting'),
+    ('tunnel_max', 3, 'default setting'),
+    ('portal_x_min', 3, 'default setting'),
+    ('portal_x_max', 10, 'default setting'),
+    ('portal_y_min', 2, 'default setting'),
+    ('portal_y_max', 10, 'default setting'),
+    ('portal_endpoint_min', 1, 'default setting'),
+    ('portal_endpoint_max', 4, 'default setting'),
+    ('portal_barrier_min', 0, 'default setting'),
+    ('portal_barrier_max', 3, 'default setting'),
+    ('portal_min', 1, 'default setting'),
+    ('portal_max', 3, 'default setting')
+    ;
