@@ -8,22 +8,61 @@
   <h1>Settings</h1>
 </header>
 <section>
-  <form action="/admin/settings" method="post">
-    <h3>Background Workers</h3>
-    <div class="form-group">
-      <label for="number_of_threads"><strong>Number of Threads</strong></label>
-        <p>If you change the number of threads, all current jobs will be killed and will start over.</p>
-        <select class="custom-select" name="number_of_threads" id="number_of_threads">
-          <% @min_max_threads[:min].upto(@min_max_threads[:max]) do |number| %>
-            <% if number == @number_of_threads %>
-              <option value="<%= number %>" selected="selected"><%= number %></option>
-              <% next %>
-            <% end %>
-            <option value="<%= number %>"><%= number %></option>
-          <% end %>
-        </select>
-      </label>
+  <ul class="nav nav-tabs">
+    <li class="nav-item">
+      <a class="nav-link active" id="general-tab" data-toggle="tab" href="#general" role="tab" aria-controls="general" aria-selected="true">General</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="simple-tab" data-toggle="tab" href="#simple" role="tab" aria-controls="simple" aria-selected="false">Simple Mazes</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="bridge-tab" data-toggle="tab" href="#bridge" role="tab" aria-controls="bridge" aria-selected="false">Bridge Mazes</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="tunnel-tab" data-toggle="tab" href="#tunnel" role="tab" aria-controls="tunnel" aria-selected="false">Tunnel Mazes</a>
+    </li>
+      <li class="nav-item">
+      <a class="nav-link" id="loop-tab" data-toggle="tab" href="#loop" role="tab" aria-controls="loop" aria-selected="false">Loop Mazes</a>
+    </li>
+      <li class="nav-item">
+      <a class="nav-link" id="mashup-tab" data-toggle="tab" href="#mashup" role="tab" aria-controls="mashup" aria-selected="false">Mashup Mazes</a>
+    </li>
+  </ul>
+  <div class="tab-content" id="myTabContent">
+    <div class="tab-pane fade show active" id="general" role="tabpanel" aria-labelledby="general-tab">
+        <form action="/admin/settings" method="post">
+        <p class="h4 mt-4">Background Workers</p>
+        <div class="form-group">
+          <label for="number_of_threads"><strong>Number of Threads</strong></label>
+            <p>If you change the number of threads, all current jobs will be killed and will start over.</p>
+            <select class="custom-select" name="number_of_threads" id="number_of_threads">
+              <% @min_max_threads[:min].upto(@min_max_threads[:max]) do |number| %>
+                <% if number == @number_of_threads %>
+                  <option value="<%= number %>" selected="selected"><%= number %></option>
+                  <% next %>
+                <% end %>
+                <option value="<%= number %>"><%= number %></option>
+              <% end %>
+            </select>
+          </label>
+        </div>
+        <button type="submit" class="btn btn-primary mt-4">Save General Settings</button>
+      </form>
     </div>
-    <button type="submit" class="btn btn-primary mt-4">Submit Form</button>
-  </form>
+    <div class="tab-pane fade" id="simple" role="tabpanel" aria-labelledby="simple-tab">
+    
+    </div>
+    <div class="tab-pane fade" id="bridge" role="tabpanel" aria-labelledby="bridge-tab">
+    
+    </div>
+    <div class="tab-pane fade" id="tunnel" role="tabpanel" aria-labelledby="tunnel-tab">
+    
+    </div>
+    <div class="tab-pane fade" id="loop" role="tabpanel" aria-labelledby="loop-tab">
+    
+    </div>
+    <div class="tab-pane fade" id="mashup" role="tabpanel" aria-labelledby="mashup-tab">
+    
+    </div>
+  </div>
 </section>
