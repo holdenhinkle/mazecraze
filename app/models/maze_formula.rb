@@ -8,11 +8,27 @@ module MazeCraze
                                  'tunnel' => 'TunnelMazeFormula',
                                  'portal' => 'PortalMazeFormula' }
 
-    def self.initialize_class_variables
+    def self.set_maze_formula_constraints
       class << self
         attr_accessor :x_min, :x_max, :y_min, :y_max,
                       :endpoint_min, :endpoint_max,
-                      :barrier_min, :barrier_max
+                      :barrier_min, :barrier_max,
+                      :normal_squares_to_other_squares_ratio
+      end
+
+      case self.to_s
+      when 'bridge'
+        class << self
+          attr_accessor :bridge_min, :bridge_max
+        end
+      when 'tunnel'
+        class << self
+          attr_accessor :tunnel_min, :tunnel_max
+        end
+      when 'portal'
+        class << self
+          attr_accessor :portal_min, :portal_max
+        end
       end
 
       @x_min = nil
@@ -23,26 +39,41 @@ module MazeCraze
       @endpoint_max = nil
       @barrier_min = nil
       @barrier_max = nil
-  
-      sql = <<~SQL
-        SELECT * 
-        FROM settings 
-        WHERE 
-        name = $1 OR 
-        name = $2 OR 
-        name = $3 OR 
-        name = $4 OR 
-        name = $5 OR 
-        name = $6 OR 
-        name = $7 OR 
-        name = $8;
-      SQL
-  
-      settings = query(sql.gsub!("\n", ""),
-                      "#{self.to_s}_x_min", "#{self.to_s}_x_max",
-                      "#{self.to_s}_y_min", "#{self.to_s}_y_max",
-                      "#{self.to_s}_endpoint_min", "#{self.to_s}_endpoint_max",
-                      "#{self.to_s}_barrier_min", "#{self.to_s}_barrier_max")
+      @barrier_min = nil
+      @normal_squares_to_other_squares_ratio = nil
+      @bridge_min = nil if self.to_s == 'bridge'
+      @bridge_max = nil if self.to_s == 'bridge'
+      @tunnel_min = nil if self.to_s == 'tunnel'
+      @tunnel_max = nil if self.to_s == 'tunnel'
+      @portal_min = nil if self.to_s == 'portal'
+      @portal_max = nil if self.to_s == 'portal'
+
+      query_arguments = [
+        "#{self.to_s}_x_min", "#{self.to_s}_x_max",
+        "#{self.to_s}_y_min", "#{self.to_s}_y_max",
+        "#{self.to_s}_endpoint_min", "#{self.to_s}_endpoint_max",
+        "#{self.to_s}_barrier_min", "#{self.to_s}_barrier_max",
+        "#{self.to_s}_normal_squares_to_other_squares_ratio"
+      ]
+
+      case self.to_s
+      when 'bridge'
+        query_arguments.concat(["#{self.to_s}_bridge_min", "#{self.to_s}_bridge_max"])
+      when 'tunnel'
+        query_arguments.concat(["#{self.to_s}_tunnel_min", "#{self.to_s}_tunnel_max"])
+      when 'portal'
+        query_arguments.concat(["#{self.to_s}_portal_min", "#{self.to_s}_portal_max"])
+      end
+
+      sql = 'SELECT * FROM settings WHERE'
+      query_arguments.length.times do |number|
+        number += 1
+        sql << " name = $#{number}"
+        sql << ' OR' unless query_arguments.length == number
+      end
+      sql << ';'
+            
+      settings = query(sql, *query_arguments)
   
       settings.each do |setting|
         case setting['name']
@@ -62,6 +93,20 @@ module MazeCraze
           self.barrier_min = setting['integer_value'].to_i
         when "#{self.to_s}_barrier_max"
           self.barrier_max = setting['integer_value'].to_i
+        when "#{self.to_s}_normal_squares_to_other_squares_ratio"
+          self.normal_squares_to_other_squares_ratio = setting['integer_value'].to_f
+        when "#{self.to_s}_bridge_min"
+          self.bridge_min = setting['integer_value'].to_i
+        when "#{self.to_s}_bridge_max"
+          self.bridge_max = setting['integer_value'].to_i
+        when "#{self.to_s}_tunnel_min"
+          self.tunnel_min = setting['integer_value'].to_i
+        when "#{self.to_s}_tunnel_max"
+          self.tunnel_max = setting['integer_value'].to_i
+        when "#{self.to_s}_portal_min"
+          self.portal_min = setting['integer_value'].to_i
+        when "#{self.to_s}_portal_max"
+          self.portal_max = setting['integer_value'].to_i
         end
       end
     end
@@ -99,6 +144,13 @@ module MazeCraze
     def self.maze_formula_type_to_class(type)
       class_name = 'MazeCraze::' + MAZE_FORMULA_CLASS_NAMES[type]
       Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
+    end
+
+    def self.constraints
+      maze_formula_classes.each_with_object({}) do |maze_class, formula_contraints|
+        sql = 'SELECT name, integer_value FROM settings WHERE name LIKE $1;'
+        formula_contraints[maze_class.to_s] = query(sql, "#{maze_class.to_s}%")
+      end
     end
 
     def self.generate_formulas(background_job_id, classes = maze_formula_classes)
@@ -524,65 +576,7 @@ module MazeCraze
       'simple'
     end
 
-    initialize_class_variables
-
-    binding.pry
-
-    # @x_min = nil
-    # @x_max = nil
-    # @y_min = nil
-    # @y_max = nil
-    # @endpoint_min = nil
-    # @endpoint_max = nil
-    # @barrier_min = nil
-    # @barrier_max = nil
-                             
-    # class << self
-    #   attr_accessor :x_min, :x_max, :y_min, :y_max,
-    #                 :endpoint_min, :endpoint_max,
-    #                 :barrier_min, :barrier_max
-    # end
-
-    # sql = <<~SQL
-    #   SELECT * 
-    #   FROM settings 
-    #   WHERE 
-    #   name = $1 OR 
-    #   name = $2 OR 
-    #   name = $3 OR 
-    #   name = $4 OR 
-    #   name = $5 OR 
-    #   name = $6 OR 
-    #   name = $7 OR 
-    #   name = $8;
-    # SQL
-
-    # settings = query(sql.gsub!("\n", ""),
-    #                 'simple_x_min', 'simple_x_max',
-    #                 'simple_y_min', 'simple_y_max',
-    #                 'simple_endpoint_min', 'simple_endpoint_max',
-    #                 'simple_barrier_min', 'simple_barrier_max')
-
-    # settings.each do |setting|
-    #   case setting['name']
-    #   when 'simple_x_min'
-    #     self.x_min = setting['integer_value'].to_i
-    #   when 'simple_x_max'
-    #     self.x_max = setting['integer_value'].to_i
-    #   when 'simple_y_min'
-    #     self.y_min = setting['integer_value'].to_i
-    #   when 'simple_y_max'
-    #     self.y_max = setting['integer_value'].to_i
-    #   when 'simple_endpoint_min'
-    #     self.endpoint_min = setting['integer_value'].to_i
-    #   when 'simple_endpoint_max'
-    #     self.endpoint_max = setting['integer_value'].to_i
-    #   when 'simple_barrier_min'
-    #     self.barrier_min = setting['integer_value'].to_i
-    #   when 'simple_barrier_max'
-    #     self.barrier_max = setting['integer_value'].to_i
-    #   end
-    # end
+    set_maze_formula_constraints
 
     def self.generate_formulas(dimensions, num_endpoints, num_barriers)
       return if (num_endpoints * 2 + num_barriers) > dimensions[:x] * dimensions[:y] / 2
@@ -602,75 +596,7 @@ module MazeCraze
       'bridge'
     end
     
-    initialize_class_variables
-
-    binding.pry
-
-    # @x_min = nil
-    # @x_max = nil
-    # @y_min = nil
-    # @y_max = nil
-    # @endpoint_min = nil
-    # @endpoint_max = nil
-    # @barrier_min = nil
-    # @barrier_max = nil
-    # @bridge_min = nil
-    # @bridge_max = nil
-                             
-    # class << self
-    #   attr_accessor :x_min, :x_max, :y_min, :y_max,
-    #                 :endpoint_min, :endpoint_max,
-    #                 :barrier_min, :barrier_max,
-    #                 :bridge_min, :bridge_max
-    # end
-
-    # sql = <<~SQL
-    #   SELECT * 
-    #   FROM settings 
-    #   WHERE 
-    #   name = $1 OR 
-    #   name = $2 OR 
-    #   name = $3 OR 
-    #   name = $4 OR 
-    #   name = $5 OR 
-    #   name = $6 OR 
-    #   name = $7 OR 
-    #   name = $8 OR 
-    #   name = $9 OR 
-    #   name = $10;
-    # SQL
-
-    # settings = query(sql.gsub!("\n", ""),
-    #                 'bridge_x_min', 'bridge_x_max',
-    #                 'bridge_y_min', 'bridge_y_max',
-    #                 'bridge_endpoint_min', 'bridge_endpoint_max',
-    #                 'bridge_barrier_min', 'bridge_barrier_max',
-    #                 'bridge_min', 'bridge_max')
-
-    # settings.each do |setting|
-    #   case setting['name']
-    #   when 'bridge_x_min'
-    #     self.x_min = setting['integer_value'].to_i
-    #   when 'bridge_x_max'
-    #     self.x_max = setting['integer_value'].to_i
-    #   when 'bridge_y_min'
-    #     self.y_min = setting['integer_value'].to_i
-    #   when 'bridge_y_max'
-    #     self.y_max = setting['integer_value'].to_i
-    #   when 'bridge_endpoint_min'
-    #     self.endpoint_min = setting['integer_value'].to_i
-    #   when 'bridge_endpoint_max'
-    #     self.endpoint_max = setting['integer_value'].to_i
-    #   when 'bridge_barrier_min'
-    #     self.barrier_min = setting['integer_value'].to_i
-    #   when 'bridge_barrier_max'
-    #     self.barrier_max = setting['integer_value'].to_i
-    #   when 'bridge_min'
-    #     self.bridge_min = setting['integer_value'].to_i
-    #   when 'bridge_max'
-    #     self.bridge_max = setting['integer_value'].to_i
-    #   end
-    # end
+    set_maze_formula_constraints
 
     def self.generate_formulas(dimensions, num_endpoints, num_barriers)
       BRIDGE_MIN.upto(bridge_max) do |num_bridges|
@@ -712,75 +638,11 @@ module MazeCraze
   end
 
   class TunnelMazeFormula < MazeFormula
-    @x_min = nil
-    @x_max = nil
-    @y_min = nil
-    @y_max = nil
-    @endpoint_min = nil
-    @endpoint_max = nil
-    @barrier_min = nil
-    @barrier_max = nil
-    @tunnel_min = nil
-    @tunnel_max = nil
-                             
-    class << self
-      attr_accessor :x_min, :x_max, :y_min, :y_max,
-                    :endpoint_min, :endpoint_max,
-                    :barrier_min, :barrier_max,
-                    :tunnel_min, :tunnel_max
-    end
-
-    sql = <<~SQL
-      SELECT * 
-      FROM settings 
-      WHERE 
-      name = $1 OR 
-      name = $2 OR 
-      name = $3 OR 
-      name = $4 OR 
-      name = $5 OR 
-      name = $6 OR 
-      name = $7 OR 
-      name = $8 OR 
-      name = $9 OR 
-      name = $10;
-    SQL
-
-    settings = query(sql.gsub!("\n", ""),
-                    'bridge_x_min', 'bridge_x_max',
-                    'bridge_y_min', 'bridge_y_max',
-                    'bridge_endpoint_min', 'bridge_endpoint_max',
-                    'bridge_barrier_min', 'bridge_barrier_max',
-                    'tunnel_min', 'tunnel_max')
-
-    settings.each do |setting|
-      case setting['name']
-      when 'bridge_x_min'
-        self.x_min = setting['integer_value'].to_i
-      when 'bridge_x_max'
-        self.x_max = setting['integer_value'].to_i
-      when 'bridge_y_min'
-        self.y_min = setting['integer_value'].to_i
-      when 'bridge_y_max'
-        self.y_max = setting['integer_value'].to_i
-      when 'bridge_endpoint_min'
-        self.endpoint_min = setting['integer_value'].to_i
-      when 'bridge_endpoint_max'
-        self.endpoint_max = setting['integer_value'].to_i
-      when 'bridge_barrier_min'
-        self.barrier_min = setting['integer_value'].to_i
-      when 'bridge_barrier_max'
-        self.barrier_max = setting['integer_value'].to_i
-      when 'tunnel_min'
-        self.tunnel_min = setting['integer_value'].to_i
-      when 'tunnel_max'
-        self.tunnel_max = setting['integer_value'].to_i
-      end
-    end
-
     def self.to_s
       'tunnel'
     end
+        
+    set_maze_formula_constraints
 
     def self.generate_formulas(dimensions, num_endpoints, num_barriers)
       tunnel_min.upto(tunnel_max) do |num_tunnels|
@@ -822,75 +684,11 @@ module MazeCraze
   end
 
   class PortalMazeFormula < MazeFormula
-    @x_min = nil
-    @x_max = nil
-    @y_min = nil
-    @y_max = nil
-    @endpoint_min = nil
-    @endpoint_max = nil
-    @barrier_min = nil
-    @barrier_max = nil
-    @portal_min = nil
-    @portal_max = nil
-                             
-    class << self
-      attr_accessor :x_min, :x_max, :y_min, :y_max,
-                    :endpoint_min, :endpoint_max,
-                    :barrier_min, :barrier_max,
-                    :portal_min, :portal_max
-    end
-
-    sql = <<~SQL
-      SELECT * 
-      FROM settings 
-      WHERE 
-      name = $1 OR 
-      name = $2 OR 
-      name = $3 OR 
-      name = $4 OR 
-      name = $5 OR 
-      name = $6 OR 
-      name = $7 OR 
-      name = $8 OR 
-      name = $9 OR 
-      name = $10;
-    SQL
-
-    settings = query(sql.gsub!("\n", ""),
-                    'bridge_x_min', 'bridge_x_max',
-                    'bridge_y_min', 'bridge_y_max',
-                    'bridge_endpoint_min', 'bridge_endpoint_max',
-                    'bridge_barrier_min', 'bridge_barrier_max',
-                    'portal_min', 'portal_max')
-
-    settings.each do |setting|
-      case setting['name']
-      when 'bridge_x_min'
-        self.x_min = setting['integer_value'].to_i
-      when 'bridge_x_max'
-        self.x_max = setting['integer_value'].to_i
-      when 'bridge_y_min'
-        self.y_min = setting['integer_value'].to_i
-      when 'bridge_y_max'
-        self.y_max = setting['integer_value'].to_i
-      when 'bridge_endpoint_min'
-        self.endpoint_min = setting['integer_value'].to_i
-      when 'bridge_endpoint_max'
-        self.endpoint_max = setting['integer_value'].to_i
-      when 'bridge_barrier_min'
-        self.barrier_min = setting['integer_value'].to_i
-      when 'bridge_barrier_max'
-        self.barrier_max = setting['integer_value'].to_i
-      when 'portal_min'
-        self.portal_min = setting['integer_value'].to_i
-      when 'portal_max'
-        self.portal_max = setting['integer_value'].to_i
-      end
-    end
-
     def self.to_s
       'portal'
     end
+    
+    set_maze_formula_constraints
 
     def self.generate_formulas(dimensions, num_endpoints, num_barriers)
       portal_min.upto(portal_max) do |num_portals|
