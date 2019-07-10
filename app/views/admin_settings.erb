@@ -30,7 +30,7 @@
   </ul>
   <div class="tab-content" id="myTabContent">
     <div class="tab-pane fade show active" id="general" role="tabpanel" aria-labelledby="general-tab">
-        <form action="/admin/settings" method="post">
+      <form action="/admin/settings" method="post">
         <p class="h4 mt-4">Background Workers</p>
         <div class="form-group">
           <label for="number_of_threads"><strong>Number of Threads</strong></label>
@@ -49,20 +49,59 @@
         <button type="submit" class="btn btn-primary mt-4">Save General Settings</button>
       </form>
     </div>
-    <div class="tab-pane fade" id="simple" role="tabpanel" aria-labelledby="simple-tab">
     
-    </div>
-    <div class="tab-pane fade" id="bridge" role="tabpanel" aria-labelledby="bridge-tab">
-    
-    </div>
-    <div class="tab-pane fade" id="tunnel" role="tabpanel" aria-labelledby="tunnel-tab">
-    
-    </div>
-    <div class="tab-pane fade" id="loop" role="tabpanel" aria-labelledby="loop-tab">
-    
-    </div>
-    <div class="tab-pane fade" id="mashup" role="tabpanel" aria-labelledby="mashup-tab">
-    
-    </div>
+    <% @maze_formula_constraints.each do |maze_formula_name, maze_formula_values| %>
+      <div class="tab-pane fade" id="<%= maze_formula_name %>" role="tabpanel" aria-labelledby="<%= maze_formula_name %>-tab">
+        <form action="/admin/settings" method="post">
+          <div class="form-group">
+
+
+            <p class="h4 mt-4">Dimensions</p>
+            <div class="row">
+              <div class="form-group col-md-4">
+
+                <% maze_formula_values.each do |x| %>
+                  <%# <% binding.pry %> %>
+                  <label for="x">Maze <strong>Width</strong> (x-value)</label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="" data-content=""></i></a>
+                  <% if session["x_validation_css"] %>
+                    <input type="number" class="form-control <%= session.delete("x_validation_css") %>" name="x" id="x" aria-describedby="x-help" value="">
+                  <% else %>
+                    <input type="number" class="form-control" name="x" id="x" aria-describedby="x-help" placeholder="<%= x["integer_value"] %>">
+                  <% end %>
+                  <% if session["x_validation_feedback"] %>
+                    <div class="<%= session.delete("x_validation_feedback_css") %>">
+                      <%= session.delete("x_validation_feedback") %>
+                    </div>
+                  <% end %>
+                <% end %>
+              </div>
+
+
+              <div class="form-group col-md-4">
+                <% maze_formula_values.each do |y| %>
+                  <%# <% binding.pry %> %>
+                  <label for="y">Maze <strong>Height</strong> (y-value)</label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="" data-content=""><i class="fas fa-question-circle"></i></a>
+                  <% if session["y_validation_css"] %>
+                    <input type="number" class="form-control <%= session.delete("y_validation_css") %>" name="y" id="y" aria-describedby="y-help" value="">
+                  <% else %>
+                    <input type="number" class="form-control" name="y" id="y" aria-describedby="y-help" placeholder="<%= y["integer_value"] %>">
+                  <% end %>
+                  <% if session["y_validation_feedback"] %>
+                    <div class="<%= session.delete("y_validation_feedback_css") %>">
+                      <%= session.delete("y_validation_feedback") %>
+                    </div>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+
+
+
+
+        <%# <% maze_formula_values.each do |values| %> %>
+          <%# <% binding.pry %> %>
+        <%# <% end %> %>
+      </div>
+    <% end %>
   </div>
 </section>

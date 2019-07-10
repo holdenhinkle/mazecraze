@@ -11,6 +11,9 @@ class AdminController < ApplicationController
     @min_max_threads = { min: MazeCraze::BackgroundWorker::MIN_THREADS,
                          max: MazeCraze::BackgroundWorker::MAX_THREADS }
     @number_of_threads = MazeCraze::BackgroundWorker.number_of_threads
+
+    # get array of maze type settings
+    @maze_formula_constraints = MazeCraze::MazeFormula.constraints
     erb :admin_settings
   end
 
