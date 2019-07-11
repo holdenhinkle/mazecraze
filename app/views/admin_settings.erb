@@ -21,11 +21,8 @@
     <li class="nav-item">
       <a class="nav-link" id="tunnel-tab" data-toggle="tab" href="#tunnel" role="tab" aria-controls="tunnel" aria-selected="false">Tunnel Mazes</a>
     </li>
-      <li class="nav-item">
-      <a class="nav-link" id="loop-tab" data-toggle="tab" href="#loop" role="tab" aria-controls="loop" aria-selected="false">Loop Mazes</a>
-    </li>
-      <li class="nav-item">
-      <a class="nav-link" id="mashup-tab" data-toggle="tab" href="#mashup" role="tab" aria-controls="mashup" aria-selected="false">Mashup Mazes</a>
+    <li class="nav-item">
+      <a class="nav-link" id="loop-tab" data-toggle="tab" href="#portal" role="tab" aria-controls="portal" aria-selected="false">Portal Mazes</a>
     </li>
   </ul>
   <div class="tab-content" id="myTabContent">
@@ -49,58 +46,179 @@
         <button type="submit" class="btn btn-primary mt-4">Save General Settings</button>
       </form>
     </div>
-    
-    <% @maze_formula_constraints.each do |maze_formula_name, maze_formula_values| %>
-      <div class="tab-pane fade" id="<%= maze_formula_name %>" role="tabpanel" aria-labelledby="<%= maze_formula_name %>-tab">
+    <% @maze_formula_constraints.each do |formula_name, constraint| %>
+      <div class="tab-pane fade" id="<%= formula_name %>" role="tabpanel" aria-labelledby="<%= formula_name %>-tab">
         <form action="/admin/settings" method="post">
+          <input type="hidden" name="formula_type" value="<%= formula_name %>">
           <div class="form-group">
-
-
-            <p class="h4 mt-4">Dimensions</p>
+            <p class="h4 mt-4">X (width)</p>
             <div class="row">
-              <div class="form-group col-md-4">
-
-                <% maze_formula_values.each do |x| %>
-                  <%# <% binding.pry %> %>
-                  <label for="x">Maze <strong>Width</strong> (x-value)</label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="" data-content=""></i></a>
-                  <% if session["x_validation_css"] %>
-                    <input type="number" class="form-control <%= session.delete("x_validation_css") %>" name="x" id="x" aria-describedby="x-help" value="">
-                  <% else %>
-                    <input type="number" class="form-control" name="x" id="x" aria-describedby="x-help" placeholder="<%= x["integer_value"] %>">
-                  <% end %>
-                  <% if session["x_validation_feedback"] %>
-                    <div class="<%= session.delete("x_validation_feedback_css") %>">
-                      <%= session.delete("x_validation_feedback") %>
-                    </div>
-                  <% end %>
+              <div class="form-group col-md-6">
+                <label for="x_min"><strong>X min</strong></label>
+                <input type="number" class="form-control" name="x_min" id="x_min" aria-describedby="x_min" placeholder="<%= constraint[:x_min] %>">
+                <% if session["x_min_validation_feedback"] %>
+                  <div class="<%= session.delete("x_min_validation_feedback_css") %>">
+                    <%= session.delete("x_min_validation_feedback") %>
+                  </div>
                 <% end %>
               </div>
-
-
-              <div class="form-group col-md-4">
-                <% maze_formula_values.each do |y| %>
-                  <%# <% binding.pry %> %>
-                  <label for="y">Maze <strong>Height</strong> (y-value)</label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="" data-content=""><i class="fas fa-question-circle"></i></a>
-                  <% if session["y_validation_css"] %>
-                    <input type="number" class="form-control <%= session.delete("y_validation_css") %>" name="y" id="y" aria-describedby="y-help" value="">
-                  <% else %>
-                    <input type="number" class="form-control" name="y" id="y" aria-describedby="y-help" placeholder="<%= y["integer_value"] %>">
-                  <% end %>
-                  <% if session["y_validation_feedback"] %>
-                    <div class="<%= session.delete("y_validation_feedback_css") %>">
-                      <%= session.delete("y_validation_feedback") %>
-                    </div>
-                  <% end %>
+              <div class="form-group col-md-6">
+                <label for="x_mxn"><strong>X max</strong></label>
+                <input type="number" class="form-control" name="x_max" id="x_max" aria-describedby="x_max" placeholder="<%= constraint[:x_max] %>">
+                <% if session["x_max_validation_feedback"] %>
+                  <div class="<%= session.delete("x_max_validation_feedback_css") %>">
+                    <%= session.delete("x_max_validation_feedback") %>
+                  </div>
                 <% end %>
               </div>
             </div>
-
-
-
-
-        <%# <% maze_formula_values.each do |values| %> %>
-          <%# <% binding.pry %> %>
-        <%# <% end %> %>
+            <p class="h4 mt-4">Y (height)</p>
+            <div class="row">
+              <div class="form-group col-md-6">
+                <label for="y_min"><strong>Y min</strong></label>
+                <input type="number" class="form-control" name="y_min" id="y_min" aria-describedby="y_min" placeholder="<%= constraint[:y_min] %>">
+                <% if session["y_min_validation_feedback"] %>
+                  <div class="<%= session.delete("y_min_validation_feedback_css") %>">
+                    <%= session.delete("y_min_validation_feedback") %>
+                  </div>
+                <% end %>
+              </div>
+              <div class="form-group col-md-6">
+                <label for="y_max"><strong>Y max</strong></label>
+                <input type="number" class="form-control" name="y_max" id="y_max" aria-describedby="y_max" placeholder="<%= constraint[:y_max] %>">
+                <% if session["y_max_validation_feedback"] %>
+                  <div class="<%= session.delete("y_max_validation_feedback_css") %>">
+                    <%= session.delete("y_max_validation_feedback") %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+            <p class="h4 mt-4">Endpoints</p>
+            <div class="row">
+              <div class="form-group col-md-6">
+                <label for="endpoint_min"><strong>Endpoint min</strong></label>
+                <input type="number" class="form-control" name="endpoint_min" id="endpoint_min" aria-describedby="endpoint_min" placeholder="<%= constraint[:endpoint_min] %>">
+                <% if session["endpoint_min_validation_feedback"] %>
+                  <div class="<%= session.delete("endpoint_min_validation_feedback_css") %>">
+                    <%= session.delete("endpoint_min_validation_feedback") %>
+                  </div>
+                <% end %>
+              </div>
+              <div class="form-group col-md-6">
+                <label for="endpoint_max"><strong>Endpoint max</strong></label>
+                <input type="number" class="form-control" name="endpoint_max" id="endpoint_max" aria-describedby="endpoint_max" placeholder="<%= constraint[:endpoint_max] %>">
+                <% if session["endpoint_max_validation_feedback"] %>
+                  <div class="<%= session.delete("endpoint_max_validation_feedback_css") %>">
+                    <%= session.delete("endpoint_max_validation_feedback") %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+            <p class="h4 mt-4">Barriers</p>
+            <div class="row">
+              <div class="form-group col-md-6">
+                <label for="barrier_min"><strong>Barrier min</strong></label>
+                <input type="number" class="form-control" name="barrier_min" id="barrier_min" aria-describedby="barrier_min" placeholder="<%= constraint[:barrier_min] %>">
+                <% if session["barrier_min_validation_feedback"] %>
+                  <div class="<%= session.delete("barrier_min_validation_feedback_css") %>">
+                    <%= session.delete("barrier_min_validation_feedback") %>
+                  </div>
+                <% end %>
+              </div>
+              <div class="form-group col-md-6">
+                <label for="barrier_max"><strong>Barrier max</strong></label>
+                <input type="number" class="form-control" name="barrier_max" id="barrier_max" aria-describedby="barrier_max" placeholder="<%= constraint[:barrier_max] %>">
+                <% if session["barrier_max_validation_feedback"] %>
+                  <div class="<%= session.delete("barrier_max_validation_feedback_css") %>">
+                    <%= session.delete("barrier_max_validation_feedback") %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+            <% if formula_name == :bridge %>
+              <p class="h4 mt-4">Bridges</p>
+              <div class="row">
+                <div class="form-group col-md-6">
+                  <label for="bridge_min"><strong>Bridge min</strong></label>
+                  <input type="number" class="form-control" name="bridge_min" id="bridge_min" aria-describedby="bridge_min" placeholder="<%= constraint[:bridge_min] %>">
+                  <% if session["bridge_min_validation_feedback"] %>
+                    <div class="<%= session.delete("bridge_min_validation_feedback_css") %>">
+                      <%= session.delete("bridge_min_validation_feedback") %>
+                    </div>
+                  <% end %>
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="bridge_max"><strong>Bridge max</strong></label>
+                  <input type="number" class="form-control" name="bridge_max" id="bridge_max" aria-describedby="bridge_max" placeholder="<%= constraint[:bridge_max] %>">
+                  <% if session["bridge_max_validation_feedback"] %>
+                    <div class="<%= session.delete("bridge_max_validation_feedback_css") %>">
+                      <%= session.delete("bridge_max_validation_feedback") %>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+            <% if formula_name == :tunnel %>
+              <p class="h4 mt-4">Tunnels</p>
+              <div class="row">
+                <div class="form-group col-md-6">
+                  <label for="tunnel_min"><strong>Tunnel min</strong></label>
+                  <input type="number" class="form-control" name="tunnel_min" id="tunnel_min" aria-describedby="tunnel_min" placeholder="<%= constraint[:tunnel_min] %>">
+                  <% if session["tunnel_min_validation_feedback"] %>
+                    <div class="<%= session.delete("tunnel_min_validation_feedback_css") %>">
+                      <%= session.delete("tunnel_min_validation_feedback") %>
+                    </div>
+                  <% end %>
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="tunnel_max"><strong>Tunnel max</strong></label>
+                  <input type="number" class="form-control" name="tunnel_max" id="tunnel_max" aria-describedby="tunnel_max" placeholder="<%= constraint[:tunnel_max] %>">
+                  <% if session["tunnel_max_validation_feedback"] %>
+                    <div class="<%= session.delete("tunnel_max_validation_feedback_css") %>">
+                      <%= session.delete("tunnel_max_validation_feedback") %>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+            <% if formula_name == :portal %>
+              <p class="h4 mt-4">Portals</p>
+              <div class="row">
+                <div class="form-group col-md-6">
+                  <label for="portal_min"><strong>Portal min</strong></label>
+                  <input type="number" class="form-control" name="portal_min" id="portal_min" aria-describedby="portal_min" placeholder="<%= constraint[:portal_min] %>">
+                  <% if session["portal_min_validation_feedback"] %>
+                    <div class="<%= session.delete("portal_min_validation_feedback_css") %>">
+                      <%= session.delete("portal_min_validation_feedback") %>
+                    </div>
+                  <% end %>
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="portal_max"><strong>Portal max</strong></label>
+                  <input type="number" class="form-control" name="portal_max" id="portal_max" aria-describedby="portal_max" placeholder="<%= constraint[:portal_max] %>">
+                  <% if session["portal_max_validation_feedback"] %>
+                    <div class="<%= session.delete("portal_max_validation_feedback_css") %>">
+                      <%= session.delete("portal_max_validation_feedback") %>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+            <p class="h4 mt-4">Normal Square to Other Squares Ratio</p>
+            <div class="row">
+              <div class="form-group col-md-12">
+                <label for="ratio"><strong>Ratio</strong></label>
+                <input type="number" step="0.01" class="form-control" name="ratio" id="ratio" aria-describedby="ratio" placeholder="<%= constraint[:normal_squares_to_other_squares_ratio] %>">
+                <% if session["ratio_validation_feedback"] %>
+                  <div class="<%= session.delete("ratio_validation_feedback_css") %>">
+                    <%= session.delete("ratio_validation_feedback") %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Update <%= formula_name.capitalize %> Maze Settings</button>
+        </form>
       </div>
     <% end %>
   </div>
