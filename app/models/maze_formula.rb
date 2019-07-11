@@ -49,20 +49,20 @@ module MazeCraze
       @portal_max = nil if self.to_s == 'portal'
 
       query_arguments = [
-        "#{self.to_s}_x_min", "#{self.to_s}_x_max",
-        "#{self.to_s}_y_min", "#{self.to_s}_y_max",
-        "#{self.to_s}_endpoint_min", "#{self.to_s}_endpoint_max",
-        "#{self.to_s}_barrier_min", "#{self.to_s}_barrier_max",
-        "#{self.to_s}_normal_squares_to_other_squares_ratio"
+        "#{self.to_s}_formula_x_min", "#{self.to_s}_formula_x_max",
+        "#{self.to_s}_formula_y_min", "#{self.to_s}_formula_y_max",
+        "#{self.to_s}_formula_endpoint_min", "#{self.to_s}_formula_endpoint_max",
+        "#{self.to_s}_formula_barrier_min", "#{self.to_s}_formula_barrier_max",
+        "#{self.to_s}_formula_normal_squares_to_other_squares_ratio"
       ]
 
       case self.to_s
       when 'bridge'
-        query_arguments.concat(["#{self.to_s}_bridge_min", "#{self.to_s}_bridge_max"])
+        query_arguments.concat(["#{self.to_s}_formula_bridge_min", "#{self.to_s}_formula_bridge_max"])
       when 'tunnel'
-        query_arguments.concat(["#{self.to_s}_tunnel_min", "#{self.to_s}_tunnel_max"])
+        query_arguments.concat(["#{self.to_s}_formula_tunnel_min", "#{self.to_s}_formula_tunnel_max"])
       when 'portal'
-        query_arguments.concat(["#{self.to_s}_portal_min", "#{self.to_s}_portal_max"])
+        query_arguments.concat(["#{self.to_s}_formula_portal_min", "#{self.to_s}_formula_portal_max"])
       end
 
       sql = 'SELECT * FROM settings WHERE'
@@ -77,35 +77,35 @@ module MazeCraze
   
       settings.each do |setting|
         case setting['name']
-        when "#{self.to_s}_x_min"
+        when "#{self.to_s}_formula_x_min"
           self.x_min = setting['integer_value'].to_i
-        when "#{self.to_s}_x_max"
+        when "#{self.to_s}_formula_x_max"
           self.x_max = setting['integer_value'].to_i
-        when "#{self.to_s}_y_min"
+        when "#{self.to_s}_formula_y_min"
           self.y_min = setting['integer_value'].to_i
-        when "#{self.to_s}_y_max"
+        when "#{self.to_s}_formula_y_max"
           self.y_max = setting['integer_value'].to_i
-        when "#{self.to_s}_endpoint_min"
+        when "#{self.to_s}_formula_endpoint_min"
           self.endpoint_min = setting['integer_value'].to_i
-        when "#{self.to_s}_endpoint_max"
+        when "#{self.to_s}_formula_endpoint_max"
           self.endpoint_max = setting['integer_value'].to_i
-        when "#{self.to_s}_barrier_min"
+        when "#{self.to_s}_formula_barrier_min"
           self.barrier_min = setting['integer_value'].to_i
-        when "#{self.to_s}_barrier_max"
+        when "#{self.to_s}_formula_barrier_max"
           self.barrier_max = setting['integer_value'].to_i
-        when "#{self.to_s}_normal_squares_to_other_squares_ratio"
+        when "#{self.to_s}_formula_normal_squares_to_other_squares_ratio"
           self.normal_squares_to_other_squares_ratio = setting['integer_value'].to_f
-        when "#{self.to_s}_bridge_min"
+        when "#{self.to_s}_formula_bridge_min"
           self.bridge_min = setting['integer_value'].to_i
-        when "#{self.to_s}_bridge_max"
+        when "#{self.to_s}_formula_bridge_max"
           self.bridge_max = setting['integer_value'].to_i
-        when "#{self.to_s}_tunnel_min"
+        when "#{self.to_s}_formula_tunnel_min"
           self.tunnel_min = setting['integer_value'].to_i
-        when "#{self.to_s}_tunnel_max"
+        when "#{self.to_s}_formula_tunnel_max"
           self.tunnel_max = setting['integer_value'].to_i
-        when "#{self.to_s}_portal_min"
+        when "#{self.to_s}_formula_portal_min"
           self.portal_min = setting['integer_value'].to_i
-        when "#{self.to_s}_portal_max"
+        when "#{self.to_s}_formula_portal_max"
           self.portal_max = setting['integer_value'].to_i
         end
       end
@@ -147,10 +147,35 @@ module MazeCraze
     end
 
     def self.constraints
-      maze_formula_classes.each_with_object({}) do |maze_class, formula_contraints|
-        sql = 'SELECT name, integer_value FROM settings WHERE name LIKE $1;'
-        formula_contraints[maze_class.to_s] = query(sql, "#{maze_class.to_s}%")
+      settings = { simple: {}, bridge: {}, tunnel: {}, portal: {} }
+      
+      sql = 'SELECT name, integer_value FROM settings WHERE name LIKE $1 AND integer_value IS NOT NULL;'
+      query(sql, "%formula%").each do |setting|
+        if setting['name'].include?('simple')
+          settings[:simple][setting['name'].gsub('simple_formula_', '').to_sym] = setting['integer_value'].to_i
+        elsif setting['name'].include?('bridge')
+          settings[:bridge][setting['name'].gsub('bridge_formula_', '').to_sym] = setting['integer_value'].to_i
+        elsif setting['name'].include?('tunnel')
+          settings[:tunnel][setting['name'].gsub('tunnel_formula_', '').to_sym] = setting['integer_value'].to_i
+        elsif setting['name'].include?('portal')
+          settings[:portal][setting['name'].gsub('portal_formula_', '').to_sym] = setting['integer_value'].to_i
+        end
       end
+
+      sql = 'SELECT name, decimal_value FROM settings WHERE name LIKE $1 AND decimal_value IS NOT NULL;'
+      query(sql, "%formula%").each do |setting|
+        if setting['name'].include?('simple')
+          settings[:simple][setting['name'].gsub('simple_formula_', '').to_sym] = setting['decimal_value'].to_f
+        elsif setting['name'].include?('bridge')
+          settings[:bridge][setting['name'].gsub('bridge_formula_', '').to_sym] = setting['decimal_value'].to_f
+        elsif setting['name'].include?('tunnel')
+          settings[:tunnel][setting['name'].gsub('tunnel_formula_', '').to_sym] = setting['decimal_value'].to_f
+        elsif setting['name'].include?('portal')
+          settings[:portal][setting['name'].gsub('portal_formula_', '').to_sym] = setting['decimal_value'].to_f
+        end
+      end
+
+      settings
     end
 
     def self.generate_formulas(background_job_id, classes = maze_formula_classes)
