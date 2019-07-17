@@ -11,18 +11,24 @@ class AdminController < ApplicationController
     @min_max_threads = { min: MazeCraze::BackgroundWorker::MIN_THREADS,
                          max: MazeCraze::BackgroundWorker::MAX_THREADS }
     @number_of_threads = MazeCraze::BackgroundWorker.number_of_threads
-
-    # get array of maze type settings
     @maze_formula_constraints = MazeCraze::MazeFormula.constraints
     erb :admin_settings
   end
 
   post '/admin/settings' do
+    binding.pry
     if params['number_of_threads']
       MazeCraze::BackgroundWorker.update_number_of_threads(params['number_of_threads'].to_i)
       session[:success] = "The settings have been updated."
       MazeCraze::BackgroundWorker.stop
       MazeCraze::BackgroundWorker.start
+    elsif params["formula_type"]
+      formula_type = MazeCraze::MazeFormula.maze_formula_type_to_class(params['formula_type'])
+      if formula_type.valid_constraints?(params)
+        formula_type.update_constraints(params)
+      else
+        # add_hashes_to_session_hash
+      end
     end
 
     redirect '/admin/settings'

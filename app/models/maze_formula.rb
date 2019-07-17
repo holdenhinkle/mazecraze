@@ -178,6 +178,175 @@ module MazeCraze
       settings
     end
 
+    # def self.valid_constraints?(constraints)
+    #   [min_constraint_valid?(constraints['x_min'], constraints['x_max']),
+    #    max_constraint_valid?(constraints['x_min'], constraints['x_max']),
+    #    min_constraint_valid?(constraints['y_min'], constraints['y_max']),
+    #    max_constraint_valid?(constraints['y_min'], constraints['y_max']),
+    #    min_constraint_valid?(constraints['endpoint_min']),
+    #    max_constraint_valid?(constraints['endpoint_max']),
+    #    min_constraint_valid?(constraints['barrier_min']),
+    #    max_constraint_valid?(constraints['barrier_max']),
+    #    ratio_valid?
+    #   ].all?
+    #   # what about bridge, tunnel, portal and mashup constraints?
+    # end
+
+    def self.valid_constraints?(constraints)
+      if self.to_s == 'simple'
+        general_constraints.all?
+      else
+        general_constraints.concat(formula_type_specific_constraints).all?
+      end
+    end
+
+    def self.general_constraints
+      [min_constraint_valid?(constraints['x_min'], constraints['x_max']),
+       max_constraint_valid?(constraints['x_min'], constraints['x_max']),
+       min_constraint_valid?(constraints['y_min'], constraints['y_max']),
+       max_constraint_valid?(constraints['y_min'], constraints['y_max']),
+       min_constraint_valid?(constraints['endpoint_min']),
+       max_constraint_valid?(constraints['endpoint_max']),
+       min_constraint_valid?(constraints['barrier_min']),
+       max_constraint_valid?(constraints['barrier_max']),
+       ratio_valid?(constraints['ratio'])]
+    end
+
+    def self.formula_type_specific_constraints
+      case self.to_s
+      when 'bridge'
+        [min_constraint_valid?(constraints['bridge_min'], constraints['bridge_max']),
+         max_constraint_valid?(constraints['bridge_min'], constraints['bridge_max'])]
+      when 'tunnel'
+        [min_constraint_valid?(constraints['tunnel_min'], constraints['tunnel_max']),
+         max_constraint_valid?(constraints['tunnel_min'], constraints['tunnel_max'])]
+      when 'portal'
+        [min_constraint_valid?(constraints['portal_min'], constraints['portal_max']),
+         max_constraint_valid?(constraints['portal_min'], constraints['portal_max'])]
+      end
+    end
+
+    def self.update_constraints(constraints)
+
+    end
+
+    def self.constraint_validation(constraints)
+      validation = { validation: true }
+      x_min_validation(validation, constraints['x_min'])
+      x_max_validation(validation, constraints['x_max'])
+      y_min_validation(validation, constraints['y_min'])
+      y_max_validation(validation, constraints['y_max'])
+      endpoint_min_validation(validation, constraints['endpoint_min'])
+      endpoint_max_validation(validation, constraints['endpoint_max'])
+      barrier_min_validation(validation, constraints['barrier_min'])
+      barrier_min_validation(validation, constraints['barrier_max'])
+      bridge_min_validation(validation, constraints['bridge_min'])
+      bridge_min_validation(validation, constraints['bridge_max'])
+      tunnel_min_validation(validation, constraints['tunnel_min'])
+      tunnel_min_validation(validation, constraints['tunnel_max'])
+      portal_min_validation(validation, constraints['portal_min'])
+      portal_min_validation(validation, constraints['portal_max'])
+      ratio_validation(validation, constraints['ratio'])
+      validation
+    end
+
+    def self.min_constraint_valid?(min, max)
+      min > 0 && min != '' && min < max
+    end
+
+    def self.max_constraint_valid?(min, max)
+      max > 0 && max != '' && max > min
+    end
+
+    # def self.x_min_valid?(new_x_min, new_x_max)
+    #   return false if negative?(new_x_min) || empty?(new_x_min) ||
+    #                   new_x_min > new_x_max
+    #   true
+    # end
+
+    # def self.x_max_valid?(new_x_min, new_x_max)
+    #   return false if negative?(new_x_max) || empty?(new_x_max) ||
+    #                   new_x_max < new_x_min
+    #   true
+    # end
+
+    # def self.y_min_valid?(new_y_min, new_y_max)
+    #   return false if negative?(new_y_min) || empty?(new_y_min) ||
+    #                   new_y_min > new_y_max
+    #   true
+    # end
+
+    # def self.y_max_valid?(new_y_min, new_y_max)
+    #   return false if negative?(new_y_max) || empty?(new_y_max) ||
+    #                   new_y_max < new_y_min
+    #   true
+    # end
+
+    # def self.endpoint_min_valid?(new_endpoint_min, new_endpoint_max)
+    #   return false if negative?(new_endpoint_min) || empty?(new_endpoint_min) ||
+    #                   new_endpoint_min > new_endpoint_max
+    #   true
+    # end
+
+    # def self.endpoint_max_valid?(new_endpoint_min, new_endpoint_max)
+    #   return false if negative?(new_endpoint_max) || empty?(new_endpoint_max) ||
+    #                   new_endpoint_max < new_endpoint_min
+    #   true
+    # end
+
+    # def self.barrier_min_valid?(new_barrier_min, new_barrier_max)
+    #   return false if negative?(new_barrier_min) || empty?(new_barrier_min) ||
+    #                   new_barrier_min > new_barrier_max
+    #   true
+    # end
+
+    # def self.barrier_max_valid?(new_barrier_min, new_barrier_max)
+    #   return false if negative?(new_barrier_maxw_y_max) || empty?(new_barrier_max) ||
+    #                   new_barrier_max < new_barrier_min
+    #   true
+    # end
+
+    # def self.bridge_min_valid?(new_bridge_min, new_bridge_max)
+    #   return false if negative?(new_bridge_min) || empty?(new_bridge_min) ||
+    #                   new_bridge_min > new_bridge_max
+    #   true
+    # end
+
+    # def self.bridge_max_valid?(new_bridge_min, new_bridge_max)
+    #   return false if negative?(new_bridge_maxw_y_max) || empty?(new_bridge_max) ||
+    #                   new_bridge_max < new_bridge_min
+    #   true
+    # end
+
+    # def self.tunnel_min_valid?(new_tunnel_min, new_tunnel_max)
+    #   return false if negative?(new_tunnel_min) || empty?(new_tunnel_min) ||
+    #                   new_tunnel_min > new_tunnel_max
+    #   true
+    # end
+
+    # def self.tunnel_max_valid?(new_tunnel_min, new_tunnel_max)
+    #   return false if negative?(new_tunnel_maxw_y_max) || empty?(new_tunnel_max) ||
+    #                   new_tunnel_max < new_tunnel_min
+    #   true
+    # end
+
+    # def self.portal_min_valid?(new_portal_min, new_portal_max)
+    #   return false if negative?(new_portal_min) || empty?(new_portal_min) ||
+    #                   new_portal_min > new_portal_max
+    #   true
+    # end
+
+    # def self.portal_max_valid?(new_portal_min, new_portal_max)
+    #   return false if negative?(new_portal_maxw_y_max) || empty?(new_portal_max) ||
+    #                   new_portal_max < new_portal_min
+    #   true
+    # end
+
+    # def self.ratio_valid?(new_ratio)
+    #   return false if negative?(new_ratio) || empty?(new_ratio)
+    #   true
+    # end
+
     def self.generate_formulas(background_job_id, classes = maze_formula_classes)
       new_formula_count = 0
       existed_formula_count = 0
