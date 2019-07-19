@@ -179,72 +179,132 @@ module MazeCraze
     end
 
     def self.valid_constraints?(constraints)
+      constraints.each do |name, value|
+        next if name == 'formula_type'
+
+        if name == 'ratio'
+          constraints[name] = value.to_f
+        else
+          constraints[name] = value.to_i
+        end
+      end
+
       if self.to_s == 'simple'
-        general_constraints.all?
+        general_constraints_valid?(constraints)
       else
-        general_constraints.concat(formula_type_specific_constraints).all?
+        general_constraints_valid?(constraints) && formula_type_constraints_valid?(constraints)
       end
     end
 
-    def self.general_constraints
+    def self.general_constraints_valid?(constraints)
       [min_constraint_valid?(constraints['x_min'], constraints['x_max']),
        max_constraint_valid?(constraints['x_min'], constraints['x_max']),
        min_constraint_valid?(constraints['y_min'], constraints['y_max']),
        max_constraint_valid?(constraints['y_min'], constraints['y_max']),
-       min_constraint_valid?(constraints['endpoint_min']),
-       max_constraint_valid?(constraints['endpoint_max']),
-       min_constraint_valid?(constraints['barrier_min']),
-       max_constraint_valid?(constraints['barrier_max']),
-       ratio_valid?(constraints['ratio'])]
+       min_constraint_valid?(constraints['endpoint_min'], constraints['endpoint_max']),
+       max_constraint_valid?(constraints['endpoint_min'], constraints['endpoint_max']),
+       min_constraint_valid?(constraints['barrier_min'], constraints['barrier_max']),
+       max_constraint_valid?(constraints['barrier_min'], constraints['barrier_max'])].all?
+      #  ratio_valid?(constraints['ratio'])].all?
     end
 
-    def self.formula_type_specific_constraints
+    def self.formula_type_constraints_valid?(constraints)
       case self.to_s
       when 'bridge'
         [min_constraint_valid?(constraints['bridge_min'], constraints['bridge_max']),
-         max_constraint_valid?(constraints['bridge_min'], constraints['bridge_max'])]
+         max_constraint_valid?(constraints['bridge_min'], constraints['bridge_max'])].all?
       when 'tunnel'
         [min_constraint_valid?(constraints['tunnel_min'], constraints['tunnel_max']),
-         max_constraint_valid?(constraints['tunnel_min'], constraints['tunnel_max'])]
+         max_constraint_valid?(constraints['tunnel_min'], constraints['tunnel_max'])].all?
       when 'portal'
         [min_constraint_valid?(constraints['portal_min'], constraints['portal_max']),
-         max_constraint_valid?(constraints['portal_min'], constraints['portal_max'])]
+         max_constraint_valid?(constraints['portal_min'], constraints['portal_max'])].all?
       end
     end
 
-    def self.update_constraints(constraints)
-    end
-
-    def self.constraint_validation(constraints)
-      validation = { validation: true }
-      x_min_validation(validation, constraints['x_min'])
-      x_max_validation(validation, constraints['x_max'])
-      y_min_validation(validation, constraints['y_min'])
-      y_max_validation(validation, constraints['y_max'])
-      endpoint_min_validation(validation, constraints['endpoint_min'])
-      endpoint_max_validation(validation, constraints['endpoint_max'])
-      barrier_min_validation(validation, constraints['barrier_min'])
-      barrier_min_validation(validation, constraints['barrier_max'])
-      bridge_min_validation(validation, constraints['bridge_min'])
-      bridge_min_validation(validation, constraints['bridge_max'])
-      tunnel_min_validation(validation, constraints['tunnel_min'])
-      tunnel_min_validation(validation, constraints['tunnel_max'])
-      portal_min_validation(validation, constraints['portal_min'])
-      portal_min_validation(validation, constraints['portal_max'])
-      ratio_validation(validation, constraints['ratio'])
-      validation
-    end
-
     def self.min_constraint_valid?(min, max)
-      min > 0 && min != '' && min < max
+      min > 0 && min < max
     end
 
     def self.max_constraint_valid?(min, max)
-      max > 0 && max != '' && max > min
+      max > 0 && max > min
     end
 
     def self.ratio_valid?(ratio)
-      ratio > 0 && ratio != ''
+      ratio > 0
+    end
+
+    def self.constraint_validation(constraints)
+      validation = {}
+      validation_lists = ['general_constraints_validation',
+                          'formula_type_constraints_validation']
+
+      validation_lists.each do |list|
+        public_send(list, constraints) do |type, min_or_max, min, max|
+          constraint_to_validate = min_or_max == 'min' ? min : max
+
+          css_validation = "#{constraints['formula_type']}_#{type}_#{min_or_max}_validation_css"
+          css_feedback = "#{constraints['formula_type']}_#{type}_#{min_or_max}_feedback_css"
+          feedback = "#{constraints['formula_type']}_#{type}_#{min_or_max}_feedback"
+
+          # what about barrier squares that can be zero?
+          # type == 'barrier'
+          if public_send(min_or_max == 'min' ? 'min_constraint_valid?' : 'max_constraint_valid?', min, max)
+            validation[css_validation] = 'is-valid'
+            validation[css_feedback] = 'valid-feedback'
+            validation[feedback] = 'Looks good!'
+          else
+            validation[css_validation] = 'is-invalid'
+            validation[css_feedback] = 'invalid-feedback'
+            if constraint_to_validate <= 0
+              validation[feedback] = "Value must be greater than 0."
+            elsif min_or_max == 'min'
+              validation[feedback] = "Value must be less than #{type} max value."
+            else
+              validation[feedback] = "Value must be greater than #{type} min value."
+            end
+          end
+        end
+      end
+
+      validation
+    end
+
+    def self.general_constraints_validation(constraints)
+      list = [['x', 'min', constraints['x_min'], constraints['x_max']],
+              ['x', 'max', constraints['x_min'], constraints['x_max']],
+              ['y', 'min', constraints['y_min'], constraints['y_max']],
+              ['y', 'max', constraints['y_min'], constraints['y_max']],
+              ['endpoint', 'min', constraints['endpoint_min'], constraints['endpoint_max']],
+              ['endpoint', 'max', constraints['endpoint_min'], constraints['endpoint_max']],
+              ['barrier', 'min', constraints['barrier_min'], constraints['barrier_max']],
+              ['barrier', 'max', constraints['barrier_min'], constraints['barrier_max']]]
+              # ratio_validation(validation, constraints['ratio'])]
+
+      list.each do |constraint_info|
+        yield *constraint_info
+      end
+    end
+
+    def self.formula_type_constraints_validation(constraints)
+      list = case self.to_s
+             when 'bridge'
+               [['bridge', 'min', constraints['bridge_min'], constraints['bridge_max']],
+                ['bridge', 'max', constraints['bridge_min'], constraints['bridge_max']]]
+             when 'tunnel'
+               [['tunnel', 'min', constraints['tunnel_min'], constraints['tunnel_max']],
+                ['tunnel', 'max', constraints['tunnel_min'], constraints['tunnel_max']]]
+             when 'portal'
+               [['portal', 'min', constraints['portal_min'], constraints['portal_max']],
+                ['portal', 'max', constraints['portal_min'], constraints['portal_max']]]
+             else
+               []
+             end
+      
+      list.each { |constraint_info| yield *constraint_info }
+    end
+
+    def self.update_constraints(constraints)
     end
 
     def self.generate_formulas(background_job_id, classes = maze_formula_classes)
@@ -297,7 +357,7 @@ module MazeCraze
     end
 
     def self.form_popovers
-      popovers = build_popovers
+      popovers = build_popovers # rename build_popovers
 
       popovers.keys.each do |element|
         next if element == :maze_types
@@ -334,7 +394,7 @@ module MazeCraze
       popovers
     end
 
-    def self.build_popovers
+    def self.build_popovers # rename build_popovers
       MazeCraze::Maze.types_popover.merge(MazeCraze::MazeSquare.types_popover).merge(maze_dimensions_popover)
     end
 

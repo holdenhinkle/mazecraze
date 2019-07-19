@@ -47,7 +47,7 @@
       </form>
     </div>
     <% @maze_formula_constraints.each do |formula_name, constraint| %>
-      <div class="tab-panel fade" id="<%= formula_name %>" role="tabpanel" aria-labelledby="<%= formula_name %>-tab">
+      <div class="tab-pane fade" id="<%= formula_name %>" role="tabpanel" aria-labelledby="<%= formula_name %>-tab">
         <form action="/admin/settings" method="post">
           <input type="hidden" name="formula_type" value="<%= formula_name %>">
           <div class="form-group">
@@ -56,26 +56,26 @@
               <div class="form-group col-md-6">
                 <label for="x_min"><strong>X min</strong></label>
                 <% if session["#{formula_name}_x_min_validation_css"] %>
-                  <input type="number" class="form-control <%= session.delete("#{formula_name}_x_min_validation_css") %>" name="x_min" id="x_min" aria-describedby="x_min" value="<% params['x_min'] %>">
+                  <input type="number" class="form-control <%= session.delete("#{formula_name}_x_min_validation_css") %>" name="x_min" id="x_min" aria-describedby="x_min" value="<%= params['x_min'] %>">
                 <% else %>
                   <input type="number" class="form-control" name="x_min" id="x_min" aria-describedby="x_min" value="<%= constraint[:x_min] %>">
                 <% end %>
-                <% if session["#{formula_name}_x_min_validation_feedback"] %>
-                  <div class="<%= session.delete("#{formula_name}_x_min_validation_feedback_css") %>">
-                    <%= session.delete("#{formula_name}_x_min_validation_feedback") %>
+                <% if session["#{formula_name}_x_min_feedback_css"] %>
+                  <div class="<%= session.delete("#{formula_name}_x_min_feedback_css") %>">
+                    <%= session.delete("#{formula_name}_x_min_feedback") %>
                   </div>
                 <% end %>
               </div>
               <div class="form-group col-md-6">
                 <label for="x_max"><strong>X max</strong></label>
-                <% if session["#{formula_name}_x_min_validation_css"] %>
-                  <input type="number" class="form-control <%= session.delete("#{formula_name}_x_max_validation_css") %>" name="x_max" id="x_max" aria-describedby="x_max" value="<% params['x_max'] %>">
+                <% if session["#{formula_name}_x_max_validation_css"] %>
+                  <input type="number" class="form-control <%= session.delete("#{formula_name}_x_max_validation_css") %>" name="x_max" id="x_max" aria-describedby="x_max" value="<%= params['x_max'] %>">
                 <% else %>
                   <input type="number" class="form-control" name="x_max" id="x_max" aria-describedby="x_max" value="<%= constraint[:x_max] %>">
                 <% end %>
-                <% if session["#{formula_name}_x_max_validation_feedback"] %>
-                  <div class="<%= session.delete("#{formula_name}_x_max_validation_feedback_css") %>">
-                    <%= session.delete("#{formula_name}_x_max_validation_feedback") %>
+                <% if session["#{formula_name}_x_max_feedback_css"] %>
+                  <div class="<%= session.delete("#{formula_name}_x_max_feedback_css") %>">
+                    <%= session.delete("#{formula_name}_x_max_feedback") %>
                   </div>
                 <% end %>
               </div>
@@ -84,19 +84,27 @@
             <div class="row">
               <div class="form-group col-md-6">
                 <label for="y_min"><strong>Y min</strong></label>
-                <input type="number" class="form-control" name="y_min" id="y_min" aria-describedby="y_min" value="<%= constraint[:y_min] %>">
-                <% if session["y_min_validation_feedback"] %>
-                  <div class="<%= session.delete("y_min_validation_feedback_css") %>">
-                    <%= session.delete("y_min_validation_feedback") %>
+                <% if session["#{formula_name}_y_min_validation_css"] %>
+                  <input type="number" class="form-control <%= session.delete("#{formula_name}_y_min_validation_css") %>" name="y_min" id="y_min" aria-describedby="y_min" value="<%= params['y_min'] %>">
+                <% else %>
+                  <input type="number" class="form-control" name="y_min" id="y_min" aria-describedby="y_min" value="<%= constraint[:y_min] %>">
+                <% end %>
+                <% if session["#{formula_name}_y_min_feedback_css"] %>
+                  <div class="<%= session.delete("#{formula_name}_y_min_feedback_css") %>">
+                    <%= session.delete("#{formula_name}_y_min_feedback") %>
                   </div>
                 <% end %>
               </div>
               <div class="form-group col-md-6">
                 <label for="y_max"><strong>Y max</strong></label>
-                <input type="number" class="form-control" name="y_max" id="y_max" aria-describedby="y_max" value="<%= constraint[:y_max] %>">
-                <% if session["y_max_validation_feedback"] %>
-                  <div class="<%= session.delete("y_max_validation_feedback_css") %>">
-                    <%= session.delete("y_max_validation_feedback") %>
+                <% if session["#{formula_name}_y_max_validation_css"] %>
+                  <input type="number" class="form-control <%= session.delete("#{formula_name}_y_max_validation_css") %>" name="y_max" id="y_max" aria-describedby="y_max" value="<%= params['y_max'] %>">
+                <% else %>
+                  <input type="number" class="form-control" name="y_max" id="y_max" aria-describedby="y_max" value="<%= constraint[:y_max] %>">
+                <% end %>
+                <% if session["#{formula_name}_y_max_feedback_css"] %>
+                  <div class="<%= session.delete("#{formula_name}_y_max_feedback_css") %>">
+                    <%= session.delete("#{formula_name}_y_max_feedback") %>
                   </div>
                 <% end %>
               </div>
@@ -105,19 +113,27 @@
             <div class="row">
               <div class="form-group col-md-6">
                 <label for="endpoint_min"><strong>Endpoint min</strong></label>
-                <input type="number" class="form-control" name="endpoint_min" id="endpoint_min" aria-describedby="endpoint_min" value="<%= constraint[:endpoint_min] %>">
-                <% if session["endpoint_min_validation_feedback"] %>
-                  <div class="<%= session.delete("endpoint_min_validation_feedback_css") %>">
-                    <%= session.delete("endpoint_min_validation_feedback") %>
+                <% if session["#{formula_name}_endpoint_min_validation_css"] %>
+                  <input type="number" class="form-control <%= session.delete("#{formula_name}_endpoint_min_validation_css") %>" name="endpoint_min" id="endpoint_min" aria-describedby="endpoint_min" value="<%= params['endpoint_min'] %>">
+                <% else %>
+                  <input type="number" class="form-control" name="endpoint_min" id="endpoint_min" aria-describedby="endpoint_min" value="<%= constraint[:endpoint_min] %>">
+                <% end %>
+                <% if session["#{formula_name}_endpoint_min_feedback_css"] %>
+                  <div class="<%= session.delete("#{formula_name}_endpoint_min_feedback_css") %>">
+                    <%= session.delete("#{formula_name}_endpoint_min_feedback") %>
                   </div>
                 <% end %>
               </div>
               <div class="form-group col-md-6">
                 <label for="endpoint_max"><strong>Endpoint max</strong></label>
-                <input type="number" class="form-control" name="endpoint_max" id="endpoint_max" aria-describedby="endpoint_max" value="<%= constraint[:endpoint_max] %>">
-                <% if session["endpoint_max_validation_feedback"] %>
-                  <div class="<%= session.delete("endpoint_max_validation_feedback_css") %>">
-                    <%= session.delete("endpoint_max_validation_feedback") %>
+                <% if session["#{formula_name}_endpoint_max_validation_css"] %>
+                  <input type="number" class="form-control <%= session.delete("#{formula_name}_endpoint_max_validation_css") %>" name="endpoint_max" id="endpoint_max" aria-describedby="endpoint_max" value="<%= params['endpoint_max'] %>">
+                <% else %>
+                  <input type="number" class="form-control" name="endpoint_max" id="endpoint_max" aria-describedby="endpoint_max" value="<%= constraint[:endpoint_max] %>">
+                <% end %>
+                <% if session["#{formula_name}_endpoint_max_feedback_css"] %>
+                  <div class="<%= session.delete("#{formula_name}_endpoint_max_feedback_css") %>">
+                    <%= session.delete("#{formula_name}_endpoint_max_feedback") %>
                   </div>
                 <% end %>
               </div>
@@ -126,19 +142,27 @@
             <div class="row">
               <div class="form-group col-md-6">
                 <label for="barrier_min"><strong>Barrier min</strong></label>
-                <input type="number" class="form-control" name="barrier_min" id="barrier_min" aria-describedby="barrier_min" value="<%= constraint[:barrier_min] %>">
-                <% if session["barrier_min_validation_feedback"] %>
-                  <div class="<%= session.delete("barrier_min_validation_feedback_css") %>">
-                    <%= session.delete("barrier_min_validation_feedback") %>
+                <% if session["#{formula_name}_barrier_min_validation_css"] %>
+                  <input type="number" class="form-control <%= session.delete("#{formula_name}_barrier_min_validation_css") %>" name="barrier_min" id="barrier_min" aria-describedby="barrier_min" value="<%= params['barrier_min'] %>">
+                <% else %>
+                  <input type="number" class="form-control" name="barrier_min" id="barrier_min" aria-describedby="barrier_min" value="<%= constraint[:barrier_min] %>">
+                <% end %>
+                <% if session["#{formula_name}_barrier_min_feedback_css"] %>
+                  <div class="<%= session.delete("#{formula_name}_barrier_min_feedback_css") %>">
+                    <%= session.delete("#{formula_name}_barrier_min_feedback") %>
                   </div>
                 <% end %>
               </div>
               <div class="form-group col-md-6">
                 <label for="barrier_max"><strong>Barrier max</strong></label>
-                <input type="number" class="form-control" name="barrier_max" id="barrier_max" aria-describedby="barrier_max" value="<%= constraint[:barrier_max] %>">
-                <% if session["barrier_max_validation_feedback"] %>
-                  <div class="<%= session.delete("barrier_max_validation_feedback_css") %>">
-                    <%= session.delete("barrier_max_validation_feedback") %>
+                <% if session["#{formula_name}_barrier_max_validation_css"] %>
+                  <input type="number" class="form-control <%= session.delete("#{formula_name}_barrier_max_validation_css") %>" name="barrier_max" id="barrier_max" aria-describedby="barrier_max" value="<%= params['barrier_max'] %>">
+                <% else %>
+                  <input type="number" class="form-control" name="barrier_max" id="barrier_max" aria-describedby="barrier_max" value="<%= constraint[:barrier_max] %>">
+                <% end %>
+                <% if session["#{formula_name}_barrier_max_feedback_css"] %>
+                  <div class="<%= session.delete("#{formula_name}_barrier_max_feedback_css") %>">
+                    <%= session.delete("#{formula_name}_barrier_max_feedback") %>
                   </div>
                 <% end %>
               </div>
@@ -148,19 +172,27 @@
               <div class="row">
                 <div class="form-group col-md-6">
                   <label for="bridge_min"><strong>Bridge min</strong></label>
-                  <input type="number" class="form-control" name="bridge_min" id="bridge_min" aria-describedby="bridge_min" value="<%= constraint[:bridge_min] %>">
-                  <% if session["bridge_min_validation_feedback"] %>
-                    <div class="<%= session.delete("bridge_min_validation_feedback_css") %>">
-                      <%= session.delete("bridge_min_validation_feedback") %>
+                  <% if session["#{formula_name}_bridge_min_validation_css"] %>
+                    <input type="number" class="form-control <%= session.delete("#{formula_name}_bridge_min_validation_css") %>" name="bridge_min" id="bridge_min" aria-describedby="bridge_min" value="<%= params['bridge_min'] %>">
+                  <% else %>
+                    <input type="number" class="form-control" name="bridge_min" id="bridge_min" aria-describedby="bridge_min" value="<%= constraint[:bridge_min] %>">
+                  <% end %>
+                  <% if session["#{formula_name}_bridge_min_feedback_css"] %>
+                    <div class="<%= session.delete("#{formula_name}_bridge_min_feedback_css") %>">
+                      <%= session.delete("#{formula_name}_bridge_min_feedback") %>
                     </div>
                   <% end %>
                 </div>
                 <div class="form-group col-md-6">
                   <label for="bridge_max"><strong>Bridge max</strong></label>
-                  <input type="number" class="form-control" name="bridge_max" id="bridge_max" aria-describedby="bridge_max" value="<%= constraint[:bridge_max] %>">
-                  <% if session["bridge_max_validation_feedback"] %>
-                    <div class="<%= session.delete("bridge_max_validation_feedback_css") %>">
-                      <%= session.delete("bridge_max_validation_feedback") %>
+                  <% if session["#{formula_name}_bridge_max_validation_css"] %>
+                    <input type="number" class="form-control <%= session.delete("#{formula_name}_bridge_max_validation_css") %>" name="bridge_max" id="bridge_max" aria-describedby="bridge_max" value="<%= params['bridge_max'] %>">
+                  <% else %>
+                    <input type="number" class="form-control" name="bridge_max" id="bridge_max" aria-describedby="bridge_max" value="<%= constraint[:bridge_max] %>">
+                  <% end %>
+                  <% if session["#{formula_name}_bridge_max_feedback_css"] %>
+                    <div class="<%= session.delete("#{formula_name}_bridge_max_feedback_css") %>">
+                      <%= session.delete("#{formula_name}_bridge_max_feedback") %>
                     </div>
                   <% end %>
                 </div>
@@ -171,19 +203,27 @@
               <div class="row">
                 <div class="form-group col-md-6">
                   <label for="tunnel_min"><strong>Tunnel min</strong></label>
-                  <input type="number" class="form-control" name="tunnel_min" id="tunnel_min" aria-describedby="tunnel_min" value="<%= constraint[:tunnel_min] %>">
-                  <% if session["tunnel_min_validation_feedback"] %>
-                    <div class="<%= session.delete("tunnel_min_validation_feedback_css") %>">
-                      <%= session.delete("tunnel_min_validation_feedback") %>
+                  <% if session["#{formula_name}_tunnel_min_validation_css"] %>
+                    <input type="number" class="form-control <%= session.delete("#{formula_name}_tunnel_min_validation_css") %>" name="tunnel_min" id="tunnel_min" aria-describedby="tunnel_min" value="<%= params['tunnel_min'] %>">
+                  <% else %>
+                    <input type="number" class="form-control" name="tunnel_min" id="tunnel_min" aria-describedby="tunnel_min" value="<%= constraint[:tunnel_min] %>">
+                  <% end %>
+                  <% if session["#{formula_name}_tunnel_min_feedback_css"] %>
+                    <div class="<%= session.delete("#{formula_name}_tunnel_min_feedback_css") %>">
+                      <%= session.delete("#{formula_name}_tunnel_min_feedback") %>
                     </div>
                   <% end %>
                 </div>
                 <div class="form-group col-md-6">
                   <label for="tunnel_max"><strong>Tunnel max</strong></label>
-                  <input type="number" class="form-control" name="tunnel_max" id="tunnel_max" aria-describedby="tunnel_max" value="<%= constraint[:tunnel_max] %>">
-                  <% if session["tunnel_max_validation_feedback"] %>
-                    <div class="<%= session.delete("tunnel_max_validation_feedback_css") %>">
-                      <%= session.delete("tunnel_max_validation_feedback") %>
+                  <% if session["#{formula_name}_tunnel_max_validation_css"] %>
+                    <input type="number" class="form-control <%= session.delete("#{formula_name}_tunnel_max_validation_css") %>" name="tunnel_max" id="tunnel_max" aria-describedby="tunnel_max" value="<%= params['tunnel_max'] %>">
+                  <% else %>
+                    <input type="number" class="form-control" name="tunnel_max" id="tunnel_max" aria-describedby="tunnel_max" value="<%= constraint[:tunnel_max] %>">
+                  <% end %>
+                  <% if session["#{formula_name}_tunnel_max_feedback_css"] %>
+                    <div class="<%= session.delete("#{formula_name}_tunnel_max_feedback_css") %>">
+                      <%= session.delete("#{formula_name}_tunnel_max_feedback") %>
                     </div>
                   <% end %>
                 </div>
@@ -194,19 +234,27 @@
               <div class="row">
                 <div class="form-group col-md-6">
                   <label for="portal_min"><strong>Portal min</strong></label>
-                  <input type="number" class="form-control" name="portal_min" id="portal_min" aria-describedby="portal_min" value="<%= constraint[:portal_min] %>">
-                  <% if session["portal_min_validation_feedback"] %>
-                    <div class="<%= session.delete("portal_min_validation_feedback_css") %>">
-                      <%= session.delete("portal_min_validation_feedback") %>
+                  <% if session["#{formula_name}_portal_min_validation_css"] %>
+                    <input type="number" class="form-control <%= session.delete("#{formula_name}_portal_min_validation_css") %>" name="portal_min" id="portal_min" aria-describedby="portal_min" value="<%= params['portal_min'] %>">
+                  <% else %>
+                    <input type="number" class="form-control" name="portal_min" id="portal_min" aria-describedby="portal_min" value="<%= constraint[:portal_min] %>">
+                  <% end %>
+                  <% if session["#{formula_name}_portal_min_feedback_css"] %>
+                    <div class="<%= session.delete("#{formula_name}_portal_min_feedback_css") %>">
+                      <%= session.delete("#{formula_name}_portal_min_feedback") %>
                     </div>
                   <% end %>
                 </div>
                 <div class="form-group col-md-6">
                   <label for="portal_max"><strong>Portal max</strong></label>
-                  <input type="number" class="form-control" name="portal_max" id="portal_max" aria-describedby="portal_max" value="<%= constraint[:portal_max] %>">
-                  <% if session["portal_max_validation_feedback"] %>
-                    <div class="<%= session.delete("portal_max_validation_feedback_css") %>">
-                      <%= session.delete("portal_max_validation_feedback") %>
+                  <% if session["#{formula_name}_portal_max_validation_css"] %>
+                    <input type="number" class="form-control <%= session.delete("#{formula_name}_portal_max_validation_css") %>" name="portal_max" id="portal_max" aria-describedby="portal_max" value="<%= params['portal_max'] %>">
+                  <% else %>
+                    <input type="number" class="form-control" name="portal_max" id="portal_max" aria-describedby="portal_max" value="<%= constraint[:portal_max] %>">
+                  <% end %>
+                  <% if session["#{formula_name}_portal_max_feedback_css"] %>
+                    <div class="<%= session.delete("#{formula_name}_portal_max_feedback_css") %>">
+                      <%= session.delete("#{formula_name}_portal_max_feedback") %>
                     </div>
                   <% end %>
                 </div>
