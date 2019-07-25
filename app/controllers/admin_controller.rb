@@ -27,10 +27,10 @@ class AdminController < ApplicationController
       formula_type = MazeCraze::MazeFormula.maze_formula_type_to_class(params['formula_type'])
       if formula_type.valid_constraints?(params)
         # formula_type.update_constraints(params)
-        session[:success] = "Success."
+        session[:success] = "The #{params['formula_type'].capitalize} Maze settings have been updated."
         redirect '/admin/settings'
       else
-        session[:error] = "Error."
+        session[:error] = "Please see the #{params['formula_type'].capitalize} Maze error message(s) and try again."
         add_hashes_to_session_hash(formula_type.constraint_validation(params))
         # refactor this
         @title = "Settings - Maze Craze Admin"
