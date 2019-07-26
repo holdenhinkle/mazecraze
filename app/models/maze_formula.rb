@@ -179,6 +179,25 @@ module MazeCraze
     end
 
     def self.valid_constraints?(constraints)
+      constraints = correct_constraint_values(constraints)
+      # constraints.each do |name, value|
+      #   next if name == 'formula_type'
+
+      #   if name == 'ratio'
+      #     constraints[name] = value.to_f
+      #   else
+      #     constraints[name] = value.to_i
+      #   end
+      # end
+
+      if self.to_s == 'simple'
+        general_constraints_valid?(constraints)
+      else
+        general_constraints_valid?(constraints) && formula_type_constraints_valid?(constraints)
+      end
+    end
+
+    def self.correct_constraint_values(constraints)
       constraints.each do |name, value|
         next if name == 'formula_type'
 
@@ -189,11 +208,7 @@ module MazeCraze
         end
       end
 
-      if self.to_s == 'simple'
-        general_constraints_valid?(constraints)
-      else
-        general_constraints_valid?(constraints) && formula_type_constraints_valid?(constraints)
-      end
+      constraints
     end
 
     def self.general_constraints_valid?(constraints)
@@ -223,13 +238,13 @@ module MazeCraze
     end
 
     def self.min_constraint_valid?(min, max, type)
-      return min >= 0 && min < max if type == 'barrier'
-      min > 0 && min < max
+      return min > -1 && min <= max if type == 'barrier'
+      min > 0 && min <= max
     end
 
     def self.max_constraint_valid?(min, max, type)
-      return max > 0 && max > min if type == 'barrier'
-      max > 1 && max > min
+      return max > 0 && max >= min if type == 'barrier'
+      max > 1 && max >= min
     end
 
     def self.min_constraint_invalid?(min, max, type)
@@ -241,7 +256,7 @@ module MazeCraze
     end
 
     def self.ratio_valid?(ratio)
-      ratio > 0
+      ratio > 0 && ratio < 1
     end
 
     def self.ratio_invalid?(ratio)
@@ -250,15 +265,17 @@ module MazeCraze
 
     def self.constraint_validation(constraints)
       validation = {}
-      validation_lists = ['general_constraints_validation',
-                          'formula_type_constraints_validation']
 
+      validation_lists = [method(:general_constraints_validation), 
+                          method(:formula_type_constraints_validation)]
+  
       validation_lists.each do |list|
-        public_send(list, constraints) do |type, min_or_max, min, max, ratio|
+        list.call(constraints) do |type, min_or_max, min, max, ratio|
+
           if type == 'ratio' && ratio_invalid?(ratio)
-            ratio_constraint_validation(validation, ratio)
+            ratio_constraint_validation(constraints, validation, ratio)
           elsif type != 'ratio' && public_send(min_or_max == 'min' ? 'min_constraint_invalid?' : 'max_constraint_invalid?', min, max, type)
-            not_ratio_constraint_validation(validation, type, min_or_max, min, max)
+            not_ratio_constraint_validation(constraints, validation, type, min_or_max, min, max)
           end
         end
       end
@@ -266,38 +283,28 @@ module MazeCraze
       validation
     end
 
-    def self.ratio_constraint_validation(validation_messages, ratio)
+    def self.ratio_constraint_validation(constraints, validation, ratio)
+      validation["#{constraints['formula_type']}_ratio_validation_css"] = 'is-invalid'
+      validation["#{constraints['formula_type']}_ratio_feedback_css"] = 'invalid-feedback'
+      validation["#{constraints['formula_type']}_ratio_feedback"] =
+        'The value must be between 0.01 and 0.99.'
     end
 
-    def self.not_ratio_constraint_validation(validation, type, min_or_max, min, max)
-      validation[validation_validation_css(constraints['formula_type'], type, min_or_max)] = 'is-invalid'
-      validation[validation_feedback_css(constraints['formula_type'], type, min_or_max)] = 'invalid-feedback'
-
-
+    def self.not_ratio_constraint_validation(constraints, validation, type, min_or_max, min, max)
+      validation["#{constraints['formula_type']}_#{type}_#{min_or_max}_validation_css"] = 'is-invalid'
+      validation["#{constraints['formula_type']}_#{type}_#{min_or_max}_feedback_css"] = 'invalid-feedback'
+      feedback = "#{constraints['formula_type']}_#{type}_#{min_or_max}_feedback"
       constraint_to_validate = min_or_max == 'min' ? min : max
-      feedback = validation_feedback_message(constraints['formula_type'], type, min_or_max)
       
       if type == 'barrier' && constraint_to_validate < 0
         validation[feedback] = "Value must be greater than or equal to 0."
       elsif type != 'barrier' && constraint_to_validate < 1
         validation[feedback] = "Value must be greater than or equal to 1."
       elsif min_or_max == 'min'
-        validation[feedback] = "Value must be less than #{type} max value."
+        validation[feedback] = "Value must be less than or equal to #{type} max value."
       elsif min_or_max == 'max'
-        validation[feedback] = "Value must be greater than #{type} min value."
+        validation[feedback] = "Value must be greater than or equal to #{type} min value."
       end
-    end
-
-    def self.validation_feedback_message(formula_type, square_type, min_or_max)
-      "#{constraints['formula_type']}_#{type}_#{min_or_max}_feedback"
-    end
-
-    def self.validation_validation_css(formula_type, square_type, min_or_max)
-      "#{constraints['formula_type']}_#{type}_#{min_or_max}_validation_css"
-    end
-
-    def self.validation_feedback_css(formula_type, square_type, min_or_max)
-      "#{constraints['formula_type']}_#{type}_#{min_or_max}_feedback_css"
     end
 
     def self.general_constraints_validation(constraints)
@@ -311,9 +318,7 @@ module MazeCraze
               ['barrier', 'max', constraints['barrier_min'], constraints['barrier_max']],
               ['ratio', nil, nil, nil, constraints['ratio']]]
 
-      list.each do |constraint_info|
-        yield(*constraint_info)
-      end
+      list.each { |constraint_info| yield(*constraint_info) }
     end
 
     def self.formula_type_constraints_validation(constraints)
