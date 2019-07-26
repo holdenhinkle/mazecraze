@@ -11,10 +11,10 @@
 </header>
 <section>
   <article>
-    <p>Create a new Maze Formula.</p>
+    <p>You can change the formula constraints on the <a href="/admin/settings">settings page</a>.</p>
     <form action="/admin/mazes/formulas/new" method="post">
       <div class="form-group">
-        <h3>Type</h3>
+        <p class="h4 mt-4">Type</p>
         <div class="row">
           <div class="form-group col-md-8">
             <label for="maze_type" >Maze <strong>Type</strong></label>  <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:maze_types][:title]%>" data-content="<%= @popovers[:maze_types][:body]%>"><i class="fas fa-question-circle"></i></a>
@@ -35,7 +35,7 @@
             </select>
           </div>
         </div>
-        <h3>Dimensions</h3>
+        <p class="h4 mt-4">Dimensions</p>
         <div class="row">
           <div class="form-group col-md-4">
             <label for="x">Maze <strong>Width</strong> (x-value)</label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:x][:title]%>" data-content="<%= @popovers[:x][:body] %>"><i class="fas fa-question-circle"></i></a>
@@ -99,7 +99,7 @@
           <div class="form-group col-md-4">
             <label for="bridges">Number of <strong>Bridges</strong></label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:bridge][:title]%>" data-content="<%= @popovers[:bridge][:body]%>"><i class="fas fa-question-circle"></i></a>
             <% if session["bridge_validation_css"] %>
-              <input type="number" class="form-control <%= session.delete("bridge_validation_css") %>" name="bridges" id="bridges" aria-describedby="bridges-help" value="<%= @formula.bridges %>">
+              <input type="number" class="form-control <%= session.delete("bridge_validation_css") %>" name="bridges" id="bridges" aria-describedby="bridges-help" value="<%= params['bridges'] %>">
             <% else %>
               <input type="number" class="form-control" name="bridges" id="bridges" aria-describedby="bridges-help" placeholder="0">
             <% end %>
@@ -114,7 +114,7 @@
           <div class="form-group col-md-4">
             <label for="tunnels">Number of <strong>Tunnels</strong></label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:tunnel][:title]%>" data-content="<%= @popovers[:tunnel][:body]%>"><i class="fas fa-question-circle"></i></a>
             <% if session["tunnel_validation_css"] %>
-              <input type="number" class="form-control <%= session.delete("tunnel_validation_css") %>" name="tunnels" id="tunnels" aria-describedby="tunnels-help" value="<%= @formula.tunnels %>">
+              <input type="number" class="form-control <%= session.delete("tunnel_validation_css") %>" name="tunnels" id="tunnels" aria-describedby="tunnels-help" value="<%= params['tunnels'] %>">
             <% else %>
               <input type="number" class="form-control" name="tunnels" id="tunnels" aria-describedby="tunnels-help" placeholder="0">
             <% end %>
@@ -129,7 +129,7 @@
           <div class="form-group col-md-4">
             <label for="portals">Number of <strong>Portals</strong></label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:portal][:title]%>" data-content="<%= @popovers[:portal][:body]%>"><i class="fas fa-question-circle"></i></a>
             <% if session["portal_validation_css"] %>
-              <input type="number" class="form-control <%= session.delete("portal_validation_css") %>" name="portals" id="portals" aria-describedby="portals-help" value="<%= @formula.portals %>">
+              <input type="number" class="form-control <%= session.delete("portal_validation_css") %>" name="portals" id="portals" aria-describedby="portals-help" value="<%= params['portals'] %>">
             <% else %>
               <input type="number" class="form-control" name="portals" id="portals" aria-describedby="portals-help" placeholder="0">
             <% end %>
@@ -156,6 +156,7 @@
         </div>
         <% session.delete("validation") if session["validation"] %>
         <button type="submit" class="btn btn-primary mt-4">Submit Form</button>
+        <a class="btn btn-link mt-4" href="/admin/mazes/formulas/new" role="button">Cancel</a>
       </div>
     </form>
   </article>
