@@ -26,7 +26,7 @@ class AdminController < ApplicationController
     elsif params["formula_type"]
       formula_type = MazeCraze::MazeFormula.maze_formula_type_to_class(params['formula_type'])
       if formula_type.valid_constraints?(params)
-        # formula_type.update_constraints(params)
+        formula_type.update_constraints(params)
         session[:success] = "The #{params['formula_type'].capitalize} Maze settings have been updated."
         redirect '/admin/settings'
       else

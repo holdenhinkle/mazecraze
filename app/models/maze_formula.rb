@@ -179,16 +179,7 @@ module MazeCraze
     end
 
     def self.valid_constraints?(constraints)
-      constraints = correct_constraint_values(constraints)
-      # constraints.each do |name, value|
-      #   next if name == 'formula_type'
-
-      #   if name == 'ratio'
-      #     constraints[name] = value.to_f
-      #   else
-      #     constraints[name] = value.to_i
-      #   end
-      # end
+      correct_constraint_values(constraints)
 
       if self.to_s == 'simple'
         general_constraints_valid?(constraints)
@@ -207,8 +198,6 @@ module MazeCraze
           constraints[name] = value.to_i
         end
       end
-
-      constraints
     end
 
     def self.general_constraints_valid?(constraints)
@@ -340,6 +329,60 @@ module MazeCraze
     end
 
     def self.update_constraints(constraints)
+      formula_class = maze_formula_type_to_class(constraints['formula_type'])
+      name_partial = "#{constraints['formula_type']}_formula"
+
+      constraints.each do |constraint, value|
+        next if constraint == 'formula_type'
+
+        formula_class.update_constraints_in_class(constraint, value)
+        update_constraints_in_db(name_partial, constraint, value)
+      end
+    end
+
+    def self.update_constraints_in_class(constraint, value)
+      case constraint
+      when "x_min"
+        self.x_min = value
+      when "x_max"
+        self.x_max = value
+      when "y_min"
+        self.y_min = value
+      when "y_max"
+        self.y_max = value
+      when "endpoint_min"
+        self.endpoint_min = value
+      when "endpoint_max"
+        self.endpoint_max = value
+      when "barrier_min"
+        self.barrier_min = value
+      when "barrier_max"
+        self.barrier_max = value
+      when "normal_squares_to_other_squares_ratio"
+        self.normal_squares_to_other_squares_ratio = value
+      when "bridge_min"
+        self.bridge_min = value
+      when "bridge_max"
+        self.bridge_max = value
+      when "tunnel_min"
+        self.tunnel_min = value
+      when "tunnel_max"
+        self.tunnel_max = value
+      when "portal_min"
+        self.portal_min = value
+      when "portal_max"
+        self.portal_max = value
+      end
+    end
+
+    def self.update_constraints_in_db(name_partial, constraint, value)
+      if constraint == 'ratio'
+        sql = 'UPDATE settings SET decimal_value = $1 WHERE name = $2;'
+        query(sql, value, "#{name_partial}_normal_squares_to_other_squares_ratio")
+      else
+        sql = 'UPDATE settings SET integer_value = $1 WHERE name = $2;'
+        query(sql, value, "#{name_partial}_#{constraint}")
+      end
     end
 
     def self.generate_formulas(background_job_id, classes = maze_formula_classes)
@@ -787,6 +830,11 @@ module MazeCraze
     
     set_maze_formula_constraints
 
+    # def initialize(formula)
+    #   @bridges = integer_value(formula['bridges'])
+    #   super(formula)
+    # end
+
     def self.generate_formulas(dimensions, num_endpoints, num_barriers)
       BRIDGE_MIN.upto(bridge_max) do |num_bridges|
         next if (num_endpoints * 2 + num_barriers + num_bridges) > dimensions[:x] * dimensions[:y] / 2
@@ -833,6 +881,11 @@ module MazeCraze
         
     set_maze_formula_constraints
 
+    # def initialize(formula)
+    #   @tunnels = integer_value(formula['tunnels'])
+    #   super(formula)
+    # end
+
     def self.generate_formulas(dimensions, num_endpoints, num_barriers)
       tunnel_min.upto(tunnel_max) do |num_tunnels|
         next if (num_endpoints * 2 + num_barriers + num_tunnels * 2) > dimensions[:x] * dimensions[:y] / 2
@@ -878,6 +931,11 @@ module MazeCraze
     end
     
     set_maze_formula_constraints
+
+    # def initialize(formula)
+    #   @portals = integer_value(formula['portals'])
+    #   super(formula)
+    # end
 
     def self.generate_formulas(dimensions, num_endpoints, num_barriers)
       portal_min.upto(portal_max) do |num_portals|
