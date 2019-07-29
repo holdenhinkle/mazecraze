@@ -16,37 +16,31 @@ class AdminController < ApplicationController
   end
 
   post '/admin/settings' do
-    # ** REFACTOR
     if params['number_of_threads']
       MazeCraze::BackgroundWorker.update_number_of_threads(params['number_of_threads'].to_i)
-      session[:success] = "The settings have been updated."
       MazeCraze::BackgroundWorker.stop
       MazeCraze::BackgroundWorker.start
+      session[:success] = "The settings have been updated."
       redirect '/admin/settings'
     elsif params["formula_type"]
       formula_type = MazeCraze::MazeFormula.maze_formula_type_to_class(params['formula_type'])
+
       if formula_type.valid_constraints?(params)
         formula_type.update_constraints(params)
         session[:success] = "The #{params['formula_type'].capitalize} Maze settings have been updated."
         redirect '/admin/settings'
       else
-        session[:error] = "Please see the #{params['formula_type'].capitalize} Maze error message(s) and try again."
-        add_hashes_to_session_hash(formula_type.constraint_validation(params))
-        # refactor this
+        add_hash_to_session_hash(formula_type.constraint_validation(params))
         @title = "Settings - Maze Craze Admin"
         @min_max_threads = { min: MazeCraze::BackgroundWorker::MIN_THREADS,
                              max: MazeCraze::BackgroundWorker::MAX_THREADS }
         @number_of_threads = MazeCraze::BackgroundWorker.number_of_threads
         @maze_formula_constraints = MazeCraze::MazeFormula.constraints
+        session[:error] = "Please see the #{params['formula_type'].capitalize} Maze error message(s) and try again."
         erb :admin_settings
       end
     end
   end
-
-
-
-
-
 
   get '/admin/background-jobs' do
     @title = "Background Jobs - Maze Craze Admin"
@@ -60,10 +54,6 @@ class AdminController < ApplicationController
     end
     erb :background_jobs
   end
-
-
-
-
 
   post '/admin/background-jobs' do
     job_id = params['id']
@@ -171,12 +161,12 @@ class AdminController < ApplicationController
 
     if @formula.exists?
       session[:error] = "That maze formula already exists."
-    elsif @formula.experiment? && @formula.experiment_valid? || @formula.valid?(params)
+    elsif @formula.valid?(params) || @formula.experiment? && @formula.experiment_valid?
       @formula.save!
       session[:success] = "Your maze formula was saved."
       redirect "/admin/mazes/formulas/new"
     else
-      add_hashes_to_session_hash(@formula.validation(params))
+      add_hash_to_session_hash(@formula.validation(params))
       session[:error] = "That maze formula is invalid."
     end
 

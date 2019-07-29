@@ -43,7 +43,7 @@ module ApplicationHelper
   #   end
   # end
 
-  def add_hashes_to_session_hash(hash)
+  def add_hash_to_session_hash(hash)
     hash.each { |key, value| session[key] = value }
   end
 end
