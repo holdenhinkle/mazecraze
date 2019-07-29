@@ -13,7 +13,7 @@ module MazeCraze
         attr_accessor :x_min, :x_max, :y_min, :y_max,
                       :endpoint_min, :endpoint_max,
                       :barrier_min, :barrier_max,
-                      :normal_squares_to_other_squares_ratio
+                      :other_squares_to_normal_squares_ratio
       end
 
       case self.to_s
@@ -40,7 +40,7 @@ module MazeCraze
       @barrier_min = nil
       @barrier_max = nil
       @barrier_min = nil
-      @normal_squares_to_other_squares_ratio = nil
+      @other_squares_to_normal_squares_ratio = nil
       @bridge_min = nil if self.to_s == 'bridge'
       @bridge_max = nil if self.to_s == 'bridge'
       @tunnel_min = nil if self.to_s == 'tunnel'
@@ -53,7 +53,7 @@ module MazeCraze
         "#{self.to_s}_formula_y_min", "#{self.to_s}_formula_y_max",
         "#{self.to_s}_formula_endpoint_min", "#{self.to_s}_formula_endpoint_max",
         "#{self.to_s}_formula_barrier_min", "#{self.to_s}_formula_barrier_max",
-        "#{self.to_s}_formula_normal_squares_to_other_squares_ratio"
+        "#{self.to_s}_formula_other_squares_to_normal_squares_ratio"
       ]
 
       case self.to_s
@@ -93,8 +93,8 @@ module MazeCraze
           self.barrier_min = setting['integer_value'].to_i
         when "#{self.to_s}_formula_barrier_max"
           self.barrier_max = setting['integer_value'].to_i
-        when "#{self.to_s}_formula_normal_squares_to_other_squares_ratio"
-          self.normal_squares_to_other_squares_ratio = setting['integer_value'].to_f
+        when "#{self.to_s}_formula_other_squares_to_normal_squares_ratio"
+          self.other_squares_to_normal_squares_ratio = setting['integer_value'].to_f
         when "#{self.to_s}_formula_bridge_min"
           self.bridge_min = setting['integer_value'].to_i
         when "#{self.to_s}_formula_bridge_max"
@@ -248,30 +248,6 @@ module MazeCraze
       validation
     end
 
-    def self.ratio_constraint_validation(constraints, validation, ratio)
-      validation["#{constraints['formula_type']}_ratio_validation_css"] = 'is-invalid'
-      validation["#{constraints['formula_type']}_ratio_feedback_css"] = 'invalid-feedback'
-      validation["#{constraints['formula_type']}_ratio_feedback"] =
-        'The value must be between 0.01 and 0.99.'
-    end
-
-    def self.not_ratio_constraint_validation(constraints, validation, type, min_or_max, min, max)
-      validation["#{constraints['formula_type']}_#{type}_#{min_or_max}_validation_css"] = 'is-invalid'
-      validation["#{constraints['formula_type']}_#{type}_#{min_or_max}_feedback_css"] = 'invalid-feedback'
-      feedback = "#{constraints['formula_type']}_#{type}_#{min_or_max}_feedback"
-      constraint_to_validate = min_or_max == 'min' ? min : max
-      
-      if type == 'barrier' && constraint_to_validate < 0
-        validation[feedback] = "Value must be greater than or equal to 0."
-      elsif type != 'barrier' && constraint_to_validate < 1
-        validation[feedback] = "Value must be greater than or equal to 1."
-      elsif min_or_max == 'min'
-        validation[feedback] = "Value must be less than or equal to #{type} max value."
-      elsif min_or_max == 'max'
-        validation[feedback] = "Value must be greater than or equal to #{type} min value."
-      end
-    end
-
     def self.general_constraints_validation(constraints)
       list = [['x', 'min', constraints['x_min'], constraints['x_max']],
               ['x', 'max', constraints['x_min'], constraints['x_max']],
@@ -304,6 +280,30 @@ module MazeCraze
       list.each { |constraint_info| yield(*constraint_info) }
     end
 
+    def self.ratio_constraint_validation(constraints, validation, ratio)
+      validation["#{constraints['formula_type']}_ratio_validation_css"] = 'is-invalid'
+      validation["#{constraints['formula_type']}_ratio_feedback_css"] = 'invalid-feedback'
+      validation["#{constraints['formula_type']}_ratio_feedback"] =
+        'The value must be between 0.01 and 0.99.'
+    end
+
+    def self.not_ratio_constraint_validation(constraints, validation, type, min_or_max, min, max)
+      validation["#{constraints['formula_type']}_#{type}_#{min_or_max}_validation_css"] = 'is-invalid'
+      validation["#{constraints['formula_type']}_#{type}_#{min_or_max}_feedback_css"] = 'invalid-feedback'
+      feedback = "#{constraints['formula_type']}_#{type}_#{min_or_max}_feedback"
+      constraint_to_validate = min_or_max == 'min' ? min : max
+      
+      if type == 'barrier' && constraint_to_validate < 0
+        validation[feedback] = "Value must be greater than or equal to 0."
+      elsif type != 'barrier' && constraint_to_validate < 1
+        validation[feedback] = "Value must be greater than or equal to 1."
+      elsif min_or_max == 'min'
+        validation[feedback] = "Value must be less than or equal to #{type} max value."
+      elsif min_or_max == 'max'
+        validation[feedback] = "Value must be greater than or equal to #{type} min value."
+      end
+    end
+
     def self.update_constraints(constraints)
       formula_class = maze_formula_type_to_class(constraints['formula_type'])
       name_partial = "#{constraints['formula_type']}_formula"
@@ -311,12 +311,12 @@ module MazeCraze
       constraints.each do |constraint, value|
         next if constraint == 'formula_type'
 
-        formula_class.update_constraints_in_class(constraint, value)
-        update_constraints_in_db(name_partial, constraint, value)
+        formula_class.update_constraint_in_class(constraint, value)
+        update_constraint_in_db(name_partial, constraint, value)
       end
     end
 
-    def self.update_constraints_in_class(constraint, value)
+    def self.update_constraint_in_class(constraint, value)
       case constraint
       when "x_min"
         self.x_min = value
@@ -334,8 +334,8 @@ module MazeCraze
         self.barrier_min = value
       when "barrier_max"
         self.barrier_max = value
-      when "normal_squares_to_other_squares_ratio"
-        self.normal_squares_to_other_squares_ratio = value
+      when "other_squares_to_normal_squares_ratio"
+        self.other_squares_to_normal_squares_ratio = value
       when "bridge_min"
         self.bridge_min = value
       when "bridge_max"
@@ -351,10 +351,10 @@ module MazeCraze
       end
     end
 
-    def self.update_constraints_in_db(name_partial, constraint, value)
+    def self.update_constraint_in_db(name_partial, constraint, value)
       if constraint == 'ratio'
         sql = 'UPDATE settings SET decimal_value = $1 WHERE name = $2;'
-        query(sql, value, "#{name_partial}_normal_squares_to_other_squares_ratio")
+        query(sql, value, "#{name_partial}_other_squares_to_normal_squares_ratio")
       else
         sql = 'UPDATE settings SET integer_value = $1 WHERE name = $2;'
         query(sql, value, "#{name_partial}_#{constraint}")
@@ -487,10 +487,10 @@ module MazeCraze
     end
 
     def valid?(input)
-      [x_valid_input?,
-      y_valid_input?,
-      endpoints_valid_input?,
-      barriers_valid_input?,
+      [x_valid_input?(input['x']),
+      y_valid_input?(input['y']),
+      endpoints_valid_input?(input['endpoints']),
+      barriers_valid_input?(input['barriers']),
       bridges_valid_input?(input['bridges']),
       tunnels_valid_input?(input['tunnels']),
       portals_valid_input?(input['portals'])].all?
@@ -504,15 +504,113 @@ module MazeCraze
     end
 
     def validation(input)
-      validation = { validation: true }
-      x_validation(validation)
-      y_validation(validation)
-      endpoints_validation(validation)
-      barrier_validation(validation)
-      bridge_validation(validation, input['bridges'])
-      tunnel_validation(validation, input['tunnels'])
-      portal_validation(validation, input['portals'])
+      validation = { validation: true } # do I need validation: true ?
+
+      items = ['x', 'y', 'endpoints', 'barriers', 'bridges', 'tunnels', 'portals']
+
+      items.each do |item|
+        generate_validation(input[item], validation, item)
+      end
+
       validation
+    end
+
+    def generate_validation(input, validation, item)
+      validation_css = "#{item}_validation_css"
+      validation_feedback_css = "#{item}_validation_feedback_css"
+      validation_feedback = "#{item}_validation_feedback"
+
+      if public_send("#{item}_valid_input?", input)
+        validation[validation_css] = 'is-valid'
+        validation[validation_feedback_css] = 'valid-feedback'
+        validation[validation_feedback] = 'Looks good!'
+      else
+        validation[validation_css] = 'is-invalid'
+        validation[validation_feedback_css] = 'invalid-feedback'
+        validation[validation_feedback] = validation_invalid_feedback(item)
+      end
+    end
+
+    def x_valid_input?(_)
+      (self.class.x_min..self.class.x_max).cover?(x) || experiment? && x > 0
+    end
+
+    def y_valid_input?(_)
+      (self.class.y_min..self.class.y_max).cover?(y) || experiment? && y > 0
+    end
+
+    def endpoints_valid_input?(_)
+      (self.class.endpoint_min..self.class.endpoint_max).cover?(endpoints) || experiment? && endpoints > 1
+    end
+
+    def barriers_valid_input?(_)
+      if endpoints == 1
+        return true if experiment? && barriers >= 1
+        (1..self.class.barrier_max).cover?(barriers)
+      else
+        return true if experiment? && barriers >= 0
+        (self.class.barrier_min..self.class.barrier_max).cover?(barriers)
+      end
+    end
+
+    def bridges_valid_input?(input)
+      input.empty? || input == '0'
+    end
+
+    def tunnels_valid_input?(input)
+      input.empty? || input == '0'
+    end
+
+    def portals_valid_input?(input)
+      input.empty? || input == '0'
+    end
+
+    def validation_invalid_feedback(item)
+      case item
+      when 'x' then x_validation_invalid_feedback
+      when 'y' then y_validation_invalid_feedback
+      when 'endpoints' then endpoints_validation_invalid_feedback
+      when 'barriers' then barriers_validation_invalid_feedback
+      when 'bridges' then bridges_validation_invalid_feedback
+      when 'tunnels' then tunnels_validation_invalid_feedback
+      when 'portals' then portals_validation_invalid_feedback
+      end
+    end
+
+    def x_validation_invalid_feedback
+      "Width must be between #{self.class.x_min} and #{self.class.x_max}."
+    end
+
+    def y_validation_invalid_feedback
+      "Height must be between #{self.class.y_min} and #{self.class.y_max}."
+    end
+
+    def endpoints_validation_invalid_feedback
+      if experiment?
+        "Experiments must have at least 1 endpoint."
+      else
+        "Number of endpoints must be between #{self.class.endpoint_min} and #{self.class.endpoint_max}."
+      end
+    end
+
+    def barriers_validation_invalid_feedback
+      if barriers == 0 && endpoints == 1
+        "You must have at least 1 barrier if you have 1 endpoint."
+      else
+        "Number of barriers must be between #{self.class.barrier_min} and #{self.class.barrier_max}."
+      end
+    end
+
+    def bridges_validation_invalid_feedback
+      'Bridge squares are only allowed on bridge mazes.'
+    end
+
+    def tunnels_validation_invalid_feedback
+      'Tunnel squares are only allowed on tunnel mazes.'
+    end
+
+    def portals_validation_invalid_feedback
+      'Portal squares are only allowed on portal mazes.'
     end
 
     def self.status_list
@@ -616,120 +714,6 @@ module MazeCraze
       [0, 0]
     end
 
-    def x_valid_input?
-      (self.class.x_min..self.class.x_max).cover?(x) || experiment? && x > 0
-    end
-
-    def y_valid_input?
-      (self.class.y_min..self.class.y_max).cover?(y) || experiment? && y > 0
-    end
-
-    def endpoints_valid_input?
-      (self.class.endpoint_min..self.class.endpoint_max).cover?(endpoints) || experiment? && endpoints > 1
-    end
-
-    def barriers_valid_input?
-      if endpoints == 1
-        return true if experiment? && barriers >= 1
-        (1..self.class.barrier_max).cover?(barriers)
-      else
-        return true if experiment? && barriers >= 0
-        (self.class.barrier_min..self.class.barrier_max).cover?(barriers)
-      end
-    end
-
-    def bridges_valid_input?(input)
-      input.empty? || input == '0'
-    end
-
-    def tunnels_valid_input?(input)
-      input.empty? || input == '0'
-    end
-
-    def portals_valid_input?(input)
-      input.empty? || input == '0'
-    end
-
-    def x_validation(validation)
-      if x_valid_input?
-        validation[:x_validation_css] = 'is-valid'
-        validation[:x_validation_feedback_css] = 'valid-feedback'
-        validation[:x_validation_feedback] = 'Looks good!'
-      else
-        validation[:x_validation_css] = 'is-invalid'
-        validation[:x_validation_feedback_css] = 'invalid-feedback'
-        validation[:x_validation_feedback] = "Width must be between #{self.class.x_min} and #{self.class.x_max}."
-      end
-    end
-
-    def y_validation(validation)
-      if y_valid_input?
-        validation[:y_validation_css] = 'is-valid'
-        validation[:y_validation_feedback_css] = 'valid-feedback'
-        validation[:y_validation_feedback] = 'Looks good!'
-      else
-        validation[:y_validation_css] = 'is-invalid'
-        validation[:y_validation_feedback_css] = 'invalid-feedback'
-        validation[:y_validation_feedback] = "Height must be between #{self.class.y_min} and #{self.class.y_max}."
-      end
-    end
-
-    def endpoints_validation(validation)
-      if endpoints_valid_input?
-        validation[:endpoint_validation_css] = 'is-valid'
-        validation[:endpoint_validation_feedback_css] = 'valid-feedback'
-        validation[:endpoint_validation_feedback] = 'Looks good!'
-      else
-        validation[:endpoint_validation_css] = 'is-invalid'
-        validation[:endpoint_validation_feedback_css] = 'invalid-feedback'
-        if experiment?
-          validation[:endpoint_validation_feedback] = "Experiments must have at least 1 endpoint."
-        else
-          validation[:endpoint_validation_feedback] = "Number of endpoints must be between #{self.class.endpoint_min} and #{self.class.endpoint_max}."
-        end
-      end
-    end
-
-    def barrier_validation(validation)
-      if barriers_valid_input?
-        validation[:barrier_validation_css] = 'is-valid'
-        validation[:barrier_validation_feedback_css] = 'valid-feedback'
-        validation[:barrier_validation_feedback] = 'Looks good!'
-      else
-        validation[:barrier_validation_css] = 'is-invalid'
-        validation[:barrier_validation_feedback_css] = 'invalid-feedback'
-        if barriers == 0 && endpoints == 1
-          validation[:barrier_validation_feedback] = "You must have at least 1 barrier if you have 1 endpoint."
-        else
-          validation[:barrier_validation_feedback] = "Number of barriers must be between #{self.class.barrier_min} and #{self.class.barrier_max}."
-        end
-      end
-    end
-
-    def bridge_validation(validation, input)
-      if !bridges_valid_input?(input)
-        validation[:bridge_validation_css] = 'is-invalid'
-        validation[:bridge_validation_feedback_css] = 'invalid-feedback'
-        validation[:bridge_validation_feedback] = 'Bridge squares are only allowed on bridge mazes.'
-      end
-    end
-
-    def tunnel_validation(validation, input)
-      if !tunnels_valid_input?(input)
-        validation[:tunnel_validation_css] = 'is-invalid'
-        validation[:tunnel_validation_feedback_css] = 'invalid-feedback'
-        validation[:tunnel_validation_feedback] = 'Tunnel squares are only allowed on tunnel mazes.'
-      end
-    end
-
-    def portal_validation(validation, input)
-      if !portals_valid_input?(input)
-        validation[:portal_validation_css] = 'is-invalid'
-        validation[:portal_validation_feedback_css] = 'invalid-feedback'
-        validation[:portal_validation_feedback] = 'Portal squares are only allowed on portal mazes.'
-      end
-    end
-
     def count_pairs(maze, square_type)
       maze.count { |square| square.match(Regexp.new(Regexp.escape(square_type))) }
     end
@@ -750,7 +734,10 @@ module MazeCraze
     set_maze_formula_constraints
 
     def self.generate_formulas(dimensions, num_endpoints, num_barriers)
-      return if (num_endpoints * 2 + num_barriers) > dimensions[:x] * dimensions[:y] / 2
+      return if (num_endpoints * 2 + num_barriers) / 
+                (dimensions[:x] * dimensions[:y]) > 
+                other_squares_to_normal_squares_ratio
+
       yield({ 'maze_type' => 'simple',
               'x' => dimensions[:x],
               'y' => dimensions[:y],
@@ -815,7 +802,11 @@ module MazeCraze
 
     def self.generate_formulas(dimensions, num_endpoints, num_barriers)
       BRIDGE_MIN.upto(bridge_max) do |num_bridges|
-        next if (num_endpoints * 2 + num_barriers + num_bridges) > dimensions[:x] * dimensions[:y] / 2
+        next if (num_endpoints * 2 + num_barriers + num_bridges) / 
+        (dimensions[:x] * dimensions[:y]) > 
+        other_squares_to_normal_squares_ratio
+
+        # next if (num_endpoints * 2 + num_barriers + num_bridges) > dimensions[:x] * dimensions[:y] / 2
         yield({ 'maze_type' => 'bridge',
                 'x' => dimensions[:x],
                 'y' => dimensions[:y],
@@ -838,19 +829,11 @@ module MazeCraze
       (self.class.bridge_min..self.class.bridge_max).cover?(bridges) || experiment? && bridges > 0
     end
 
-    def bridge_validation(validation, _)
-      if bridges_valid_input?(_)
-        validation[:bridge_validation_css] = 'is-valid'
-        validation[:bridge_validation_feedback_css] = 'valid-feedback'
-        validation[:bridge_validation_feedback] = 'Looks good!'
+    def bridges_validation_invalid_feedback
+      if experiment?
+        "Bridge experiments must have at least 1 bridge."
       else
-        validation[:bridge_validation_css] = 'is-invalid'
-        validation[:bridge_validation_feedback_css] = 'invalid-feedback'
-        if experiment?
-          validation[:bridge_validation_feedback] = "Bridge experiments must have at least 1 bridge."
-        else
-          validation[:bridge_validation_feedback] = "Number of bridges must be between #{self.class.bridge_min} and #{self.class.bridge_max}."
-        end
+        "Number of bridges must be between #{self.class.bridge_min} and #{self.class.bridge_max}."
       end
     end
 
@@ -911,7 +894,11 @@ module MazeCraze
 
     def self.generate_formulas(dimensions, num_endpoints, num_barriers)
       tunnel_min.upto(tunnel_max) do |num_tunnels|
-        next if (num_endpoints * 2 + num_barriers + num_tunnels * 2) > dimensions[:x] * dimensions[:y] / 2
+        next if ((num_endpoints * 2) + num_barriers + (num_tunnels * 2)) / 
+        (dimensions[:x] * dimensions[:y]) > 
+        other_squares_to_normal_squares_ratio
+
+        # next if (num_endpoints * 2 + num_barriers + num_tunnels * 2) > dimensions[:x] * dimensions[:y] / 2
         yield({ 'maze_type' => 'tunnel',
                 'x' => dimensions[:x],
                 'y' => dimensions[:y],
@@ -931,23 +918,14 @@ module MazeCraze
     end
 
     def tunnels_valid_input?(_)
-      # input and tunnels are the same. var input is needed to validate tunnels in MazeFormula when tunnels are not allowed.
       (self.class.tunnel_min..self.class.tunnel_max).cover?(tunnels) || experiment? && tunnels > 0
     end
 
-    def tunnel_validation(validation, _)
-      if tunnels_valid_input?(_)
-        validation[:tunnel_validation_css] = 'is-valid'
-        validation[:tunnel_validation_feedback_css] = 'valid-feedback'
-        validation[:tunnel_validation_feedback] = 'Looks good!'
+    def tunnels_validation_invalid_feedback
+      if experiment?
+        "Tunnel experiments must have at least 1 tunnel."
       else
-        validation[:tunnel_validation_css] = 'is-invalid'
-        validation[:tunnel_validation_feedback_css] = 'invalid-feedback'
-        if experiment?
-          validation[:tunnel_validation_feedback] = "Tunnel experiments must have at least 1 tunnel."
-        else
-          validation[:tunnel_validation_feedback] = "Number of tunnels must be between #{self.class.tunnel_min} and #{self.class.tunnel_max}."
-        end
+        "Number of tunnels must be between #{self.class.tunnel_min} and #{self.class.tunnel_max}."
       end
     end
 
@@ -1008,7 +986,11 @@ module MazeCraze
 
     def self.generate_formulas(dimensions, num_endpoints, num_barriers)
       portal_min.upto(portal_max) do |num_portals|
-        next if (num_endpoints * 2 + num_barriers + num_portals * 2) > dimensions[:x] * dimensions[:y] / 2
+        next if ((num_endpoints * 2) + num_barriers + (num_portals * 2)) / 
+        (dimensions[:x] * dimensions[:y]) > 
+        other_squares_to_normal_squares_ratio
+
+        # next if (num_endpoints * 2 + num_barriers + num_portals * 2) > dimensions[:x] * dimensions[:y] / 2
         yield({ 'maze_type' => 'portal',
                 'x' => dimensions[:x],
                 'y' => dimensions[:y],
@@ -1031,19 +1013,11 @@ module MazeCraze
       (self.class.portal_min..self.class.portal_max).cover?(portals) || experiment? && portals > 0
     end
 
-    def portal_validation(validation, _)
-      if portals_valid_input?(_)
-        validation[:portal_validation_css] = 'is-valid'
-        validation[:portal_validation_feedback_css] = 'valid-feedback'
-        validation[:portal_validation_feedback] = 'Looks good!'
+    def portals_validation_invalid_feedback
+      if experiment?
+        "Portal experiments must have at least 1 portal."
       else
-        validation[:portal_validation_css] = 'is-invalid'
-        validation[:portal_validation_feedback_css] = 'invalid-feedback'
-        if experiment?
-          validation[:portal_validation_feedback] = "Portal experiments must have at least 1 portal."
-        else
-          validation[:portal_validation_feedback] = "Number of portals must be between #{self.class.portal_min} and #{self.class.portal_max}."
-        end
+        "Number of portals must be between #{self.class.portal_min} and #{self.class.portal_max}."
       end
     end
   end
