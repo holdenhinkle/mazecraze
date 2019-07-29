@@ -68,14 +68,14 @@
         <div class="row">
           <div class="form-group col-md-6">
             <label for="endpoints">Number of <strong>Endpoints</strong></label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:endpoint][:title] %>" data-content="<%= @popovers[:endpoint][:body] %>"><i class="fas fa-question-circle"></i></a>
-            <% if session["endpoint_validation_css"] %>
-              <input type="number" class="form-control <%= session.delete("endpoint_validation_css") %>" name="endpoints" id="endpoints" aria-describedby="endpoints-help"  value="<%= @formula.endpoints %>">
+            <% if session["endpoints_validation_css"] %>
+              <input type="number" class="form-control <%= session.delete("endpoints_validation_css") %>" name="endpoints" id="endpoints" aria-describedby="endpoints-help"  value="<%= @formula.endpoints %>">
             <% else %>
               <input type="number" class="form-control" name="endpoints" id="endpoints" aria-describedby="endpoints-help" placeholder="0">
             <% end %>
-            <% if session["endpoint_validation_feedback"] %>
-              <div class="<%= session.delete("endpoint_validation_feedback_css") %>">
-                <%= session.delete("endpoint_validation_feedback") %>
+            <% if session["endpoints_validation_feedback"] %>
+              <div class="<%= session.delete("endpoints_validation_feedback_css") %>">
+                <%= session.delete("endpoints_validation_feedback") %>
               </div>
             <% end %>
           </div>
@@ -83,14 +83,14 @@
         <div class="row">
           <div class="form-group col-md-6">
             <label for="barriers">Number of <strong>Barriers</strong></label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:barrier][:title]%>" data-content="<%= @popovers[:barrier][:body]%>"><i class="fas fa-question-circle"></i></a>
-            <% if session["barrier_validation_css"] %>
-              <input type="number" class="form-control <%= session.delete("barrier_validation_css") %>" name="barriers" id="barriers" aria-describedby="barriers-help" value="<%= @formula.barriers %>">
+            <% if session["barriers_validation_css"] %>
+              <input type="number" class="form-control <%= session.delete("barriers_validation_css") %>" name="barriers" id="barriers" aria-describedby="barriers-help" value="<%= @formula.barriers %>">
             <% else %>
               <input type="number" class="form-control" name="barriers" id="barriers" aria-describedby="barriers-help" placeholder="0">
             <% end %>
-            <% if session["barrier_validation_feedback"] %>
-              <div class="<%= session.delete("barrier_validation_feedback_css") %>">
-                <%= session.delete("barrier_validation_feedback") %>
+            <% if session["barriers_validation_feedback"] %>
+              <div class="<%= session.delete("barriers_validation_feedback_css") %>">
+                <%= session.delete("barriers_validation_feedback") %>
               </div>
             <% end %>
           </div>
@@ -98,14 +98,14 @@
         <div class="row">
           <div class="form-group col-md-6">
             <label for="bridges">Number of <strong>Bridges</strong></label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:bridge][:title]%>" data-content="<%= @popovers[:bridge][:body]%>"><i class="fas fa-question-circle"></i></a>
-            <% if session["bridge_validation_css"] %>
-              <input type="number" class="form-control <%= session.delete("bridge_validation_css") %>" name="bridges" id="bridges" aria-describedby="bridges-help" value="<%= params['bridges'] %>">
+            <% if session["bridges_validation_css"] %>
+              <input type="number" class="form-control <%= session.delete("bridges_validation_css") %>" name="bridges" id="bridges" aria-describedby="bridges-help" value="<%= params['bridges'] %>">
             <% else %>
               <input type="number" class="form-control" name="bridges" id="bridges" aria-describedby="bridges-help" placeholder="0">
             <% end %>
-            <% if session["bridge_validation_feedback"] %>
-              <div class="<%= session.delete("bridge_validation_feedback_css") %>">
-                <%= session.delete("bridge_validation_feedback") %>
+            <% if session["bridges_validation_feedback"] %>
+              <div class="<%= session.delete("bridges_validation_feedback_css") %>">
+                <%= session.delete("bridges_validation_feedback") %>
               </div>
             <% end %>
           </div>
@@ -113,14 +113,14 @@
         <div class="row">
           <div class="form-group col-md-6">
             <label for="tunnels">Number of <strong>Tunnels</strong></label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:tunnel][:title]%>" data-content="<%= @popovers[:tunnel][:body]%>"><i class="fas fa-question-circle"></i></a>
-            <% if session["tunnel_validation_css"] %>
-              <input type="number" class="form-control <%= session.delete("tunnel_validation_css") %>" name="tunnels" id="tunnels" aria-describedby="tunnels-help" value="<%= params['tunnels'] %>">
+            <% if session["tunnels_validation_css"] %>
+              <input type="number" class="form-control <%= session.delete("tunnels_validation_css") %>" name="tunnels" id="tunnels" aria-describedby="tunnels-help" value="<%= params['tunnels'] %>">
             <% else %>
               <input type="number" class="form-control" name="tunnels" id="tunnels" aria-describedby="tunnels-help" placeholder="0">
             <% end %>
-            <% if session["tunnel_validation_feedback"] %>
-              <div class="<%= session.delete("tunnel_validation_feedback_css") %>">
-                <%= session.delete("tunnel_validation_feedback") %>
+            <% if session["tunnels_validation_feedback"] %>
+              <div class="<%= session.delete("tunnels_validation_feedback_css") %>">
+                <%= session.delete("tunnels_validation_feedback") %>
               </div>
             <% end %>
           </div>
@@ -128,14 +128,14 @@
         <div class="row">
           <div class="form-group col-md-6">
             <label for="portals">Number of <strong>Portals</strong></label> <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="<%= @popovers[:portal][:title]%>" data-content="<%= @popovers[:portal][:body]%>"><i class="fas fa-question-circle"></i></a>
-            <% if session["portal_validation_css"] %>
-              <input type="number" class="form-control <%= session.delete("portal_validation_css") %>" name="portals" id="portals" aria-describedby="portals-help" value="<%= params['portals'] %>">
+            <% if session["portals_validation_css"] %>
+              <input type="number" class="form-control <%= session.delete("portals_validation_css") %>" name="portals" id="portals" aria-describedby="portals-help" value="<%= params['portals'] %>">
             <% else %>
               <input type="number" class="form-control" name="portals" id="portals" aria-describedby="portals-help" placeholder="0">
             <% end %>
-            <% if session["portal_validation_feedback"] %>
-              <div class="<%= session.delete("portal_validation_feedback_css") %>">
-                <%= session.delete("portal_validation_feedback") %>
+            <% if session["portals_validation_feedback"] %>
+              <div class="<%= session.delete("portals_validation_feedback_css") %>">
+                <%= session.delete("portals_validation_feedback") %>
               </div>
             <% end %>
           </div>
