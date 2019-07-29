@@ -497,14 +497,14 @@ module MazeCraze
     end
 
     def experiment_valid?
-      [barriers_valid_input?,
-      bridges_valid_input?,
-      tunnels_valid_input?,
-      portals_valid_input?].all?
+      [barriers_valid_input?('_'),
+      bridges_valid_input?('_'),
+      tunnels_valid_input?('_'),
+      portals_valid_input?('_')].all?
     end
 
     def validation(input)
-      validation = { validation: true } # do I need validation: true ?
+      validation = { validation: true }
 
       items = ['x', 'y', 'endpoints', 'barriers', 'bridges', 'tunnels', 'portals']
 
