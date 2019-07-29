@@ -86,62 +86,57 @@ CREATE TABLE settings (
   integer_value integer,
   decimal_value decimal,
   text_value text,
-  updated_by text NOT NULL,
   created timestamp NOT NULL DEFAULT NOW(),
   updated timestamp NOT NULL DEFAULT NOW()
 );
 
-INSERT INTO settings (name, integer_value, updated_by) 
+INSERT INTO settings (name, integer_value) 
   VALUES
-    ('number_of_threads', 1, 'default setting'),
-
-    ('simple_formula_x_min', 3, 'default setting'),
-    ('simple_formula_x_max', 10, 'default setting'),
-    ('simple_formula_y_min', 2, 'default setting'),
-    ('simple_formula_y_max', 10, 'default setting'),
-    ('simple_formula_endpoint_min', 1, 'default setting'),
-    ('simple_formula_endpoint_max', 4, 'default setting'),
-    ('simple_formula_barrier_min', 0, 'default setting'),
-    ('simple_formula_barrier_max', 3, 'default setting'),
-    
-    ('bridge_formula_x_min', 3, 'default setting'),
-    ('bridge_formula_x_max', 11, 'default setting'),
-    ('bridge_formula_y_min', 2, 'default setting'),
-    ('bridge_formula_y_max', 11, 'default setting'),
-    ('bridge_formula_endpoint_min', 1, 'default setting'),
-    ('bridge_formula_endpoint_max', 5, 'default setting'),
-    ('bridge_formula_barrier_min', 0, 'default setting'),
-    ('bridge_formula_barrier_max', 4, 'default setting'),
-    ('bridge_formula_bridge_min', 1, 'default setting'),
-    ('bridge_formula_bridge_max', 4, 'default setting'),
-
-    ('tunnel_formula_x_min', 3, 'default setting'),
-    ('tunnel_formula_x_max', 12, 'default setting'),
-    ('tunnel_formula_y_min', 2, 'default setting'),
-    ('tunnel_formula_y_max', 12, 'default setting'),
-    ('tunnel_formula_endpoint_min', 1, 'default setting'),
-    ('tunnel_formula_endpoint_max', 6, 'default setting'),
-    ('tunnel_formula_barrier_min', 0, 'default setting'),
-    ('tunnel_formula_barrier_max', 5, 'default setting'),
-    ('tunnel_formula_tunnel_min', 1, 'default setting'),
-    ('tunnel_formula_tunnel_max', 5, 'default setting'),
-
-    ('portal_formula_x_min', 3, 'default setting'),
-    ('portal_formula_x_max', 13, 'default setting'),
-    ('portal_formula_y_min', 2, 'default setting'),
-    ('portal_formula_y_max', 13, 'default setting'),
-    ('portal_formula_endpoint_min', 1, 'default setting'),
-    ('portal_formula_endpoint_max', 7, 'default setting'),
-    ('portal_formula_barrier_min', 0, 'default setting'),
-    ('portal_formula_barrier_max', 6, 'default setting'),
-    ('portal_formula_portal_min', 1, 'default setting'),
-    ('portal_formula_portal_max', 6, 'default setting')
+    ('number_of_threads', 1),
+    ('simple_formula_x_min', 3),
+    ('simple_formula_x_max', 10),
+    ('simple_formula_y_min', 2),
+    ('simple_formula_y_max', 10),
+    ('simple_formula_endpoint_min', 1),
+    ('simple_formula_endpoint_max', 4),
+    ('simple_formula_barrier_min', 0),
+    ('simple_formula_barrier_max', 3),
+    ('bridge_formula_x_min', 3),
+    ('bridge_formula_x_max', 11),
+    ('bridge_formula_y_min', 2),
+    ('bridge_formula_y_max', 11),
+    ('bridge_formula_endpoint_min', 1),
+    ('bridge_formula_endpoint_max', 5),
+    ('bridge_formula_barrier_min', 0),
+    ('bridge_formula_barrier_max', 4),
+    ('bridge_formula_bridge_min', 1),
+    ('bridge_formula_bridge_max', 4),
+    ('tunnel_formula_x_min', 3),
+    ('tunnel_formula_x_max', 12),
+    ('tunnel_formula_y_min', 2),
+    ('tunnel_formula_y_max', 12),
+    ('tunnel_formula_endpoint_min', 1),
+    ('tunnel_formula_endpoint_max', 6),
+    ('tunnel_formula_barrier_min', 0),
+    ('tunnel_formula_barrier_max', 5),
+    ('tunnel_formula_tunnel_min', 1),
+    ('tunnel_formula_tunnel_max', 5),
+    ('portal_formula_x_min', 3),
+    ('portal_formula_x_max', 13),
+    ('portal_formula_y_min', 2),
+    ('portal_formula_y_max', 13),
+    ('portal_formula_endpoint_min', 1),
+    ('portal_formula_endpoint_max', 7),
+    ('portal_formula_barrier_min', 0),
+    ('portal_formula_barrier_max', 6),
+    ('portal_formula_portal_min', 1),
+    ('portal_formula_portal_max', 6)
 ;
 
-INSERT INTO settings (name, decimal_value, updated_by) 
+INSERT INTO settings (name, decimal_value) 
   VALUES
-    ('simple_formula_normal_squares_to_other_squares_ratio', .6, 'default setting'),
-    ('bridge_formula_normal_squares_to_other_squares_ratio', .6, 'default setting'),
-    ('tunnel_formula_normal_squares_to_other_squares_ratio', .6, 'default setting'),
-    ('portal_formula_normal_squares_to_other_squares_ratio', .6, 'default setting')
+    ('simple_formula_other_squares_to_normal_squares_ratio', .6),
+    ('bridge_formula_other_squares_to_normal_squares_ratio', .6),
+    ('tunnel_formula_other_squares_to_normal_squares_ratio', .6),
+    ('portal_formula_other_squares_to_normal_squares_ratio', .6)
 ;
