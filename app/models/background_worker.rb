@@ -34,14 +34,9 @@ module MazeCraze
       attr_accessor :worker
     end
 
-    def self.active?
+    def self.alive?
       return false if worker.nil?
-
-      worker.threads.each do |thread|
-        return true if thread.alive? && worker.job_queue_open?
-      end
-
-      false
+      !worker.dead?
     end
 
     def self.number_of_threads
@@ -62,12 +57,11 @@ module MazeCraze
       MazeCraze::BackgroundThread.kill_all_threads
       MazeCraze::BackgroundJob.undo_running_jobs
       MazeCraze::BackgroundJob.reset_running_jobs
-      BackgroundWorker.kill_worker
+      kill_worker
     end
 
     def self.kill_worker
       worker.kill_worker
-      self.worker = nil
     end
 
     attr_reader :job_queue
@@ -94,51 +88,10 @@ module MazeCraze
       query(sql, id, 'NOW()', job.id)
     end
 
-    def dead?
-      return false if threads.any?(&:alive?) && job_queue_open?
-      true
-    end
-
     def job_queue_open?
       !job_queue.closed?
     end
 
-    def delete_job(job_id)
-      deleted_jobs << job_id
-    end
-
-    # REFACTOR THIS
-    def kill_specific_job(thread_id, job_id)
-      MazeCraze::BackgroundThread.thread_from_id(thread_id).kill_thread
-
-      job = MazeCraze::BackgroundJob.job_from_id(job_id)
-      job.reset
-      job.undo
-      enqueue_job(job)
-      new_thread
-    end
-
-    def kill_worker
-      job_queue.close
-      yield if block_given? # do I need this?
-      update_worker_status('dead')
-    end
-
-    def retire_worker
-      kill_worker do
-        threads.each(&:join)
-        threads.each do |thread|
-          MazeCraze::BackgroundThread.each_background_thread do |background_thread|
-            if background_thread.thread == thread
-              background_thread.kill_thread
-            end
-          end
-          threads.delete(thread)
-        end
-      end
-    end
-
-    # REFACTOR THIS
     def new_thread
       threads << thread = Thread.new do
         if thread.nil?
@@ -167,7 +120,32 @@ module MazeCraze
         end
       end
 
-      retire_worker unless job_queue_open?
+     soft_stop unless job_queue_open?
+    end
+
+    def delete_job(job_id)
+      deleted_jobs << job_id
+    end
+
+    def cancel_job(thread_id, job_id)
+      MazeCraze::BackgroundThread.thread_from_id(thread_id).kill_thread
+      job = MazeCraze::BackgroundJob.job_from_id(job_id)
+      job.reset
+      job.undo
+      enqueue_job(job)
+      new_thread
+    end
+
+    def kill_worker
+      job_queue.close
+      yield if block_given?
+      update_worker_status('dead')
+      self.class.worker = nil
+    end
+
+    def dead?
+      return false if threads.any?(&:alive?) && job_queue_open?
+      true
     end
 
     private
@@ -192,6 +170,14 @@ module MazeCraze
 
     def wait_for_job
       job_queue.pop(false)
+    end
+
+    # soft_stop kills the worker but lets jobs that are running finish first
+    def soft_stop
+      kill_worker do
+        threads.each(&:join)
+        MazeCraze::BackgroundThread.kill_all_threads
+      end
     end
   end
 end
