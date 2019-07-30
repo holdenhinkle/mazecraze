@@ -16,23 +16,6 @@ module MazeCraze
       attr_accessor :all, :queued_count
     end
 
-    attr_reader :type, :params, :thread_id
-    attr_accessor :id, :queue_order, :background_worker_id,
-                  :background_thread_id, :status
-
-    def initialize(job)
-      self.class.all << self
-      @id = job[:id]
-      @background_worker_id = nil
-      @background_thread_id = nil
-      @type = job[:type]
-      @params = job[:params]
-      @status = 'queued'
-      self.class.queued_count += 1
-      @queue_order = self.class.queued_count
-      save!
-    end
-
     def self.each_job
       all.each { |job| yield(job) }
     end
@@ -82,6 +65,23 @@ module MazeCraze
         job.queue_order -= 1
         job.update_queue_order
       end
+    end
+
+    attr_reader :type, :params, :thread_id
+    attr_accessor :id, :queue_order, :background_worker_id,
+                  :background_thread_id, :status
+
+    def initialize(job)
+      self.class.all << self
+      @id = job[:id]
+      @background_worker_id = nil
+      @background_thread_id = nil
+      @type = job[:type]
+      @params = job[:params]
+      @status = 'queued'
+      self.class.queued_count += 1
+      @queue_order = self.class.queued_count
+      save!
     end
 
     def save!

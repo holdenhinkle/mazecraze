@@ -12,21 +12,6 @@ module MazeCraze
       attr_accessor :all
     end
 
-    attr_reader :job_queue
-    attr_accessor :id, :number_of_threads, :threads, :deleted_jobs
-
-    def initialize
-      self.class.all << self
-      @id = nil
-      @number_of_threads = self.class.number_of_threads
-      @threads = []
-      @deleted_jobs = []
-      @job_queue = Queue.new
-      save!
-      enqueue_jobs
-      work
-    end
-
     def self.each_worker
       all.each { |worker| yield(worker) }
     end
@@ -67,6 +52,21 @@ module MazeCraze
       MazeCraze::BackgroundJob.undo_running_jobs
       MazeCraze::BackgroundJob.reset_running_jobs
       BackgroundWorker.kill_all_workers
+    end
+
+    attr_reader :job_queue
+    attr_accessor :id, :number_of_threads, :threads, :deleted_jobs
+
+    def initialize
+      self.class.all << self
+      @id = nil
+      @number_of_threads = self.class.number_of_threads
+      @threads = []
+      @deleted_jobs = []
+      @job_queue = Queue.new
+      save!
+      enqueue_jobs
+      work
     end
 
     def enqueue_jobs

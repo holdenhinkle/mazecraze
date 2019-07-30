@@ -418,7 +418,7 @@ module MazeCraze
       existed_formula_count = 0
 
       formulas.each do |formula|
-        new_formula = MazeFormula.new(formula)
+        new_formula =  maze_formula_type_to_class(formula['maze_type']).new(formula)
         if new_formula.exists?
           existed_formula_count += 1
         else
@@ -801,7 +801,7 @@ module MazeCraze
     end
 
     def self.generate_formulas(dimensions, num_endpoints, num_barriers)
-      BRIDGE_MIN.upto(bridge_max) do |num_bridges|
+      bridge_min.upto(bridge_max) do |num_bridges|
         next if (num_endpoints * 2 + num_barriers + num_bridges) / 
         (dimensions[:x] * dimensions[:y]) > 
         other_squares_to_normal_squares_ratio
