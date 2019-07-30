@@ -89,11 +89,6 @@ module MazeCraze
       self.id = query(sql, type, params.to_json, status, queue_order).first['id']
     end
 
-    # def set_queue_order(queue_order)
-    #   self.queue_order = queue_order
-    #   update_queue_order
-    # end
-
     def update_queue_order
       sql = 'UPDATE background_jobs SET queue_order = $1 WHERE id = $2;'
       query(sql, queue_order, id)

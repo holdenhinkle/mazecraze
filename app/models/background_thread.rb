@@ -9,13 +9,14 @@ module MazeCraze
     end
 
     attr_reader :thread, :background_worker_id
-    attr_accessor :id, :status, :mode
+    attr_accessor :id, :background_job_id, :status, :mode
 
     def initialize(background_worker_id, thread)
       self.class.all << self
       @id = nil
       @thread = thread
       @background_worker_id = background_worker_id
+      @background_job_id = nil
       @status = thread.alive? ? 'alive' : 'dead'
       @mode = 'waiting'
       save!
@@ -34,6 +35,7 @@ module MazeCraze
       each_background_thread do |background_thread|
         next unless background_thread.background_worker_id == worker_id
         status << { id: background_thread.id,
+                    job_id: background_thread.background_job_id,
                     status: background_thread.thread.alive?,
                     mode: background_thread.mode }
       end

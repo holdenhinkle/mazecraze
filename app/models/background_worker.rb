@@ -141,6 +141,7 @@ module MazeCraze
 
         while job_queue_open?
           background_thread.mode = Thread.current[:mode] = 'waiting'
+          background_thread.background_job_id = nil
           job = wait_for_job
 
           if job && deleted_jobs.include?(job.id)
@@ -148,6 +149,7 @@ module MazeCraze
             next
           elsif job
             background_thread.mode = Thread.current[:mode] = 'processing'
+            background_thread.background_job_id = job.id
             job.update_job_is_running(background_thread.id)
             MazeCraze::BackgroundJob.queued_count -= 1
             MazeCraze::BackgroundJob.update_queue_orders

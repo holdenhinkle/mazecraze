@@ -15,7 +15,7 @@
         <p class="h4 card-header">Number of Threads: <%= @number_of_threads %></p>
         <div class="card-body">
           <% @thread_stats.each_with_index do |thread_stat, index| %>
-            <p class="mb-2"><strong>Thread <%= index + 1 %></strong> (ID #<%= thread_stat[:id] %>): <%= thread_stat[:status] ? 'Alive' : 'Dead' %> and <%= thread_stat[:mode].capitalize %>...</p>
+            <p class="mb-2"><strong>Thread <%= index + 1 %></strong> (ID #<%= thread_stat[:id] %>): <%= thread_stat[:status] ? 'Alive' : 'Dead' %> and <%= thread_stat[:mode].capitalize %><%= thread_stat[:mode] == 'processing' ? " Job ID \##{thread_stat[:job_id]}" : '' %>...</p>
           <% end %>
           <hr>
           <p>Change the number of threads on the <a href="/admin/settings" class="text-primary">settings</a> page.</p>
