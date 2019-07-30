@@ -6,31 +6,42 @@ module MazeCraze
     MIN_THREADS = 1
     MAX_THREADS = 10
 
-    @all = []
+    # Each BackgroundWorker object creates a new instance of the Queue object
+    # which implements multi-producer, multi-consumer queues. Each BackgroundWorker
+    # instance can run many threads at a time -- the number of threads that can be
+    # run is dependent upon the operating system and the machine that is running this
+    # application and the number of threads you enable the application to instantiate,
+    # which is a setting on the Settings page in the administrative area. We use an
+    # instance of the Queue object it to pass jobs to threads when they become available.
+    # We only allow one instance of BackgroundWorker to exist at a time to optimize the
+    # use of threads that are available for several reasons:
+
+    # 1) If more than one BackgroundWorker instance existed at the same time, we would
+    # have to implement a way to balance the jobs that are pushed to each
+    # BackgroundWorker's queue, which would be difficult to do because we would have to
+    # estimate how long each job would take to be processed (some jobs can be processed
+    # quickly, in a matter of seconds, while some jobs can take hours to complete).
+
+    # 2) Each BackgroundWorker instance tries to instantiate the number of threads that
+    # are allowed to run (again, this is a setting on the Settings page in the
+    # adminstrative area). If, for example, a machine can only run 4 threads, having more
+    # than one instance of BackgroundWorker would be pointless -- the application would
+    # not even be able to instantiate the additional threads.
+
+    @worker = nil
 
     class << self
-      attr_accessor :all
+      attr_accessor :worker
     end
 
-    def self.each_worker
-      all.each { |worker| yield(worker) }
-    end
+    def self.active?
+      return false if worker.nil?
 
-    def self.active_workers
-      active_workers = []
-      each_worker do |worker|
-        worker.threads.each do |thread|
-          if thread.alive? && worker.job_queue_open?
-            active_workers << worker
-            break
-          end
-        end
+      worker.threads.each do |thread|
+        return true if thread.alive? && worker.job_queue_open?
       end
-      active_workers
-    end
 
-    def self.worker_from_id(worker_id)
-      each_worker { |worker| return worker if worker.id == worker_id }
+      false
     end
 
     def self.number_of_threads
@@ -51,15 +62,19 @@ module MazeCraze
       MazeCraze::BackgroundThread.kill_all_threads
       MazeCraze::BackgroundJob.undo_running_jobs
       MazeCraze::BackgroundJob.reset_running_jobs
-      BackgroundWorker.kill_all_workers
+      BackgroundWorker.kill_worker
+    end
+
+    def self.kill_worker
+      worker.kill_worker
+      self.worker = nil
     end
 
     attr_reader :job_queue
     attr_accessor :id, :number_of_threads, :threads, :deleted_jobs
 
     def initialize
-      self.class.all << self
-      @id = nil
+      self.class.worker = self
       @number_of_threads = self.class.number_of_threads
       @threads = []
       @deleted_jobs = []
@@ -94,7 +109,7 @@ module MazeCraze
 
     # REFACTOR THIS
     def kill_specific_job(thread_id, job_id)
-      MazeCraze::BackgroundThread.background_thread_from_id(thread_id).kill_thread
+      MazeCraze::BackgroundThread.thread_from_id(thread_id).kill_thread
 
       job = MazeCraze::BackgroundJob.job_from_id(job_id)
       job.reset
@@ -103,16 +118,10 @@ module MazeCraze
       new_thread
     end
 
-    def self.kill_all_workers
-      each_worker(&:kill_worker)
-      all.clear
-    end
-
     def kill_worker
       job_queue.close
-      yield if block_given?
+      yield if block_given? # do I need this?
       update_worker_status('dead')
-      self.class.all.delete(self)
     end
 
     def retire_worker

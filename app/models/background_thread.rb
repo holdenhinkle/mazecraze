@@ -13,10 +13,8 @@ module MazeCraze
 
     def initialize(background_worker_id, thread)
       self.class.all << self
-      @id = nil
       @thread = thread
       @background_worker_id = background_worker_id
-      @background_job_id = nil
       @status = thread.alive? ? 'alive' : 'dead'
       @mode = 'waiting'
       save!
@@ -26,7 +24,7 @@ module MazeCraze
       all.each { |background_thread| yield(background_thread) }
     end
 
-    def self.background_thread_from_id(thread_id)
+    def self.thread_from_id(thread_id)
       each_background_thread { |background_thread| return background_thread if background_thread.id == thread_id }
     end
 
@@ -49,9 +47,7 @@ module MazeCraze
     def kill_thread
       Thread.kill(thread)
       update_thread_status('dead')
-      worker = MazeCraze::BackgroundWorker.worker_from_id(background_worker_id)
-      worker = worker.first if worker.is_a?(Array) # sometimes worker is an array -- i can't track this bug down
-      worker.threads.delete(thread)
+      MazeCraze::BackgroundWorker.worker.threads.delete(thread)
       self.class.all.delete(self)
     end
 

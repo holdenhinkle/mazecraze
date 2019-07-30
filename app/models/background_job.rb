@@ -74,8 +74,6 @@ module MazeCraze
     def initialize(job)
       self.class.all << self
       @id = job[:id]
-      @background_worker_id = nil
-      @background_thread_id = nil
       @type = job[:type]
       @params = job[:params]
       @status = 'queued'
