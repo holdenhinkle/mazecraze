@@ -1025,48 +1025,48 @@ module MazeCraze
         "Number of portals must be between #{self.class.portal_min} and #{self.class.portal_max}."
       end
     end
-  end
 
-  def create_unique_square_set(maze = [])
-    if (count_pairs(maze, 'endpoint') / 2) != endpoints
-      create_unique_square_set(maze << format_pair(maze, 'endpoint'))
-    elsif (count_pairs(maze, 'portal') / 2) != portals
-      create_unique_square_set(maze << format_pair(maze, 'portal'))
-    elsif maze.count('barrier') != barriers
-      create_unique_square_set(maze << 'barrier')
-    else
-      maze << 'normal'
+    def create_unique_square_set(maze = [])
+      if (count_pairs(maze, 'endpoint') / 2) != endpoints
+        create_unique_square_set(maze << format_pair(maze, 'endpoint'))
+      elsif (count_pairs(maze, 'portal') / 2) != portals
+        create_unique_square_set(maze << format_pair(maze, 'portal'))
+      elsif maze.count('barrier') != barriers
+        create_unique_square_set(maze << 'barrier')
+      else
+        maze << 'normal'
+      end
+      maze
     end
-    maze
-  end
 
-  def exists?
-    sql = <<~SQL
-      SELECT * 
-      FROM maze_formulas 
-      WHERE 
-      maze_type = $1 AND 
-      x = $2 AND 
-      y = $3 AND 
-      endpoints = $4 AND 
-      barriers = $5 AND 
-      portals = $8;
-    SQL
+    def exists?
+      sql = <<~SQL
+        SELECT * 
+        FROM maze_formulas 
+        WHERE 
+        maze_type = $1 AND 
+        x = $2 AND 
+        y = $3 AND 
+        endpoints = $4 AND 
+        barriers = $5 AND 
+        portals = $6;
+      SQL
 
-    results = query(sql.gsub!("\n", ""), maze_type, x, y, endpoints, barriers, portals)
+      results = query(sql.gsub!("\n", ""), maze_type, x, y, endpoints, barriers, portals)
 
-    return false if results.values.empty?
-    true
-  end
+      return false if results.values.empty?
+      true
+    end
 
-  def save!
-    sql = <<~SQL
-      INSERT INTO maze_formulas 
-      (background_job_id, maze_type, unique_square_set, x, y, endpoints, barriers, portals, experiment) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
-    SQL
+    def save!
+      sql = <<~SQL
+        INSERT INTO maze_formulas 
+        (background_job_id, maze_type, unique_square_set, x, y, endpoints, barriers, portals, experiment) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+      SQL
 
-    query(sql.gsub!("\n", ""), background_job_id, maze_type, unique_square_set, x, y, endpoints,
-    barriers, portals, experiment)
+      query(sql.gsub!("\n", ""), background_job_id, maze_type, unique_square_set, x, y, endpoints,
+      barriers, portals, experiment)
+    end
   end
 end
