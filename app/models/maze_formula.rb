@@ -8,6 +8,7 @@ module MazeCraze
                                  'tunnel' => 'TunnelMazeFormula',
                                  'portal' => 'PortalMazeFormula' }
 
+    # set and manage maze formula class constraints
     def self.set_maze_formula_constraints
       class << self
         attr_accessor :x_min, :x_max, :y_min, :y_max,
@@ -109,17 +110,6 @@ module MazeCraze
           self.portal_max = setting['integer_value'].to_i
         end
       end
-    end
-
-    def self.maze_formula_classes
-      MAZE_FORMULA_CLASS_NAMES.keys.each_with_object([]) do |maze_type, maze_formula_classes|
-        maze_formula_classes << maze_formula_type_to_class(maze_type)
-      end
-    end
-
-    def self.maze_formula_type_to_class(type)
-      class_name = 'MazeCraze::' + MAZE_FORMULA_CLASS_NAMES[type]
-      Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
     end
 
     def self.constraints
@@ -361,26 +351,19 @@ module MazeCraze
       end
     end
 
-    attr_reader :background_job_id,
-                :maze_type, :x, :y,
-                :endpoints, :barriers, :experiment,
-                :unique_square_set
-
-    def initialize(formula)
-      @background_job_id = formula['background_job_id']
-      @maze_type = formula['maze_type']
-      @x = integer_value(formula['x'])
-      @y = integer_value(formula['y'])
-      @endpoints = integer_value(formula['endpoints'])
-      @barriers = integer_value(formula['barriers'])
-      @experiment = formula[:experiment] ? true : false
-      @unique_square_set = if formula['unique_square_set']
-                            JSON.parse(formula['unique_square_set'])
-                          else
-                            create_unique_square_set
-                          end
+    # get class(es)
+    def self.maze_formula_classes
+      MAZE_FORMULA_CLASS_NAMES.keys.each_with_object([]) do |maze_type, maze_formula_classes|
+        maze_formula_classes << maze_formula_type_to_class(maze_type)
+      end
     end
 
+    def self.maze_formula_type_to_class(type)
+      class_name = 'MazeCraze::' + MAZE_FORMULA_CLASS_NAMES[type]
+      Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
+    end
+
+    # auto-generate maze formulas
     def self.generate_formulas(background_job_id, classes = maze_formula_classes)
       new_formula_count = 0
       existed_formula_count = 0
@@ -430,6 +413,7 @@ module MazeCraze
       { new: new_formula_count, existed: existed_formula_count }
     end
 
+    # generate new maze formula page popups
     def self.form_popovers
       popovers = build_popovers # rename build_popovers
 
@@ -477,9 +461,49 @@ module MazeCraze
         y: { title: 'Valid Heights', body: "<p>Here's a description of the height field.</p>" } }
     end
 
+    # misc class methods
     def self.retrieve_formula_values(id)
       sql = "SELECT * FROM maze_formulas WHERE id = $1;"
       query(sql, id)[0]
+    end
+
+    def self.status_list
+      %w(pending approved rejected)
+    end
+
+    def self.count_by_type_and_status(maze_type, status)
+      sql = "SELECT count(maze_type) FROM maze_formulas WHERE maze_type = $1 AND status = $2;"
+      query(sql, maze_type, status)
+    end
+
+    def self.status_list_by_maze_type(maze_type)
+      sql = "SELECT id, x, y, endpoints, barriers, bridges, tunnels, portals, experiment, status FROM maze_formulas WHERE maze_type = $1 ORDER BY x, y, endpoints, barriers;"
+      query(sql, maze_type)
+    end
+
+    def self.update_status(id, status)
+      sql = "UPDATE maze_formulas SET status = $1 WHERE id = $2;"
+      query(sql, status, id)
+    end
+
+    attr_reader :background_job_id,
+                :maze_type, :x, :y,
+                :endpoints, :barriers, :experiment,
+                :unique_square_set
+
+    def initialize(formula)
+      @background_job_id = formula['background_job_id']
+      @maze_type = formula['maze_type']
+      @x = integer_value(formula['x'])
+      @y = integer_value(formula['y'])
+      @endpoints = integer_value(formula['endpoints'])
+      @barriers = integer_value(formula['barriers'])
+      @experiment = formula[:experiment] ? true : false
+      @unique_square_set = if formula['unique_square_set']
+                            JSON.parse(formula['unique_square_set'])
+                          else
+                            create_unique_square_set
+                          end
     end
 
     def experiment?
@@ -611,25 +635,6 @@ module MazeCraze
 
     def portals_validation_invalid_feedback
       'Portal squares are only allowed on portal mazes.'
-    end
-
-    def self.status_list
-      %w(pending approved rejected)
-    end
-
-    def self.count_by_type_and_status(maze_type, status)
-      sql = "SELECT count(maze_type) FROM maze_formulas WHERE maze_type = $1 AND status = $2;"
-      query(sql, maze_type, status)
-    end
-
-    def self.status_list_by_maze_type(maze_type)
-      sql = "SELECT id, x, y, endpoints, barriers, bridges, tunnels, portals, experiment, status FROM maze_formulas WHERE maze_type = $1 ORDER BY x, y, endpoints, barriers;"
-      query(sql, maze_type)
-    end
-
-    def self.update_status(id, status)
-      sql = "UPDATE maze_formulas SET status = $1 WHERE id = $2;"
-      query(sql, status, id)
     end
 
     def generate_permutations(id)
