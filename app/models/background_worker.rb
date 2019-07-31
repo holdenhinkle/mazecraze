@@ -56,6 +56,7 @@ module MazeCraze
     def self.stop
       MazeCraze::BackgroundThread.kill_all_threads
       MazeCraze::BackgroundJob.undo_running_jobs
+      MazeCraze::BackgroundJob.update_queue_order
       MazeCraze::BackgroundJob.reset_running_jobs
       kill_worker
     end
@@ -65,13 +66,13 @@ module MazeCraze
     end
 
     attr_reader :job_queue
-    attr_accessor :id, :number_of_threads, :threads, :deleted_jobs
+    attr_accessor :id, :number_of_threads, :threads, :deleted_jobs_to_skip
 
     def initialize
       self.class.worker = self
       @number_of_threads = self.class.number_of_threads
       @threads = []
-      @deleted_jobs = []
+      @deleted_jobs_to_skip = []
       @job_queue = Queue.new
       save!
       enqueue_jobs
@@ -79,7 +80,11 @@ module MazeCraze
     end
 
     def enqueue_jobs
-      MazeCraze::BackgroundJob.each_job { |job| enqueue_job(job) if job.status == 'queued' }
+      return if MazeCraze::BackgroundJob.all.empty?
+
+      MazeCraze::BackgroundJob.all.sort_by(&:queue_order).each do |job|
+        enqueue_job(job) if job.status == 'queued'
+      end
     end
 
     def enqueue_job(job)
@@ -106,30 +111,34 @@ module MazeCraze
           background_thread.background_job_id = nil
           job = wait_for_job
 
-          if job && deleted_jobs.include?(job.id)
-            deleted_jobs.delete(job.id)
+          if job && deleted_jobs_to_skip.include?(job.id)
+            deleted_jobs_to_skip.delete(job.id)
             next
           elsif job
             background_thread.mode = Thread.current[:mode] = 'processing'
             background_thread.background_job_id = job.id
             job.update_job_is_running(background_thread.id)
-            MazeCraze::BackgroundJob.queued_count -= 1
-            MazeCraze::BackgroundJob.update_queue_orders
+            MazeCraze::BackgroundJob.queue_count -= 1
+            MazeCraze::BackgroundJob.update_queue_orders # for queued jobs RENAME
             job.run
           end
         end
       end
 
-     soft_stop unless job_queue_open?
+      soft_stop unless job_queue_open?
     end
 
-    def delete_job(job_id)
-      deleted_jobs << job_id
+    def skip_job_in_queue(job_id)
+      deleted_jobs_to_skip << job_id
     end
 
     def cancel_job(thread_id, job_id)
+      binding.pry if MazeCraze::BackgroundThread.thread_from_id(thread_id).is_a? Array
+
       MazeCraze::BackgroundThread.thread_from_id(thread_id).kill_thread
       job = MazeCraze::BackgroundJob.job_from_id(job_id)
+      job.queue_order = job.class.queue_count += 1
+      job.update_queue_order
       job.reset
       job.undo
       enqueue_job(job)

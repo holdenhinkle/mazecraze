@@ -67,14 +67,18 @@ class AdminController < ApplicationController
     worker = MazeCraze::BackgroundWorker.worker
 
     if params['delete_job']
+      job = MazeCraze::BackgroundJob.job_from_id(job_id)
       if worker_id != '' && MazeCraze::BackgroundWorker.alive?
-        worker.delete_job(job_id)
+        worker.skip_job_in_queue(job_id)
+      end
+      if thread_id == ''
+        job.update_queue_order_because_of_deleted_job
       end
       if thread_id != ''
         MazeCraze::BackgroundThread.thread_from_id(thread_id).kill_thread
         worker.new_thread
       end
-      MazeCraze::BackgroundJob.job_from_id(job_id).delete
+      job.delete # delete from db
       session[:success] = "Job ID \##{job_id} was deleted."
     elsif params['cancel_job']
       worker.cancel_job(thread_id, job_id)
@@ -82,7 +86,6 @@ class AdminController < ApplicationController
     elsif params['start_worker']
       MazeCraze::BackgroundWorker.start
     elsif params['stop_worker']
-      # reorder queue
       MazeCraze::BackgroundWorker.stop
     elsif params['restart_threads']
       MazeCraze::BackgroundWorker.stop
