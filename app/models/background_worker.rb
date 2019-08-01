@@ -6,28 +6,6 @@ module MazeCraze
     MIN_THREADS = 1
     MAX_THREADS = 10
 
-    # Each BackgroundWorker object creates a new instance of the Queue object
-    # which implements multi-producer, multi-consumer queues. Each BackgroundWorker
-    # instance can run many threads at a time -- the number of threads that can be
-    # run is dependent upon the operating system and the machine that is running this
-    # application and the number of threads you enable the application to instantiate,
-    # which is a setting on the Settings page in the administrative area. We use an
-    # instance of the Queue object it to pass jobs to threads when they become available.
-    # We only allow one instance of BackgroundWorker to exist at a time to optimize the
-    # use of threads that are available for several reasons:
-
-    # 1) If more than one BackgroundWorker instance existed at the same time, we would
-    # have to implement a way to balance the jobs that are pushed to each
-    # BackgroundWorker's queue, which would be difficult to do because we would have to
-    # estimate how long each job would take to be processed (some jobs can be processed
-    # quickly, in a matter of seconds, while some jobs can take hours to complete).
-
-    # 2) Each BackgroundWorker instance tries to instantiate the number of threads that
-    # are allowed to run (again, this is a setting on the Settings page in the
-    # adminstrative area). If, for example, a machine can only run 4 threads, having more
-    # than one instance of BackgroundWorker would be pointless -- the application would
-    # not even be able to instantiate the additional threads.
-
     @worker = nil
 
     class << self
@@ -58,7 +36,7 @@ module MazeCraze
       MazeCraze::BackgroundJob.undo_running_jobs
       MazeCraze::BackgroundJob.update_queue_order_upon_stop
       MazeCraze::BackgroundJob.reset_running_jobs
-      kill_worker
+      kill_worker if worker
     end
 
     def self.kill_worker
@@ -113,20 +91,22 @@ module MazeCraze
     end
 
     def new_thread
+      puts "Entering new_thread. Thread count: #{threads.count}"
+
       threads << thread = Thread.new do
         if thread.nil?
-          threads.delete(nil)
+          p thread
+          p threads.delete(nil)
+          puts "In new_thread > thread.nil? Thread count: #{threads.count}"
           next
         end
-
         background_thread = MazeCraze::BackgroundThread.new(id, thread)
 
         while job_queue_open?
 
-          # binding.pry unless background_thread.thread.alive?
+          binding.pry unless thread.alive?
 
-          # binding.pry unless MazeCraze::BackgroundThread.thread_from_thread(thread)
-
+          binding.pry unless MazeCraze::BackgroundThread.thread_from_thread(thread)
 
           background_thread.mode = Thread.current[:mode] = 'waiting'
           background_thread.background_job_id = nil
@@ -146,7 +126,9 @@ module MazeCraze
         end
       end
 
-      # binding.pry
+      puts "Leaving new_thread. Thread count: #{threads.count}"
+
+      delete_stopped_threads_from_threads
 
       # soft_stop unless job_queue_open?
     end
@@ -160,8 +142,13 @@ module MazeCraze
       # undefined method `kill_thread' for nil:NilClass
       # file: background_worker.rb location: cancel_job line: 159
 
+      binding.pry if MazeCraze::BackgroundThread.all.count != threads.count
 
-      MazeCraze::BackgroundThread.thread_from_id(thread_id).kill_thread
+      background_thread = MazeCraze::BackgroundThread.thread_from_id(thread_id)
+      threads.delete(MazeCraze::BackgroundThread.all.delete(background_thread).kill_thread)
+
+      binding.pry if MazeCraze::BackgroundThread.all.count != threads.count
+
       job = MazeCraze::BackgroundJob.job_from_id(job_id)
       job.queue_order = job.class.queue_count += 1
       job.update_queue_order
@@ -184,6 +171,12 @@ module MazeCraze
     end
 
     private
+
+    def delete_stopped_threads_from_threads
+      puts "Before: #{threads.count}" # remove
+      threads.select(&:nil?).each { |thread| threads.delete(thread) }
+      puts "After: #{threads.count}" # remove
+    end
 
     def save!
       sql = "INSERT INTO background_workers DEFAULT VALUES RETURNING id;"

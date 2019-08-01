@@ -17,12 +17,12 @@ module MazeCraze
     end
 
     # delete this
-    # def self.thread_from_thread(thread)
-    #   all.each do |background_thread|
-    #     return background_thread if background_thread.thread == thread
-    #   end
-    #   nil
-    # end
+    def self.thread_from_thread(thread)
+      all.each do |background_thread|
+        return background_thread if background_thread.thread == thread
+      end
+      nil
+    end
 
     def self.thread_details(worker_id)
       details = []
@@ -38,6 +38,7 @@ module MazeCraze
 
     def self.kill_all_threads
       all.each(&:kill_thread)
+      all.clear
     end
 
     attr_reader :thread, :background_worker_id
@@ -53,10 +54,10 @@ module MazeCraze
     end
 
     def kill_thread
-      Thread.kill(thread)
       update_thread_status_to_dead
-      MazeCraze::BackgroundWorker.worker.threads.delete(thread)
-      self.class.all.delete(self)
+      Thread.kill(thread)
+      # MazeCraze::BackgroundWorker.worker.threads.delete(thread)
+      # self.class.all.delete(self)
     end
 
     def save!
