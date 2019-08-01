@@ -8,17 +8,25 @@ module MazeCraze
       attr_accessor :all
     end
 
-    def self.each_background_thread
-      all.each { |background_thread| yield(background_thread) }
+    def self.thread_from_id(thread_id)
+      all.each do |background_thread| 
+        return background_thread if background_thread.id == thread_id
+      end
+      # sometimes the thread doesn't exist so all is returned
+      nil
     end
 
-    def self.thread_from_id(thread_id)
-      each_background_thread { |background_thread| return background_thread if background_thread.id == thread_id }
-    end
+    # delete this
+    # def self.thread_from_thread(thread)
+    #   all.each do |background_thread|
+    #     return background_thread if background_thread.thread == thread
+    #   end
+    #   nil
+    # end
 
     def self.thread_details(worker_id)
       details = []
-      each_background_thread do |background_thread|
+      all.each do |background_thread|
         next unless background_thread.background_worker_id == worker_id
         details << { id: background_thread.id,
                      job_id: background_thread.background_job_id,
@@ -29,7 +37,7 @@ module MazeCraze
     end
 
     def self.kill_all_threads
-      each_background_thread(&:kill_thread)
+      all.each(&:kill_thread)
     end
 
     attr_reader :thread, :background_worker_id
@@ -46,7 +54,7 @@ module MazeCraze
 
     def kill_thread
       Thread.kill(thread)
-      update_thread_status('dead')
+      update_thread_status_to_dead
       MazeCraze::BackgroundWorker.worker.threads.delete(thread)
       self.class.all.delete(self)
     end
@@ -56,8 +64,8 @@ module MazeCraze
       self.id = query(sql, background_worker_id, status).first['id']
     end
 
-    def update_thread_status(thread_status)
-      self.status = thread_status
+    def update_thread_status_to_dead
+      self.status = 'dead'
       sql = "UPDATE background_threads SET status = $1, updated = $2 WHERE id = $3;"
       query(sql, status, 'NOW()', id)
     end

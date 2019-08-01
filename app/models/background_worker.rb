@@ -56,7 +56,7 @@ module MazeCraze
     def self.stop
       MazeCraze::BackgroundThread.kill_all_threads
       MazeCraze::BackgroundJob.undo_running_jobs
-      MazeCraze::BackgroundJob.update_queue_order
+      MazeCraze::BackgroundJob.update_queue_order_upon_stop
       MazeCraze::BackgroundJob.reset_running_jobs
       kill_worker
     end
@@ -82,7 +82,22 @@ module MazeCraze
     def enqueue_jobs
       return if MazeCraze::BackgroundJob.all.empty?
 
-      MazeCraze::BackgroundJob.all.sort_by(&:queue_order).each do |job|
+      # ArgumentError at /admin/settings
+      # comparison of Integer with nil failed
+      # file: background_worker.rb location: sort_by line: 85
+
+      # MazeCraze::BackgroundJob.all.sort_by(&:queue_order).each do |job|
+      #   enqueue_job(job) if job.status == 'queued'
+      # end
+
+      queued = MazeCraze::BackgroundJob.all.select { |job| job.status == 'queued' }
+
+      sorted = queued.sort_by do |job|
+        binding.pry if job.queue_order.nil?
+        job.queue_order
+      end
+
+      sorted.each do |job|
         enqueue_job(job) if job.status == 'queued'
       end
     end
@@ -107,6 +122,12 @@ module MazeCraze
         background_thread = MazeCraze::BackgroundThread.new(id, thread)
 
         while job_queue_open?
+
+          # binding.pry unless background_thread.thread.alive?
+
+          # binding.pry unless MazeCraze::BackgroundThread.thread_from_thread(thread)
+
+
           background_thread.mode = Thread.current[:mode] = 'waiting'
           background_thread.background_job_id = nil
           job = wait_for_job
@@ -119,13 +140,15 @@ module MazeCraze
             background_thread.background_job_id = job.id
             job.update_job_is_running(background_thread.id)
             MazeCraze::BackgroundJob.queue_count -= 1
-            MazeCraze::BackgroundJob.update_queue_orders # for queued jobs RENAME
+            MazeCraze::BackgroundJob.decrement_queued_jobs_queue_order
             job.run
           end
         end
       end
 
-      soft_stop unless job_queue_open?
+      # binding.pry
+
+      # soft_stop unless job_queue_open?
     end
 
     def skip_job_in_queue(job_id)
@@ -133,7 +156,10 @@ module MazeCraze
     end
 
     def cancel_job(thread_id, job_id)
-      binding.pry if MazeCraze::BackgroundThread.thread_from_id(thread_id).is_a? Array
+      # NoMethodError at /admin/background-jobs
+      # undefined method `kill_thread' for nil:NilClass
+      # file: background_worker.rb location: cancel_job line: 159
+
 
       MazeCraze::BackgroundThread.thread_from_id(thread_id).kill_thread
       job = MazeCraze::BackgroundJob.job_from_id(job_id)
@@ -147,7 +173,7 @@ module MazeCraze
 
     def kill_worker
       job_queue.close
-      yield if block_given?
+      # yield if block_given?
       update_worker_status('dead')
       self.class.worker = nil
     end
@@ -182,11 +208,11 @@ module MazeCraze
     end
 
     # soft_stop kills the worker but lets jobs that are running finish first
-    def soft_stop
-      kill_worker do
-        threads.each(&:join)
-        MazeCraze::BackgroundThread.kill_all_threads
-      end
-    end
+    # def soft_stop
+    #   kill_worker do
+    #     threads.each(&:join)
+    #     MazeCraze::BackgroundThread.kill_all_threads
+    #   end
+    # end
   end
 end

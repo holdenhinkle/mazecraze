@@ -16,52 +16,16 @@ module MazeCraze
       attr_accessor :all, :queue_count
     end
 
-    def self.each_job
-      all.each { |job| yield(job) }
-    end
-
     def self.job_from_id(job_id)
-      each_job { |job| return job if job.id == job_id }
+      all.each { |job| return job if job.id == job_id }
     end
 
     def self.each_running_job
-      each_job { |job| yield(job) if job.status == 'running'}
+      all.each { |job| yield(job) if job.status == 'running'}
     end
 
     def self.each_queued_job
-      each_job { |job| yield(job) if job.status == 'queued'}
-    end
-
-    def self.undo_running_jobs
-      each_running_job(&:undo)
-    end
-
-    def self.reset_running_jobs
-      each_running_job(&:reset)
-    end
-
-    def self.update_queue_order
-      sql = 'SELECT * FROM background_jobs WHERE status = $1 ORDER BY updated;'
-      running_jobs = query(sql, 'running')
-
-      update_queued_jobs_queue_order(running_jobs)
-      update_running_jobs_queue_order(running_jobs)
-    end
-
-    def self.update_queued_jobs_queue_order(running_jobs)
-      each_queued_job do |job|
-        job.queue_order += running_jobs.count
-        job.update_queue_order
-      end
-    end
-
-    def self.update_running_jobs_queue_order(running_jobs)
-      running_jobs.each_with_index do |job, index|
-        self.queue_count += 1
-        job = job_from_id(job['id'])
-        job.queue_order = index + 1
-        job.update_queue_order
-      end
+      all.each { |job| yield(job) if job.status == 'queued'}
     end
 
     def self.all_jobs
@@ -87,12 +51,47 @@ module MazeCraze
       query(sql, type, params.to_json)
     end
 
-    def self.update_queue_orders
-      each_job do |job|
-        next unless job.status == 'queued'
-        job.queue_order -= 1
+    def self.update_queue_order_upon_stop
+      sql = 'SELECT * FROM background_jobs WHERE status = $1 ORDER BY updated;'
+      running_jobs = query(sql, 'running')
+
+      update_queued_jobs_queue_order_upon_stop(running_jobs)
+      update_running_jobs_queue_order_upon_stop(running_jobs)
+    end
+
+    def self.update_queued_jobs_queue_order_upon_stop(running_jobs)
+      each_queued_job do |job|
+        job.queue_order += running_jobs.count
+        binding.pry if job.queue_order.nil?
         job.update_queue_order
       end
+    end
+
+    def self.update_running_jobs_queue_order_upon_stop(running_jobs)
+      running_jobs.each_with_index do |job, index|
+        self.queue_count += 1
+        job = job_from_id(job['id'])
+        job.queue_order = index + 1
+        binding.pry if job.queue_order.nil?
+        job.update_queue_order
+      end
+    end
+
+    def self.decrement_queued_jobs_queue_order
+      all.each do |job|
+        next unless job.status == 'queued'
+        job.queue_order -= 1
+        binding.pry if job.queue_order.nil?
+        job.update_queue_order
+      end
+    end
+
+    def self.undo_running_jobs
+      each_running_job(&:undo)
+    end
+
+    def self.reset_running_jobs
+      each_running_job(&:reset)
     end
 
     attr_reader :type, :params, :thread_id
@@ -107,6 +106,7 @@ module MazeCraze
       @status = 'queued'
       self.class.queue_count += 1
       @queue_order = self.class.queue_count
+      binding.pry if queue_order.nil?
       save!
     end
 
@@ -120,8 +120,8 @@ module MazeCraze
       query(sql, queue_order, id)
     end
 
-    def update_job_is_running(thread_id)
-      self.background_thread_id = thread_id
+    def update_job_is_running(new_thread_id)
+      self.background_thread_id = new_thread_id
       self.status = 'running'
       self.queue_order = nil
       sql = "UPDATE background_jobs SET background_thread_id = $1, status = $2, queue_order = $3, updated = $4 WHERE id = $5;"
@@ -134,8 +134,8 @@ module MazeCraze
       query(sql, status, 'NOW()', id)
     end
 
-    def update_job_thread_id(thread_id)
-      self.background_thread_id = thread_id
+    def update_job_thread_id(new_thread_id)
+      self.background_thread_id = new_thread_id
       sql = "UPDATE background_jobs SET background_thread_id = $1, updated = $2 WHERE id = $3;"
       query(sql, background_thread_id, 'NOW()', id)
     end
@@ -149,14 +149,6 @@ module MazeCraze
       update_job_status('queued')
       update_job_thread_id(nil)
     end
-
-    # this is for jobs that are cancelled
-    # def reset(new_queue_order = self.class.queue_count)
-    #   self.queue_order = new_queue_order
-    #   update_queue_order
-    #   update_job_status('queued')
-    #   update_job_thread_id(nil)
-    # end
 
     def undo
       table_name = case type
@@ -172,7 +164,7 @@ module MazeCraze
       query(sql, id)
     end
 
-    def delete
+    def delete_from_db
       self.class.all.delete(self)
       sql = "DELETE FROM background_jobs WHERE id = $1;"
       query(sql, id)
@@ -183,14 +175,9 @@ module MazeCraze
       query(sql, queue_order).each do |job|
         job = self.class.job_from_id(job['id'])
         job.queue_order -= 1
+        binding.pry if job.queue_order.nil?
         job.update_queue_order
       end
-    end
-
-    def delete_from_db
-      self.class.all.delete(self)
-      sql = "DELETE FROM background_jobs WHERE id = $1;"
-      query(sql, id)
     end
 
     private
@@ -214,5 +201,23 @@ module MazeCraze
 
     def generate_maze_candidates
     end
+  end
+
+  class GenerateMazeFormulas < BackgroundJob
+    def run; end
+
+    def undo; end
+  end
+
+  class GenerateMazePermutations < BackgroundJob
+    def run; end
+
+    def undo; end
+  end
+
+  class GenerateMazeCandidates < BackgroundJob
+    def run; end
+
+    def undo; end
   end
 end
