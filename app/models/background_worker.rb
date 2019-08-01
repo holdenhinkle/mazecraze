@@ -104,8 +104,6 @@ module MazeCraze
           end
         end
       end
-
-      delete_nil_threads_from_threads
     end
 
     def skip_job_in_queue(job_id)
@@ -137,11 +135,6 @@ module MazeCraze
     end
 
     private
-
-    def delete_nil_threads_from_threads 
-      threads = BackgroundThread.all_background_thread_threads
-      threads.select(&:nil?).each { |thread| threads.delete(thread) }
-    end
 
     def save!
       sql = "INSERT INTO background_workers DEFAULT VALUES RETURNING id;"
