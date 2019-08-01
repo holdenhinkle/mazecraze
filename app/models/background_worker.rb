@@ -56,20 +56,12 @@ module MazeCraze
       work
     end
 
-    def enqueue_jobs # refactor
-      # return if MazeCraze::BackgroundJob.all.empty?
-
-      queued_jobs = MazeCraze::BackgroundJob.all.select { |job| job.status == 'queued' }
+    def enqueue_jobs
+      queued_jobs = MazeCraze::BackgroundJob.all.select do |job|
+        job.status == 'queued'
+      end
 
       queued_jobs.sort_by(&:queue_order).each { |job| enqueue_job(job) }
-
-      # sorted = queued.sort_by do |job|
-      #   job.queue_order
-      # end
-
-      # sorted.each do |job|
-      #   enqueue_job(job) if job.status == 'queued'
-      # end
     end
 
     def enqueue_job(job)
