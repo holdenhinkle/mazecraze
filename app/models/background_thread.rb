@@ -8,6 +8,10 @@ module MazeCraze
       attr_accessor :all
     end
 
+    def self.all_background_thread_threads
+      all.map(&:thread)
+    end
+
     def self.thread_from_id(thread_id)
       all.each do |background_thread| 
         return background_thread if background_thread.id == thread_id
@@ -32,14 +36,13 @@ module MazeCraze
       all.clear
     end
 
-    attr_reader :thread, :background_worker_id
-    attr_accessor :id, :background_job_id, :status, :mode
+    attr_reader :background_worker_id
+    attr_accessor :id, :thread, :background_job_id, :status, :mode
 
-    def initialize(background_worker_id, thread)
+    def initialize(background_worker_id)
       self.class.all << self
-      @thread = thread
       @background_worker_id = background_worker_id
-      @status = thread.alive? ? 'alive' : 'dead'
+      @status = 'alive'
       @mode = 'waiting'
       save!
     end

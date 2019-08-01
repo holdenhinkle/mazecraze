@@ -44,12 +44,11 @@ module MazeCraze
     end
 
     attr_reader :job_queue
-    attr_accessor :id, :number_of_threads, :threads, :deleted_jobs_to_skip
+    attr_accessor :id, :number_of_threads, :deleted_jobs_to_skip
 
     def initialize
       self.class.worker = self
       @number_of_threads = self.class.number_of_threads
-      @threads = []
       @deleted_jobs_to_skip = []
       @job_queue = Queue.new
       save!
@@ -57,7 +56,7 @@ module MazeCraze
       work
     end
 
-    def enqueue_jobs
+    def enqueue_jobs # refactor
       return if MazeCraze::BackgroundJob.all.empty?
 
       queued = MazeCraze::BackgroundJob.all.select { |job| job.status == 'queued' }
@@ -82,25 +81,23 @@ module MazeCraze
     end
 
     def new_thread
-      threads << thread = Thread.new do
-        if thread.nil?
-          threads.delete(nil) # does this do anything?
-          next
-        end
-        background_thread = MazeCraze::BackgroundThread.new(id, thread)
+      thread_obj = MazeCraze::BackgroundThread.new(id)
+
+      thread_obj.thread = Thread.new do
+        next if thread_obj.thread.nil?
 
         while job_queue_open?
-          background_thread.mode = Thread.current[:mode] = 'waiting'
-          background_thread.background_job_id = nil
+          thread_obj.mode = 'waiting'
+          thread_obj.background_job_id = nil
           job = wait_for_job
 
           if job && deleted_jobs_to_skip.include?(job.id)
             deleted_jobs_to_skip.delete(job.id)
             next
           elsif job
-            background_thread.mode = Thread.current[:mode] = 'processing'
-            background_thread.background_job_id = job.id
-            job.update_job_is_running(background_thread.id)
+            thread_obj.mode = 'processing'
+            thread_obj.background_job_id = job.id
+            job.update_job_is_running(thread_obj.id)
             MazeCraze::BackgroundJob.queue_count -= 1
             MazeCraze::BackgroundJob.decrement_queued_jobs_queue_order
             job.run
@@ -108,21 +105,16 @@ module MazeCraze
         end
       end
 
-      delete_stopped_threads_from_threads
+      delete_nil_threads_from_threads
     end
 
     def skip_job_in_queue(job_id)
       deleted_jobs_to_skip << job_id
     end
 
-    def cancel_job(thread_id, job_id)
-      binding.pry if MazeCraze::BackgroundThread.all.count != threads.count
-
+    def cancel_job(thread_id, job_id) # refactor
       background_thread = MazeCraze::BackgroundThread.thread_from_id(thread_id)
-      threads.delete(MazeCraze::BackgroundThread.all.delete(background_thread).kill_thread)
-
-      binding.pry if MazeCraze::BackgroundThread.all.count != threads.count
-
+      MazeCraze::BackgroundThread.all.delete(background_thread).kill_thread
       job = MazeCraze::BackgroundJob.job_from_id(job_id)
       job.queue_order = job.class.queue_count += 1
       job.update_queue_order
@@ -139,13 +131,15 @@ module MazeCraze
     end
 
     def dead?
+      threads = BackgroundThread.all_background_thread_threads
       return false if threads.any?(&:alive?) && job_queue_open?
       true
     end
 
     private
 
-    def delete_stopped_threads_from_threads
+    def delete_nil_threads_from_threads 
+      threads = BackgroundThread.all_background_thread_threads
       threads.select(&:nil?).each { |thread| threads.delete(thread) }
     end
 

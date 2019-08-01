@@ -15,7 +15,7 @@ class AdminController < ApplicationController
     erb :admin_settings
   end
 
-  post '/admin/settings' do
+  post '/admin/settings' do # refactor
     if params['number_of_threads']
       number_of_threads = params['number_of_threads'].to_i
       queued_jobs = MazeCraze::BackgroundJob.all_jobs_of_status_type('queued')
@@ -60,13 +60,13 @@ class AdminController < ApplicationController
     erb :background_jobs
   end
 
-  post '/admin/background-jobs' do
+  post '/admin/background-jobs' do # refactor
     job_id = params['id']
     worker_id = params['background_worker_id']
     thread_id = params['background_thread_id']
     worker = MazeCraze::BackgroundWorker.worker
 
-    if params['delete_job']
+    if params['delete_job'] # refactor - use job status instead of work_id and thread_id values
       job = MazeCraze::BackgroundJob.job_from_id(job_id)
 
       # if job is queued
@@ -78,19 +78,14 @@ class AdminController < ApplicationController
 
       # if job is running
       if thread_id != '' # this could be else
-        bg_thread_class = MazeCraze::BackgroundThread
-        bg_thread_obj = bg_thread_class.thread_from_id(thread_id)
-        worker = MazeCraze::BackgroundWorker.worker
-        worker.threads.delete(bg_thread_class.all.delete(bg_thread_obj).kill_thread)
+        background_thread = MazeCraze::BackgroundThread.thread_from_id(thread_id)
+        MazeCraze::BackgroundThread.all.delete(background_thread).kill_thread
         job.undo
         job.delete_from_db
         worker.new_thread
       end
       session[:success] = "Job ID \##{job_id} was deleted."
     elsif params['cancel_job']
-
-      binding.pry if MazeCraze::BackgroundThread.all.count != MazeCraze::BackgroundWorker.worker.threads.count
-
       worker.cancel_job(thread_id, job_id)
       session[:success] = "Job ID \##{job_id} was cancelled and re-queued."
     elsif params['start_worker']

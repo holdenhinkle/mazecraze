@@ -146,7 +146,7 @@ module MazeCraze
       update_job_thread_id(nil)
     end
 
-    def undo
+    def undo # refactor
       table_name = case type
                   when 'generate_maze_formulas'
                     'maze_formulas'
@@ -177,7 +177,7 @@ module MazeCraze
 
     private
 
-    def generate_maze_formulas
+    def generate_maze_formulas # refactor
       if params.empty?
         generated_formula_stats = MazeCraze::MazeFormula.generate_formulas(id.to_i)
       else
