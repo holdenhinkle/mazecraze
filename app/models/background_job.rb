@@ -62,7 +62,6 @@ module MazeCraze
     def self.update_queued_jobs_queue_order_upon_stop(running_jobs)
       each_queued_job do |job|
         job.queue_order += running_jobs.count
-        binding.pry if job.queue_order.nil?
         job.update_queue_order
       end
     end
@@ -72,7 +71,6 @@ module MazeCraze
         self.queue_count += 1
         job = job_from_id(job['id'])
         job.queue_order = index + 1
-        binding.pry if job.queue_order.nil?
         job.update_queue_order
       end
     end
@@ -81,7 +79,6 @@ module MazeCraze
       all.each do |job|
         next unless job.status == 'queued'
         job.queue_order -= 1
-        binding.pry if job.queue_order.nil?
         job.update_queue_order
       end
     end
@@ -106,7 +103,6 @@ module MazeCraze
       @status = 'queued'
       self.class.queue_count += 1
       @queue_order = self.class.queue_count
-      binding.pry if queue_order.nil?
       save!
     end
 
@@ -175,7 +171,6 @@ module MazeCraze
       query(sql, queue_order).each do |job|
         job = self.class.job_from_id(job['id'])
         job.queue_order -= 1
-        binding.pry if job.queue_order.nil?
         job.update_queue_order
       end
     end

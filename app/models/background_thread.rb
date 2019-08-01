@@ -12,15 +12,6 @@ module MazeCraze
       all.each do |background_thread| 
         return background_thread if background_thread.id == thread_id
       end
-      # sometimes the thread doesn't exist so all is returned
-      nil
-    end
-
-    # delete this
-    def self.thread_from_thread(thread)
-      all.each do |background_thread|
-        return background_thread if background_thread.thread == thread
-      end
       nil
     end
 
@@ -56,8 +47,6 @@ module MazeCraze
     def kill_thread
       update_thread_status_to_dead
       Thread.kill(thread)
-      # MazeCraze::BackgroundWorker.worker.threads.delete(thread)
-      # self.class.all.delete(self)
     end
 
     def save!

@@ -76,27 +76,14 @@ class AdminController < ApplicationController
         job.update_queue_order_because_of_deleted_job
       end
 
-
-      # if thread_id == ''
-      #   job.update_queue_order_because_of_deleted_job
-      # end
-
       # if job is running
       if thread_id != '' # this could be else
-        binding.pry if MazeCraze::BackgroundThread.thread_from_id(thread_id).thread.nil?
-        binding.pry if MazeCraze::BackgroundThread.thread_from_id(thread_id).nil?
-        binding.pry if MazeCraze::BackgroundThread.thread_from_id(thread_id).is_a? Array
-
-        # MazeCraze::BackgroundThread.thread_from_id(thread_id).kill_thread
         bg_thread_class = MazeCraze::BackgroundThread
         bg_thread_obj = bg_thread_class.thread_from_id(thread_id)
         worker = MazeCraze::BackgroundWorker.worker
-
         worker.threads.delete(bg_thread_class.all.delete(bg_thread_obj).kill_thread)
         job.undo
         job.delete_from_db
-
-        # remove thread from threads array
         worker.new_thread
       end
       session[:success] = "Job ID \##{job_id} was deleted."
