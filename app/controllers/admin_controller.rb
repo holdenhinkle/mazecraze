@@ -18,12 +18,13 @@ class AdminController < ApplicationController
   post '/admin/settings' do # refactor
     if params['number_of_threads']
       number_of_threads = params['number_of_threads'].to_i
+      worker = MazeCraze::BackgroundWorker.instance
       queued_jobs = MazeCraze::BackgroundJob.all_jobs_of_status_type('queued')
       running_jobs = MazeCraze::BackgroundJob.all_jobs_of_status_type('running')
 
       MazeCraze::BackgroundThread.update_number_of_threads(number_of_threads)
-      MazeCraze::BackgroundWorker.stop # if MazeCraze::BackgroundWorker.alive?
-      MazeCraze::BackgroundWorker.start if queued_jobs.any? || running_jobs.any?
+      worker.stop
+      worker.start if queued_jobs.any? || running_jobs.any?
       session[:success] = "The settings have been updated."
       redirect '/admin/settings'
     elsif params["formula_type"]
@@ -50,9 +51,10 @@ class AdminController < ApplicationController
     @title = "Background Jobs - Maze Craze Admin"
     @job_statuses = MazeCraze::BackgroundJob::JOB_STATUSES
     @jobs = MazeCraze::BackgroundJob.all_jobs
+    worker = MazeCraze::BackgroundWorker.instance
 
-    if @background_workers_status = MazeCraze::BackgroundWorker.alive?
-      worker = MazeCraze::BackgroundWorker.worker
+    if @background_workers_status = worker.alive? # this isn't a perfect indicator of whether or not the system alive or dead
+      # worker = MazeCraze::BackgroundWorker.instance
       @number_of_threads = MazeCraze::BackgroundThread.number_of_threads
       @thread_stats = MazeCraze::BackgroundThread.thread_details(worker.id)
     end
@@ -64,7 +66,7 @@ class AdminController < ApplicationController
     job_id = params['id']
     worker_id = params['background_worker_id']
     thread_id = params['background_thread_id']
-    worker = MazeCraze::BackgroundWorker.worker
+    worker = MazeCraze::BackgroundWorker.instance
 
     if params['delete_job'] # refactor - use job status instead of work_id and thread_id values
       job = MazeCraze::BackgroundJob.job_from_id(job_id)
@@ -89,12 +91,12 @@ class AdminController < ApplicationController
       worker.cancel_job(thread_id, job_id)
       session[:success] = "Job ID \##{job_id} was cancelled and re-queued."
     elsif params['start_worker']
-      MazeCraze::BackgroundWorker.start
+      worker.start
     elsif params['stop_worker']
-      MazeCraze::BackgroundWorker.stop
+      worker.stop
     elsif params['restart_threads']
-      MazeCraze::BackgroundWorker.stop
-      MazeCraze::BackgroundWorker.start
+      worker.stop
+      worker.start
     end
 
     redirect "/admin/background-jobs"
@@ -113,12 +115,13 @@ class AdminController < ApplicationController
   end
 
   get '/admin/background-jobs/queued/sort' do
-    MazeCraze::BackgroundWorker.stop if MazeCraze::BackgroundWorker.alive?
+    worker = MazeCraze::BackgroundWorker.instance
+    worker.stop if worker.alive?
     erb :background_jobs_sort_queue
   end
 
   post '/admin/background-jobs/queued/sort' do
-    MazeCraze::BackgroundWorker.start
+    MazeCraze::BackgroundWorker.instance.start
     redirect "/admin/background-jobs"
   end
 
@@ -213,13 +216,13 @@ class AdminController < ApplicationController
   def new_background_job(job_type, job_params)
     MazeCraze::BackgroundJob.new({ type: job_type, params: job_params })
 
-    worker = MazeCraze::BackgroundWorker.worker
+    worker = MazeCraze::BackgroundWorker.instance
 
-    if worker.nil?
-      MazeCraze::BackgroundWorker.new
+    if worker.dead?
+      worker.start
     else
       worker.enqueue_job(MazeCraze::BackgroundJob.all.last)
-      MazeCraze::BackgroundWorker.new if worker.dead?
+      worker.start if worker.dead?
     end
   end
 
