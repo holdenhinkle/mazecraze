@@ -10,37 +10,37 @@ module MazeCraze
 
     class << self
       attr_accessor :worker
-    end
 
-    def self.alive?
-      return false if worker.nil?
-      !worker.dead?
-    end
+      def alive?
+        return false if worker.nil?
+        !worker.dead?
+      end
 
-    def self.number_of_threads
-      sql = 'SELECT integer_value FROM settings WHERE name = $1;'
-      query(sql, 'number_of_threads').first['integer_value'].to_i
-    end
+      def number_of_threads
+        sql = 'SELECT integer_value FROM settings WHERE name = $1;'
+        query(sql, 'number_of_threads').first['integer_value'].to_i
+      end
 
-    def self.update_number_of_threads(number)
-      sql = 'UPDATE settings SET integer_value = $1, updated = $2 WHERE name = $3;'
-      query(sql, number, 'NOW()', 'number_of_threads')
-    end
+      def update_number_of_threads(number)
+        sql = 'UPDATE settings SET integer_value = $1, updated = $2 WHERE name = $3;'
+        query(sql, number, 'NOW()', 'number_of_threads')
+      end
 
-    def self.start
-      BackgroundWorker.new
-    end
+      def start
+        BackgroundWorker.new
+      end
 
-    def self.stop
-      MazeCraze::BackgroundThread.kill_all_threads
-      MazeCraze::BackgroundJob.undo_running_jobs
-      MazeCraze::BackgroundJob.update_queue_order_upon_stop
-      MazeCraze::BackgroundJob.reset_running_jobs
-      kill_worker if worker
-    end
+      def stop
+        MazeCraze::BackgroundThread.kill_all_threads
+        MazeCraze::BackgroundJob.undo_running_jobs
+        MazeCraze::BackgroundJob.update_queue_order_upon_stop
+        MazeCraze::BackgroundJob.reset_running_jobs
+        kill_worker if worker
+      end
 
-    def self.kill_worker
-      worker.kill_worker
+      def kill_worker
+        worker.kill_worker
+      end
     end
 
     attr_reader :job_queue

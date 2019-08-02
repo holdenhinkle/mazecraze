@@ -14,81 +14,81 @@ module MazeCraze
 
     class << self
       attr_accessor :all, :queue_count
-    end
 
-    def self.job_from_id(job_id)
-      all.each { |job| return job if job.id == job_id }
-    end
-
-    def self.each_running_job
-      all.each { |job| yield(job) if job.status == 'running'}
-    end
-
-    def self.each_queued_job
-      all.each { |job| yield(job) if job.status == 'queued'}
-    end
-
-    def self.all_jobs
-      JOB_STATUSES.each_with_object({}) do |status, jobs|
-        sql = "SELECT * FROM background_jobs WHERE status = $1 ORDER BY updated DESC LIMIT 10;"
-        jobs[status] = query(sql, status)
-        sql = "SELECT COUNT(id) FROM background_jobs WHERE status = $1;"
-        jobs[status + '_count'] = query(sql, status)
+      def job_from_id(job_id)
+        all.each { |job| return job if job.id == job_id }
       end
-    end
 
-    def self.all_jobs_of_status_type(status)
-      sql = "SELECT * FROM background_jobs WHERE status = $1 ORDER BY created DESC;"
-      query(sql, status)
-    end
-
-    def self.duplicate_job?(type, params = nil)
-      duplicate_jobs(type, params).any?
-    end
-
-    def self.duplicate_jobs(type, params = nil)
-      sql = 'SELECT * FROM background_jobs WHERE job_type = $1 AND params = $2;'
-      query(sql, type, params.to_json)
-    end
-
-    def self.update_queue_order_upon_stop
-      sql = 'SELECT * FROM background_jobs WHERE status = $1 ORDER BY updated;'
-      running_jobs = query(sql, 'running')
-
-      update_queued_jobs_queue_order_upon_stop(running_jobs)
-      update_running_jobs_queue_order_upon_stop(running_jobs)
-    end
-
-    def self.update_queued_jobs_queue_order_upon_stop(running_jobs)
-      each_queued_job do |job|
-        job.queue_order += running_jobs.count
-        job.update_queue_order
+      def each_running_job
+        all.each { |job| yield(job) if job.status == 'running'}
       end
-    end
 
-    def self.update_running_jobs_queue_order_upon_stop(running_jobs)
-      running_jobs.each_with_index do |job, index|
-        self.queue_count += 1
-        job = job_from_id(job['id'])
-        job.queue_order = index + 1
-        job.update_queue_order
+      def each_queued_job
+        all.each { |job| yield(job) if job.status == 'queued'}
       end
-    end
 
-    def self.decrement_queued_jobs_queue_order
-      all.each do |job|
-        next unless job.status == 'queued'
-        job.queue_order -= 1
-        job.update_queue_order
+      def all_jobs
+        JOB_STATUSES.each_with_object({}) do |status, jobs|
+          sql = "SELECT * FROM background_jobs WHERE status = $1 ORDER BY updated DESC LIMIT 10;"
+          jobs[status] = query(sql, status)
+          sql = "SELECT COUNT(id) FROM background_jobs WHERE status = $1;"
+          jobs[status + '_count'] = query(sql, status)
+        end
       end
-    end
 
-    def self.undo_running_jobs
-      each_running_job(&:undo)
-    end
+      def all_jobs_of_status_type(status)
+        sql = "SELECT * FROM background_jobs WHERE status = $1 ORDER BY created DESC;"
+        query(sql, status)
+      end
 
-    def self.reset_running_jobs
-      each_running_job(&:reset)
+      def duplicate_job?(type, params = nil)
+        duplicate_jobs(type, params).any?
+      end
+
+      def duplicate_jobs(type, params = nil)
+        sql = 'SELECT * FROM background_jobs WHERE job_type = $1 AND params = $2;'
+        query(sql, type, params.to_json)
+      end
+
+      def update_queue_order_upon_stop
+        sql = 'SELECT * FROM background_jobs WHERE status = $1 ORDER BY updated;'
+        running_jobs = query(sql, 'running')
+
+        update_queued_jobs_queue_order_upon_stop(running_jobs)
+        update_running_jobs_queue_order_upon_stop(running_jobs)
+      end
+
+      def update_queued_jobs_queue_order_upon_stop(running_jobs)
+        each_queued_job do |job|
+          job.queue_order += running_jobs.count
+          job.update_queue_order
+        end
+      end
+
+      def update_running_jobs_queue_order_upon_stop(running_jobs)
+        running_jobs.each_with_index do |job, index|
+          self.queue_count += 1
+          job = job_from_id(job['id'])
+          job.queue_order = index + 1
+          job.update_queue_order
+        end
+      end
+
+      def decrement_queued_jobs_queue_order
+        all.each do |job|
+          next unless job.status == 'queued'
+          job.queue_order -= 1
+          job.update_queue_order
+        end
+      end
+
+      def undo_running_jobs
+        each_running_job(&:undo)
+      end
+
+      def reset_running_jobs
+        each_running_job(&:reset)
+      end
     end
 
     attr_reader :type, :params, :thread_id
