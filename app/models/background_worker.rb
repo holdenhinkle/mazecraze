@@ -19,6 +19,7 @@ module MazeCraze
       self.deleted_jobs_to_skip_in_queue = []
       enqueue_jobs
       work
+      self
     end
 
     def stop
@@ -27,11 +28,11 @@ module MazeCraze
       MazeCraze::BackgroundJob.update_queue_order_upon_stop
       MazeCraze::BackgroundJob.reset_running_jobs
       reset_worker
+      self
     end
 
     def restart
-      stop
-      start
+      stop.start
     end
 
     def enqueue_jobs

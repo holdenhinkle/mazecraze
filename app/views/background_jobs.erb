@@ -21,13 +21,13 @@
           <% if @number_of_threads != @thread_stats.count %>
             <p>The number of threads configured to run does not match the number of threads that are actually running. This could be due to either:</p>
             <ol>
-              <li>limitations of the machine this app is running on</li>
-              <li>the operating system did not have that number of threads available when the threads were initialized</li>
+              <li>Limitations of the machine this app is running on</li>
+              <li>The operating system did not have that number of threads available when the threads were initialized</li>
             </ol>
             <p>Press the <strong>Restart</strong> button to restart the system to try to initialize the number of threads configured in this app.</p> 
             <form action="/admin/background-jobs" method="post">
               <input type="hidden" name="restart" value="true">
-              <button type="type" class="btn btn-secondary">Restart</button>
+              <button type="type" class="btn btn-secondary mb-3">Restart</button>
             </form>
           <% end %>
           <p>Change the number of threads on the <a href="/admin/settings" class="text-primary">settings</a> page.</p>
