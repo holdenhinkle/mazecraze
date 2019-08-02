@@ -105,7 +105,7 @@ module MazeCraze
     end
 
     def reset_worker
-      job_queue.close
+      job_queue.close if job_queue
       update_worker_status('dead')
     end
 

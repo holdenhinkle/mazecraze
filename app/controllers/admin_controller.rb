@@ -90,13 +90,12 @@ class AdminController < ApplicationController
     elsif params['cancel_job']
       worker.cancel_job(thread_id, job_id)
       session[:success] = "Job ID \##{job_id} was cancelled and re-queued."
-    elsif params['start_worker']
+    elsif params['start']
       worker.start
-    elsif params['stop_worker']
+    elsif params['stop']
       worker.stop
-    elsif params['restart_threads']
-      worker.stop
-      worker.start
+    elsif params['restart']
+      worker.restart
     end
 
     redirect "/admin/background-jobs"

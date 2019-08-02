@@ -12,22 +12,30 @@
     <% if @background_workers_status %>
       <p class='h2'>Status: <span class="badge badge-success">Running</span></p>
       <div class="card">
-        <p class="h4 card-header">Number of Threads: <%= @number_of_threads %></p>
+        <p class="h4 card-header">Number of Threads: <%= @thread_stats.count %></p>
         <div class="card-body">
           <% @thread_stats.each_with_index do |thread_stat, index| %>
             <p class="mb-2"><strong>Thread <%= index + 1 %></strong> (ID #<%= thread_stat[:id] %>): <%= thread_stat[:status] ? 'Alive' : 'Dead' %> and <%= thread_stat[:mode].capitalize %><%= thread_stat[:mode] == 'processing' ? " Job ID \##{thread_stat[:job_id]}" : '' %>...</p>
           <% end %>
           <hr>
+          <% if @number_of_threads != @thread_stats.count %>
+            <p>The number of threads configured to run does not match the number of threads that are actually running. This could be due to either:</p>
+            <ol>
+              <li>limitations of the machine this app is running on</li>
+              <li>the operating system did not have that number of threads available when the threads were initialized</li>
+            </ol>
+            <p>Press the <strong>Restart</strong> button to restart the system to try to initialize the number of threads configured in this app.</p> 
+            <form action="/admin/background-jobs" method="post">
+              <input type="hidden" name="restart" value="true">
+              <button type="type" class="btn btn-secondary">Restart</button>
+            </form>
+          <% end %>
           <p>Change the number of threads on the <a href="/admin/settings" class="text-primary">settings</a> page.</p>
-          <form action="/admin/background-jobs" method="post">
-            <input type="hidden" name="restart_threads" value="true">
-            <button type="type" class="btn btn-secondary">Restart Threads</button>
-          </form>
         </div>
       </div>
       <p class='pt-3'>If you press 'Stop', all jobs that are running will be cancelled and put back in the queue.</p>
       <form action="/admin/background-jobs" method="post">
-        <input type="hidden" name="stop_worker" value="true">
+        <input type="hidden" name="stop" value="true">
         <button type="type" class="btn btn-primary btn-lg">Stop</button>
       </form>
     <% else %>
@@ -35,7 +43,7 @@
       <hr>
       <p>There are no jobs in the queue. The system will start when you add a job.</p>
       <form action="/admin/background-jobs" method="post">
-        <input type="hidden" name="start_worker" value="true">
+        <input type="hidden" name="start" value="true">
         <button type="type" class="btn btn-primary btn-lg">Start</button>
       </form>
     <% end %>
