@@ -29,6 +29,11 @@ module MazeCraze
       reset_worker
     end
 
+    def restart
+      stop
+      start
+    end
+
     def enqueue_jobs
       queued_jobs = MazeCraze::BackgroundJob.all.select do |job|
         job.status == 'queued'
