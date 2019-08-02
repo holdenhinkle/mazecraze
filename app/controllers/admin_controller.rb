@@ -8,9 +8,9 @@ class AdminController < ApplicationController
 
   get '/admin/settings' do
     @title = "Settings - Maze Craze Admin"
-    @min_max_threads = { min: MazeCraze::BackgroundWorker::MIN_THREADS,
-                         max: MazeCraze::BackgroundWorker::MAX_THREADS }
-    @number_of_threads = MazeCraze::BackgroundWorker.number_of_threads
+    @min_max_threads = { min: MazeCraze::BackgroundThread::MIN_THREADS,
+                         max: MazeCraze::BackgroundThread::MAX_THREADS }
+    @number_of_threads = MazeCraze::BackgroundThread.number_of_threads
     @maze_formula_constraints = MazeCraze::MazeFormula.constraints
     erb :admin_settings
   end
@@ -21,7 +21,7 @@ class AdminController < ApplicationController
       queued_jobs = MazeCraze::BackgroundJob.all_jobs_of_status_type('queued')
       running_jobs = MazeCraze::BackgroundJob.all_jobs_of_status_type('running')
 
-      MazeCraze::BackgroundWorker.update_number_of_threads(number_of_threads)
+      MazeCraze::BackgroundThread.update_number_of_threads(number_of_threads)
       MazeCraze::BackgroundWorker.stop # if MazeCraze::BackgroundWorker.alive?
       MazeCraze::BackgroundWorker.start if queued_jobs.any? || running_jobs.any?
       session[:success] = "The settings have been updated."
@@ -36,9 +36,9 @@ class AdminController < ApplicationController
       else
         add_hash_to_session_hash(formula_type.constraint_validation(params))
         @title = "Settings - Maze Craze Admin"
-        @min_max_threads = { min: MazeCraze::BackgroundWorker::MIN_THREADS,
-                             max: MazeCraze::BackgroundWorker::MAX_THREADS }
-        @number_of_threads = MazeCraze::BackgroundWorker.number_of_threads
+        @min_max_threads = { min: MazeCraze::BackgroundThread::MIN_THREADS,
+                             max: MazeCraze::BackgroundThread::MAX_THREADS }
+        @number_of_threads = MazeCraze::BackgroundThread.number_of_threads
         @maze_formula_constraints = MazeCraze::MazeFormula.constraints
         session[:error] = "Please see the #{params['formula_type'].capitalize} Maze error message(s) and try again."
         erb :admin_settings
@@ -53,7 +53,7 @@ class AdminController < ApplicationController
 
     if @background_workers_status = MazeCraze::BackgroundWorker.alive?
       worker = MazeCraze::BackgroundWorker.worker
-      @number_of_threads = MazeCraze::BackgroundWorker.number_of_threads
+      @number_of_threads = MazeCraze::BackgroundThread.number_of_threads
       @thread_stats = MazeCraze::BackgroundThread.thread_details(worker.id)
     end
 

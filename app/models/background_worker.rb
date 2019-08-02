@@ -3,9 +3,6 @@ module MazeCraze
     extend MazeCraze::Queryable
     include MazeCraze::Queryable
 
-    MIN_THREADS = 1
-    MAX_THREADS = 10
-
     @worker = nil
 
     class << self
@@ -14,16 +11,6 @@ module MazeCraze
       def alive?
         return false if worker.nil?
         !worker.dead?
-      end
-
-      def number_of_threads
-        sql = 'SELECT integer_value FROM settings WHERE name = $1;'
-        query(sql, 'number_of_threads').first['integer_value'].to_i
-      end
-
-      def update_number_of_threads(number)
-        sql = 'UPDATE settings SET integer_value = $1, updated = $2 WHERE name = $3;'
-        query(sql, number, 'NOW()', 'number_of_threads')
       end
 
       def start
@@ -44,11 +31,10 @@ module MazeCraze
     end
 
     attr_reader :job_queue
-    attr_accessor :id, :number_of_threads, :deleted_jobs_to_skip
+    attr_accessor :id, :deleted_jobs_to_skip
 
     def initialize
       self.class.worker = self
-      @number_of_threads = self.class.number_of_threads
       @deleted_jobs_to_skip = []
       @job_queue = Queue.new
       save!
@@ -104,7 +90,7 @@ module MazeCraze
       deleted_jobs_to_skip << job_id
     end
 
-    def cancel_job(thread_id, job_id) # refactor
+    def cancel_job(thread_id, job_id)
       background_thread = MazeCraze::BackgroundThread.thread_from_id(thread_id)
       MazeCraze::BackgroundThread.all.delete(background_thread).kill_thread
       job = MazeCraze::BackgroundJob.job_from_id(job_id)
@@ -141,7 +127,7 @@ module MazeCraze
     end
 
     def work
-      number_of_threads.times { new_thread }
+      BackgroundThread.number_of_threads.times { new_thread }
     end
 
     def jobs_in_job_queue?

@@ -1,11 +1,25 @@
 module MazeCraze
   class BackgroundThread
     include MazeCraze::Queryable
+    extend MazeCraze::Queryable
+
+    MIN_THREADS = 1
+    MAX_THREADS = 10
 
     @all = []
 
     class << self
       attr_accessor :all
+
+      def number_of_threads
+        sql = 'SELECT integer_value FROM settings WHERE name = $1;'
+        query(sql, 'number_of_threads').first['integer_value'].to_i
+      end
+
+      def update_number_of_threads(number)
+        sql = 'UPDATE settings SET integer_value = $1, updated = $2 WHERE name = $3;'
+        query(sql, number, 'NOW()', 'number_of_threads')
+      end
 
       def all_background_thread_threads
         all.map(&:thread)
