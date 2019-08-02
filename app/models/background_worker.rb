@@ -10,7 +10,7 @@ module MazeCraze
 
     def initialize
       @id = save!
-      start
+      start if MazeCraze::BackgroundJob.all_jobs_of_status_type('queued').any?
     end
 
     def start
