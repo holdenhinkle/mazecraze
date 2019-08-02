@@ -50,15 +50,15 @@ module MazeCraze
       end
     end
 
-    attr_reader :background_worker_id
-    attr_accessor :id, :thread, :background_job_id, :status, :mode
+    attr_reader :id, :background_worker_id
+    attr_accessor :thread, :background_job_id, :status, :mode
 
     def initialize(background_worker_id)
       self.class.all << self
       @background_worker_id = background_worker_id
       @status = 'alive'
       @mode = 'waiting'
-      save!
+      @id = save!
     end
 
     def kill_thread
@@ -68,7 +68,7 @@ module MazeCraze
 
     def save!
       sql = 'INSERT INTO background_threads (background_worker_id, status) VALUES ($1, $2) RETURNING id;'
-      self.id = query(sql, background_worker_id, status).first['id']
+      query(sql, background_worker_id, status).first['id']
     end
 
     def update_thread_status_to_dead

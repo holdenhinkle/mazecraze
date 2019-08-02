@@ -9,7 +9,7 @@ module MazeCraze
     attr_accessor :id, :deleted_jobs_to_skip_in_queue, :job_queue
 
     def initialize
-      save!
+      @id = save!
       start
     end
 
@@ -108,7 +108,7 @@ module MazeCraze
 
     def save!
       sql = "INSERT INTO background_workers DEFAULT VALUES RETURNING id;"
-      self.id = query(sql).first['id']
+      query(sql).first['id']
     end
 
     def update_worker_status(status)
