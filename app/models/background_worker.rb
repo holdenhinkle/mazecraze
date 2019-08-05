@@ -6,6 +6,7 @@ module MazeCraze
     extend MazeCraze::Queryable
     include MazeCraze::Queryable
 
+    attr_reader :mutex
     attr_accessor :id, :deleted_jobs_to_skip_in_queue, :job_queue
 
     def initialize
@@ -17,6 +18,7 @@ module MazeCraze
       update_worker_status('alive')
       self.job_queue = Queue.new
       self.deleted_jobs_to_skip_in_queue = []
+      @mutex = Mutex.new
       enqueue_jobs
       work
       self
@@ -81,8 +83,10 @@ module MazeCraze
             thread_obj.mode = 'processing'
             thread_obj.background_job_id = job.id
             job.update_job_is_running(thread_obj.id)
-            MazeCraze::BackgroundJob.queue_count -= 1
-            MazeCraze::BackgroundJob.decrement_queued_jobs_queue_order
+            mutex.synchronize do
+              MazeCraze::BackgroundJob.queue_count -= 1
+              MazeCraze::BackgroundJob.decrement_queued_jobs_queue_order
+            end
             job.run
           end
         end
@@ -100,6 +104,7 @@ module MazeCraze
       job.queue_order = job.class.queue_count += 1
       job.update_queue_order
       job.reset
+      binding.pry if job.status == 'running'
       job.undo
       enqueue_job(job)
       new_thread
