@@ -3,10 +3,9 @@ require 'singleton'
 module MazeCraze
   class BackgroundWorker
     include Singleton
-    extend MazeCraze::Queryable
+    # extend MazeCraze::Queryable
     include MazeCraze::Queryable
 
-    attr_reader :mutex
     attr_accessor :id, :deleted_jobs_to_skip_in_queue, :job_queue
 
     def initialize
@@ -18,7 +17,6 @@ module MazeCraze
       update_worker_status('alive')
       self.job_queue = Queue.new
       self.deleted_jobs_to_skip_in_queue = []
-      @mutex = Mutex.new
       enqueue_jobs
       work
       self
@@ -29,7 +27,7 @@ module MazeCraze
       MazeCraze::BackgroundJob.undo_running_jobs
       MazeCraze::BackgroundJob.update_queue_order_upon_stop
       MazeCraze::BackgroundJob.reset_running_jobs
-      reset_worker
+      reset
       self
     end
 
@@ -51,8 +49,8 @@ module MazeCraze
       query(sql, id, 'NOW()', job.id)
     end
 
-    def job_queue_open?
-      !job_queue.closed?
+    def skip_job_in_queue(job_id)
+      deleted_jobs_to_skip_in_queue << job_id
     end
 
     def dead?
@@ -72,70 +70,31 @@ module MazeCraze
         next if thread_obj.thread.nil?
 
         while job_queue_open?
-          thread_obj.mode = 'waiting'
-          thread_obj.background_job_id = nil
+          thread_wait(thread_obj)
           job = wait_for_job
 
           if job && deleted_jobs_to_skip_in_queue.include?(job.id)
             deleted_jobs_to_skip_in_queue.delete(job.id)
             next
-          # elsif job
-          #   thread_obj.mode = 'processing'
-          #   thread_obj.background_job_id = job.id
-          #   job.update_job_is_running(thread_obj.id)
-          #   mutex.synchronize do
-          #     MazeCraze::BackgroundJob.queue_count -= 1
-          #     MazeCraze::BackgroundJob.decrement_queued_jobs_queue_order
-          #   end
-          #   job.run
-          # end
-
           elsif job
-            thread_obj.mode = 'processing'
-            thread_obj.background_job_id = job.id
-
-            job.update_job_thread_id(thread_obj.id)
-            job.update_job_status('running')
-
-            job.synchronize_queue_order_updates('new_thread')
-
-            # mutex.synchronize do
-            #   job.update_queue_order(nil)
-            #   MazeCraze::BackgroundJob.queue_count -= 1
-            #   MazeCraze::BackgroundJob.decrement_queued_jobs_queue_order
-            # end
-            job.run
+            thread_process(thread_obj, job)
           end
         end
       end
     end
 
-    def skip_job_in_queue(job_id)
-      deleted_jobs_to_skip_in_queue << job_id
-    end
-
-    def cancel_job(thread_id, job_id)
-      background_thread = MazeCraze::BackgroundThread.thread_from_id(thread_id)
-      MazeCraze::BackgroundThread.all.delete(background_thread).kill_thread
-      job = MazeCraze::BackgroundJob.job_from_id(job_id)
-     
-      job.synchronize_queue_order_updates('cancel_job')
-      # job.queue_order = job.class.queue_count += 1 # mutex
-      # job.update_queue_order # mutex
-
-      job.reset
-      binding.pry if job.status == 'running'
-      job.undo
-      enqueue_job(job)
-      new_thread
-    end
-
-    def reset_worker
-      job_queue.close if job_queue
-      update_worker_status('dead')
-    end
-
     private
+
+    def thread_wait(thread_obj)
+      thread_obj.mode = 'waiting'
+      thread_obj.background_job_id = nil
+    end
+
+    def thread_process(thread_obj, job)
+      thread_obj.mode = 'processing'
+      thread_obj.background_job_id = job.id
+      job.run(thread_obj)
+    end
 
     def save!
       sql = "INSERT INTO background_workers DEFAULT VALUES RETURNING id;"
@@ -151,12 +110,21 @@ module MazeCraze
       BackgroundThread.number_of_threads.times { new_thread }
     end
 
+    def job_queue_open?
+      !job_queue.closed?
+    end
+
     def jobs_in_job_queue?
       !job_queue.empty?
     end
 
     def wait_for_job
       job_queue.pop(false)
+    end
+
+    def reset
+      job_queue.close if job_queue
+      update_worker_status('dead')
     end
   end
 end

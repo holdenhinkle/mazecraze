@@ -74,8 +74,7 @@ class AdminController < ApplicationController
       if worker_id != '' && thread_id == ''
         worker.skip_job_in_queue(job_id)
         job.delete_from_db
-        job.synchronize_queue_order_updates('delete_job')
-        # job.update_queue_order_because_of_deleted_job
+        job.update_queue_order_for('delete_job')
       end
 
       # if job is running
@@ -88,7 +87,9 @@ class AdminController < ApplicationController
       end
       session[:success] = "Job ID \##{job_id} was deleted."
     elsif params['cancel_job']
-      worker.cancel_job(thread_id, job_id)
+      job = MazeCraze::BackgroundJob.job_from_id(job_id)
+      job.cancel
+      # worker.cancel_job(thread_id, job_id)
       session[:success] = "Job ID \##{job_id} was cancelled and re-queued."
     elsif params['start']
       worker.start
@@ -212,10 +213,14 @@ class AdminController < ApplicationController
     end
   end
 
-  def new_background_job(job_type, job_params)
+  def new_background_job(job_type, job_params) # hacky?
+    # worker = MazeCraze::BackgroundWorker.instance # because we need @mutex
+
+    # MazeCraze::BackgroundJob.new({ type: job_type, params: job_params })
+
     MazeCraze::BackgroundJob.new({ type: job_type, params: job_params })
 
-    worker = MazeCraze::BackgroundWorker.instance
+    worker = MazeCraze::BackgroundWorker.instance # because we need @mutex
 
     if worker.dead?
       worker.start
