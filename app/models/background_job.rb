@@ -6,7 +6,7 @@ module MazeCraze
     JOB_TYPES = %w(generate_maze_formulas
                    generate_maze_permutations
                    generate_maze_candidates).freeze
-
+ 
     JOB_STATUSES = %w(running queued completed failed).freeze
 
     @all = []
@@ -210,13 +210,13 @@ module MazeCraze
 
     def undo
       table_name = case type
-                  when 'generate_maze_formulas'
-                    'maze_formulas'
-                  when 'generate_maze_permutations'
-                    'maze_formula_set_permutations'
-                  when 'generate_maze_candidates'
-                    'maze_candidates'
-                  end
+                   when 'generate_maze_formulas'
+                     'maze_formulas'
+                   when 'generate_maze_permutations'
+                     'maze_formula_set_permutations'
+                   when 'generate_maze_candidates'
+                     'maze_candidates'
+                   end
 
       sql = "DELETE FROM #{table_name} WHERE background_job_id = $1;"
       query(sql, id)
@@ -253,29 +253,5 @@ module MazeCraze
       update_job_status('completed')
       # remove job from jobs array - doesn't need to exist in memory anymore because it will never be used again
     end
-
-    def generate_maze_permutations
-    end
-
-    def generate_maze_candidates
-    end
-  end
-
-  class GenerateMazeFormulas < BackgroundJob
-    def run; end
-
-    def undo; end
-  end
-
-  class GenerateMazePermutations < BackgroundJob
-    def run; end
-
-    def undo; end
-  end
-
-  class GenerateMazeCandidates < BackgroundJob
-    def run; end
-
-    def undo; end
   end
 end

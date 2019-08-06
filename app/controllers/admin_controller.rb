@@ -193,7 +193,7 @@ class AdminController < ApplicationController
     end
   end
 
-  def new_background_job(job_type, job_params) # hacky?
+  def new_background_job(job_type, job_params)
     MazeCraze::BackgroundJob.new({ type: job_type, params: job_params })
 
     worker = MazeCraze::BackgroundWorker.instance
