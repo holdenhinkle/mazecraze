@@ -9,481 +9,511 @@ module MazeCraze
                                  'portal' => 'PortalMazeFormula' }
 
     # set and manage maze formula class constraints
-    def self.set_maze_formula_constraints
-      class << self
-        attr_accessor :x_min, :x_max, :y_min, :y_max,
-                      :endpoint_min, :endpoint_max,
-                      :barrier_min, :barrier_max,
-                      :other_squares_to_normal_squares_ratio
-      end
-
-      case self.to_s
-      when 'bridge'
+    class << self
+      def set_maze_formula_constraints
         class << self
-          attr_accessor :bridge_min, :bridge_max
+          attr_accessor :x_min, :x_max, :y_min, :y_max,
+                        :endpoint_min, :endpoint_max,
+                        :barrier_min, :barrier_max,
+                        :other_squares_to_normal_squares_ratio
         end
-      when 'tunnel'
-        class << self
-          attr_accessor :tunnel_min, :tunnel_max
+
+        case self.to_s
+        when 'bridge'
+          class << self
+            attr_accessor :bridge_min, :bridge_max
+          end
+        when 'tunnel'
+          class << self
+            attr_accessor :tunnel_min, :tunnel_max
+          end
+        when 'portal'
+          class << self
+            attr_accessor :portal_min, :portal_max
+          end
         end
-      when 'portal'
-        class << self
-          attr_accessor :portal_min, :portal_max
+
+        @x_min = nil
+        @x_max = nil
+        @y_min = nil
+        @y_max = nil
+        @endpoint_min = nil
+        @endpoint_max = nil
+        @barrier_min = nil
+        @barrier_max = nil
+        @barrier_min = nil
+        @other_squares_to_normal_squares_ratio = nil
+        @bridge_min = nil if self.to_s == 'bridge'
+        @bridge_max = nil if self.to_s == 'bridge'
+        @tunnel_min = nil if self.to_s == 'tunnel'
+        @tunnel_max = nil if self.to_s == 'tunnel'
+        @portal_min = nil if self.to_s == 'portal'
+        @portal_max = nil if self.to_s == 'portal'
+
+        query_arguments = [
+          "#{self.to_s}_formula_x_min", "#{self.to_s}_formula_x_max",
+          "#{self.to_s}_formula_y_min", "#{self.to_s}_formula_y_max",
+          "#{self.to_s}_formula_endpoint_min", "#{self.to_s}_formula_endpoint_max",
+          "#{self.to_s}_formula_barrier_min", "#{self.to_s}_formula_barrier_max",
+          "#{self.to_s}_formula_other_squares_to_normal_squares_ratio"
+        ]
+
+        case self.to_s
+        when 'bridge'
+          query_arguments.concat(["#{self.to_s}_formula_bridge_min", "#{self.to_s}_formula_bridge_max"])
+        when 'tunnel'
+          query_arguments.concat(["#{self.to_s}_formula_tunnel_min", "#{self.to_s}_formula_tunnel_max"])
+        when 'portal'
+          query_arguments.concat(["#{self.to_s}_formula_portal_min", "#{self.to_s}_formula_portal_max"])
         end
-      end
 
-      @x_min = nil
-      @x_max = nil
-      @y_min = nil
-      @y_max = nil
-      @endpoint_min = nil
-      @endpoint_max = nil
-      @barrier_min = nil
-      @barrier_max = nil
-      @barrier_min = nil
-      @other_squares_to_normal_squares_ratio = nil
-      @bridge_min = nil if self.to_s == 'bridge'
-      @bridge_max = nil if self.to_s == 'bridge'
-      @tunnel_min = nil if self.to_s == 'tunnel'
-      @tunnel_max = nil if self.to_s == 'tunnel'
-      @portal_min = nil if self.to_s == 'portal'
-      @portal_max = nil if self.to_s == 'portal'
-
-      query_arguments = [
-        "#{self.to_s}_formula_x_min", "#{self.to_s}_formula_x_max",
-        "#{self.to_s}_formula_y_min", "#{self.to_s}_formula_y_max",
-        "#{self.to_s}_formula_endpoint_min", "#{self.to_s}_formula_endpoint_max",
-        "#{self.to_s}_formula_barrier_min", "#{self.to_s}_formula_barrier_max",
-        "#{self.to_s}_formula_other_squares_to_normal_squares_ratio"
-      ]
-
-      case self.to_s
-      when 'bridge'
-        query_arguments.concat(["#{self.to_s}_formula_bridge_min", "#{self.to_s}_formula_bridge_max"])
-      when 'tunnel'
-        query_arguments.concat(["#{self.to_s}_formula_tunnel_min", "#{self.to_s}_formula_tunnel_max"])
-      when 'portal'
-        query_arguments.concat(["#{self.to_s}_formula_portal_min", "#{self.to_s}_formula_portal_max"])
-      end
-
-      sql = 'SELECT * FROM settings WHERE'
-      query_arguments.length.times do |number|
-        number += 1
-        sql << " name = $#{number}"
-        sql << ' OR' unless query_arguments.length == number
-      end
-      sql << ';'
-            
-      settings = query(sql, *query_arguments)
-  
-      settings.each do |setting|
-        case setting['name']
-        when "#{self.to_s}_formula_x_min"
-          self.x_min = setting['integer_value'].to_i
-        when "#{self.to_s}_formula_x_max"
-          self.x_max = setting['integer_value'].to_i
-        when "#{self.to_s}_formula_y_min"
-          self.y_min = setting['integer_value'].to_i
-        when "#{self.to_s}_formula_y_max"
-          self.y_max = setting['integer_value'].to_i
-        when "#{self.to_s}_formula_endpoint_min"
-          self.endpoint_min = setting['integer_value'].to_i
-        when "#{self.to_s}_formula_endpoint_max"
-          self.endpoint_max = setting['integer_value'].to_i
-        when "#{self.to_s}_formula_barrier_min"
-          self.barrier_min = setting['integer_value'].to_i
-        when "#{self.to_s}_formula_barrier_max"
-          self.barrier_max = setting['integer_value'].to_i
-        when "#{self.to_s}_formula_other_squares_to_normal_squares_ratio"
-          self.other_squares_to_normal_squares_ratio = setting['integer_value'].to_f
-        when "#{self.to_s}_formula_bridge_min"
-          self.bridge_min = setting['integer_value'].to_i
-        when "#{self.to_s}_formula_bridge_max"
-          self.bridge_max = setting['integer_value'].to_i
-        when "#{self.to_s}_formula_tunnel_min"
-          self.tunnel_min = setting['integer_value'].to_i
-        when "#{self.to_s}_formula_tunnel_max"
-          self.tunnel_max = setting['integer_value'].to_i
-        when "#{self.to_s}_formula_portal_min"
-          self.portal_min = setting['integer_value'].to_i
-        when "#{self.to_s}_formula_portal_max"
-          self.portal_max = setting['integer_value'].to_i
+        sql = 'SELECT * FROM settings WHERE'
+        query_arguments.length.times do |number|
+          number += 1
+          sql << " name = $#{number}"
+          sql << ' OR' unless query_arguments.length == number
         end
-      end
-    end
-
-    def self.constraints
-      settings = { simple: {}, bridge: {}, tunnel: {}, portal: {} }
-      
-      sql = 'SELECT name, integer_value FROM settings WHERE name LIKE $1 AND integer_value IS NOT NULL;'
-      query(sql, "%formula%").each do |setting|
-        if setting['name'].include?('simple')
-          settings[:simple][setting['name'].gsub('simple_formula_', '').to_sym] = setting['integer_value'].to_i
-        elsif setting['name'].include?('bridge')
-          settings[:bridge][setting['name'].gsub('bridge_formula_', '').to_sym] = setting['integer_value'].to_i
-        elsif setting['name'].include?('tunnel')
-          settings[:tunnel][setting['name'].gsub('tunnel_formula_', '').to_sym] = setting['integer_value'].to_i
-        elsif setting['name'].include?('portal')
-          settings[:portal][setting['name'].gsub('portal_formula_', '').to_sym] = setting['integer_value'].to_i
-        end
-      end
-
-      sql = 'SELECT name, decimal_value FROM settings WHERE name LIKE $1 AND decimal_value IS NOT NULL;'
-      query(sql, "%formula%").each do |setting|
-        if setting['name'].include?('simple')
-          settings[:simple][setting['name'].gsub('simple_formula_', '').to_sym] = setting['decimal_value'].to_f
-        elsif setting['name'].include?('bridge')
-          settings[:bridge][setting['name'].gsub('bridge_formula_', '').to_sym] = setting['decimal_value'].to_f
-        elsif setting['name'].include?('tunnel')
-          settings[:tunnel][setting['name'].gsub('tunnel_formula_', '').to_sym] = setting['decimal_value'].to_f
-        elsif setting['name'].include?('portal')
-          settings[:portal][setting['name'].gsub('portal_formula_', '').to_sym] = setting['decimal_value'].to_f
-        end
-      end
-
-      settings
-    end
-
-    def self.valid_constraints?(constraints)
-      correct_constraint_types(constraints)
-
-      if self.to_s == 'simple'
-        general_constraints_valid?(constraints)
-      else
-        general_constraints_valid?(constraints) && formula_type_constraints_valid?(constraints)
-      end
-    end
-
-    def self.correct_constraint_types(constraints)
-      constraints.each do |name, value|
-        next if name == 'formula_type'
-
-        if name == 'ratio'
-          constraints[name] = value.to_f
-        else
-          constraints[name] = value.to_i
-        end
-      end
-    end
-
-    def self.general_constraints_valid?(constraints)
-      [min_constraint_valid?(constraints['x_min'], constraints['x_max'], 'x'),
-       max_constraint_valid?(constraints['x_min'], constraints['x_max'], 'x'),
-       min_constraint_valid?(constraints['y_min'], constraints['y_max'], 'y'),
-       max_constraint_valid?(constraints['y_min'], constraints['y_max'], 'y'),
-       min_constraint_valid?(constraints['endpoint_min'], constraints['endpoint_max'], 'endpoint'),
-       max_constraint_valid?(constraints['endpoint_min'], constraints['endpoint_max'], 'endpoint'),
-       min_constraint_valid?(constraints['barrier_min'], constraints['barrier_max'], 'barrier'),
-       max_constraint_valid?(constraints['barrier_min'], constraints['barrier_max'], 'barrier'),
-       ratio_valid?(constraints['ratio'])].all?
-    end
-
-    def self.formula_type_constraints_valid?(constraints)
-      case self.to_s
-      when 'bridge'
-        [min_constraint_valid?(constraints['bridge_min'], constraints['bridge_max'], 'bridge'),
-         max_constraint_valid?(constraints['bridge_min'], constraints['bridge_max'], 'bridge')].all?
-      when 'tunnel'
-        [min_constraint_valid?(constraints['tunnel_min'], constraints['tunnel_max'], 'tunnel'),
-         max_constraint_valid?(constraints['tunnel_min'], constraints['tunnel_max'], 'tunnel')].all?
-      when 'portal'
-        [min_constraint_valid?(constraints['portal_min'], constraints['portal_max'], 'tunnel'),
-         max_constraint_valid?(constraints['portal_min'], constraints['portal_max'], 'tunnel')].all?
-      end
-    end
-
-    def self.min_constraint_valid?(min, max, type)
-      return min > -1 && min <= max if type == 'barrier'
-      min > 0 && min <= max
-    end
-
-    def self.max_constraint_valid?(min, max, type)
-      return max > 0 && max >= min if type == 'barrier'
-      max > 1 && max >= min
-    end
-
-    def self.min_constraint_invalid?(min, max, type)
-      !min_constraint_valid?(min, max, type)
-    end
-
-    def self.max_constraint_invalid?(min, max, type)
-      !max_constraint_valid?(min, max, type)
-    end
-
-    def self.ratio_valid?(ratio)
-      ratio > 0 && ratio < 1
-    end
-
-    def self.ratio_invalid?(ratio)
-      !ratio_valid?(ratio)
-    end
-
-    def self.constraint_validation(constraints)
-      validation = {}
-
-      validation_lists = [method(:general_constraints_validation), 
-                          method(:formula_type_constraints_validation)]
-  
-      validation_lists.each do |list|
-        list.call(constraints) do |type, min_or_max, min, max, ratio|
-
-          if type == 'ratio' && ratio_invalid?(ratio)
-            ratio_constraint_validation(constraints, validation, ratio)
-          elsif type != 'ratio' && public_send(min_or_max == 'min' ? 'min_constraint_invalid?' : 'max_constraint_invalid?', min, max, type)
-            not_ratio_constraint_validation(constraints, validation, type, min_or_max, min, max)
+        sql << ';'
+              
+        settings = query(sql, *query_arguments)
+    
+        settings.each do |setting|
+          case setting['name']
+          when "#{self.to_s}_formula_x_min"
+            self.x_min = setting['integer_value'].to_i
+          when "#{self.to_s}_formula_x_max"
+            self.x_max = setting['integer_value'].to_i
+          when "#{self.to_s}_formula_y_min"
+            self.y_min = setting['integer_value'].to_i
+          when "#{self.to_s}_formula_y_max"
+            self.y_max = setting['integer_value'].to_i
+          when "#{self.to_s}_formula_endpoint_min"
+            self.endpoint_min = setting['integer_value'].to_i
+          when "#{self.to_s}_formula_endpoint_max"
+            self.endpoint_max = setting['integer_value'].to_i
+          when "#{self.to_s}_formula_barrier_min"
+            self.barrier_min = setting['integer_value'].to_i
+          when "#{self.to_s}_formula_barrier_max"
+            self.barrier_max = setting['integer_value'].to_i
+          when "#{self.to_s}_formula_other_squares_to_normal_squares_ratio"
+            self.other_squares_to_normal_squares_ratio = setting['integer_value'].to_f
+          when "#{self.to_s}_formula_bridge_min"
+            self.bridge_min = setting['integer_value'].to_i
+          when "#{self.to_s}_formula_bridge_max"
+            self.bridge_max = setting['integer_value'].to_i
+          when "#{self.to_s}_formula_tunnel_min"
+            self.tunnel_min = setting['integer_value'].to_i
+          when "#{self.to_s}_formula_tunnel_max"
+            self.tunnel_max = setting['integer_value'].to_i
+          when "#{self.to_s}_formula_portal_min"
+            self.portal_min = setting['integer_value'].to_i
+          when "#{self.to_s}_formula_portal_max"
+            self.portal_max = setting['integer_value'].to_i
           end
         end
       end
 
-      validation
-    end
+      def constraints
+        settings = { simple: {}, bridge: {}, tunnel: {}, portal: {} }
+        
+        sql = 'SELECT name, integer_value FROM settings WHERE name LIKE $1 AND integer_value IS NOT NULL;'
+        query(sql, "%formula%").each do |setting|
+          if setting['name'].include?('simple')
+            settings[:simple][setting['name'].gsub('simple_formula_', '').to_sym] = setting['integer_value'].to_i
+          elsif setting['name'].include?('bridge')
+            settings[:bridge][setting['name'].gsub('bridge_formula_', '').to_sym] = setting['integer_value'].to_i
+          elsif setting['name'].include?('tunnel')
+            settings[:tunnel][setting['name'].gsub('tunnel_formula_', '').to_sym] = setting['integer_value'].to_i
+          elsif setting['name'].include?('portal')
+            settings[:portal][setting['name'].gsub('portal_formula_', '').to_sym] = setting['integer_value'].to_i
+          end
+        end
 
-    def self.general_constraints_validation(constraints)
-      list = [['x', 'min', constraints['x_min'], constraints['x_max']],
-              ['x', 'max', constraints['x_min'], constraints['x_max']],
-              ['y', 'min', constraints['y_min'], constraints['y_max']],
-              ['y', 'max', constraints['y_min'], constraints['y_max']],
-              ['endpoint', 'min', constraints['endpoint_min'], constraints['endpoint_max']],
-              ['endpoint', 'max', constraints['endpoint_min'], constraints['endpoint_max']],
-              ['barrier', 'min', constraints['barrier_min'], constraints['barrier_max']],
-              ['barrier', 'max', constraints['barrier_min'], constraints['barrier_max']],
-              ['ratio', nil, nil, nil, constraints['ratio']]]
+        sql = 'SELECT name, decimal_value FROM settings WHERE name LIKE $1 AND decimal_value IS NOT NULL;'
+        query(sql, "%formula%").each do |setting|
+          if setting['name'].include?('simple')
+            settings[:simple][setting['name'].gsub('simple_formula_', '').to_sym] = setting['decimal_value'].to_f
+          elsif setting['name'].include?('bridge')
+            settings[:bridge][setting['name'].gsub('bridge_formula_', '').to_sym] = setting['decimal_value'].to_f
+          elsif setting['name'].include?('tunnel')
+            settings[:tunnel][setting['name'].gsub('tunnel_formula_', '').to_sym] = setting['decimal_value'].to_f
+          elsif setting['name'].include?('portal')
+            settings[:portal][setting['name'].gsub('portal_formula_', '').to_sym] = setting['decimal_value'].to_f
+          end
+        end
 
-      list.each { |constraint_info| yield(*constraint_info) }
-    end
-
-    def self.formula_type_constraints_validation(constraints)
-      list = case self.to_s
-             when 'bridge'
-               [['bridge', 'min', constraints['bridge_min'], constraints['bridge_max']],
-                ['bridge', 'max', constraints['bridge_min'], constraints['bridge_max']]]
-             when 'tunnel'
-               [['tunnel', 'min', constraints['tunnel_min'], constraints['tunnel_max']],
-                ['tunnel', 'max', constraints['tunnel_min'], constraints['tunnel_max']]]
-             when 'portal'
-               [['portal', 'min', constraints['portal_min'], constraints['portal_max']],
-                ['portal', 'max', constraints['portal_min'], constraints['portal_max']]]
-             else
-               []
-             end
-      
-      list.each { |constraint_info| yield(*constraint_info) }
-    end
-
-    def self.ratio_constraint_validation(constraints, validation, ratio)
-      validation["#{constraints['formula_type']}_ratio_validation_css"] = 'is-invalid'
-      validation["#{constraints['formula_type']}_ratio_feedback_css"] = 'invalid-feedback'
-      validation["#{constraints['formula_type']}_ratio_feedback"] =
-        'The value must be between 0.01 and 0.99.'
-    end
-
-    def self.not_ratio_constraint_validation(constraints, validation, type, min_or_max, min, max)
-      validation["#{constraints['formula_type']}_#{type}_#{min_or_max}_validation_css"] = 'is-invalid'
-      validation["#{constraints['formula_type']}_#{type}_#{min_or_max}_feedback_css"] = 'invalid-feedback'
-      feedback = "#{constraints['formula_type']}_#{type}_#{min_or_max}_feedback"
-      constraint_to_validate = min_or_max == 'min' ? min : max
-      
-      if type == 'barrier' && constraint_to_validate < 0
-        validation[feedback] = "Value must be greater than or equal to 0."
-      elsif type != 'barrier' && constraint_to_validate < 1
-        validation[feedback] = "Value must be greater than or equal to 1."
-      elsif min_or_max == 'min'
-        validation[feedback] = "Value must be less than or equal to #{type} max value."
-      elsif min_or_max == 'max'
-        validation[feedback] = "Value must be greater than or equal to #{type} min value."
+        settings
       end
-    end
 
-    def self.update_constraints(constraints)
-      formula_class = maze_formula_type_to_class(constraints['formula_type'])
-      name_partial = "#{constraints['formula_type']}_formula"
+      def valid_constraints?(constraints)
+        correct_constraint_types(constraints)
 
-      constraints.each do |constraint, value|
-        next if constraint == 'formula_type'
-
-        formula_class.update_constraint_in_class(constraint, value)
-        update_constraint_in_db(name_partial, constraint, value)
+        if self.to_s == 'simple'
+          general_constraints_valid?(constraints)
+        else
+          general_constraints_valid?(constraints) && formula_type_constraints_valid?(constraints)
+        end
       end
-    end
 
-    def self.update_constraint_in_class(constraint, value)
-      case constraint
-      when "x_min"
-        self.x_min = value
-      when "x_max"
-        self.x_max = value
-      when "y_min"
-        self.y_min = value
-      when "y_max"
-        self.y_max = value
-      when "endpoint_min"
-        self.endpoint_min = value
-      when "endpoint_max"
-        self.endpoint_max = value
-      when "barrier_min"
-        self.barrier_min = value
-      when "barrier_max"
-        self.barrier_max = value
-      when "other_squares_to_normal_squares_ratio"
-        self.other_squares_to_normal_squares_ratio = value
-      when "bridge_min"
-        self.bridge_min = value
-      when "bridge_max"
-        self.bridge_max = value
-      when "tunnel_min"
-        self.tunnel_min = value
-      when "tunnel_max"
-        self.tunnel_max = value
-      when "portal_min"
-        self.portal_min = value
-      when "portal_max"
-        self.portal_max = value
+      def correct_constraint_types(constraints)
+        constraints.each do |name, value|
+          next if name == 'formula_type'
+
+          if name == 'ratio'
+            constraints[name] = value.to_f
+          else
+            constraints[name] = value.to_i
+          end
+        end
       end
-    end
 
-    def self.update_constraint_in_db(name_partial, constraint, value)
-      if constraint == 'ratio'
-        sql = 'UPDATE settings SET decimal_value = $1 WHERE name = $2;'
-        query(sql, value, "#{name_partial}_other_squares_to_normal_squares_ratio")
-      else
-        sql = 'UPDATE settings SET integer_value = $1 WHERE name = $2;'
-        query(sql, value, "#{name_partial}_#{constraint}")
+      def general_constraints_valid?(constraints)
+        [min_constraint_valid?(constraints['x_min'], constraints['x_max'], 'x'),
+        max_constraint_valid?(constraints['x_min'], constraints['x_max'], 'x'),
+        min_constraint_valid?(constraints['y_min'], constraints['y_max'], 'y'),
+        max_constraint_valid?(constraints['y_min'], constraints['y_max'], 'y'),
+        min_constraint_valid?(constraints['endpoint_min'], constraints['endpoint_max'], 'endpoint'),
+        max_constraint_valid?(constraints['endpoint_min'], constraints['endpoint_max'], 'endpoint'),
+        min_constraint_valid?(constraints['barrier_min'], constraints['barrier_max'], 'barrier'),
+        max_constraint_valid?(constraints['barrier_min'], constraints['barrier_max'], 'barrier'),
+        ratio_valid?(constraints['ratio'])].all?
       end
-    end
 
-    # get class(es)
-    def self.maze_formula_classes
-      MAZE_FORMULA_CLASS_NAMES.keys.each_with_object([]) do |maze_type, maze_formula_classes|
-        maze_formula_classes << maze_formula_type_to_class(maze_type)
+      def formula_type_constraints_valid?(constraints)
+        case self.to_s
+        when 'bridge'
+          [min_constraint_valid?(constraints['bridge_min'], constraints['bridge_max'], 'bridge'),
+          max_constraint_valid?(constraints['bridge_min'], constraints['bridge_max'], 'bridge')].all?
+        when 'tunnel'
+          [min_constraint_valid?(constraints['tunnel_min'], constraints['tunnel_max'], 'tunnel'),
+          max_constraint_valid?(constraints['tunnel_min'], constraints['tunnel_max'], 'tunnel')].all?
+        when 'portal'
+          [min_constraint_valid?(constraints['portal_min'], constraints['portal_max'], 'tunnel'),
+          max_constraint_valid?(constraints['portal_min'], constraints['portal_max'], 'tunnel')].all?
+        end
       end
-    end
 
-    def self.maze_formula_type_to_class(type)
-      class_name = 'MazeCraze::' + MAZE_FORMULA_CLASS_NAMES[type]
-      Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
-    end
+      def min_constraint_valid?(min, max, type)
+        return min > -1 && min <= max if type == 'barrier'
+        min > 0 && min <= max
+      end
 
-    # auto-generate maze formulas
-    def self.generate_formulas(background_job_id, classes = maze_formula_classes)
-      new_formula_count = 0
-      existed_formula_count = 0
+      def max_constraint_valid?(min, max, type)
+        return max > 0 && max >= min if type == 'barrier'
+        max > 1 && max >= min
+      end
 
-      classes.each do |maze_class|
-        formulas = maze_class.formula_dimensions.each_with_object([]) do |dimensions, formulas|
-          maze_class.endpoint_min.upto(maze_class.endpoint_max) do |num_endpoints|
-            maze_class.barrier_min.upto(maze_class.barrier_max) do |num_barriers|
-              next if num_endpoints == 1 && num_barriers == 0
-              maze_class.generate_formulas(dimensions, num_endpoints, num_barriers) do |formula|
-                formula['background_job_id'] = background_job_id
-                formulas << formula
-              end
+      def min_constraint_invalid?(min, max, type)
+        !min_constraint_valid?(min, max, type)
+      end
+
+      def max_constraint_invalid?(min, max, type)
+        !max_constraint_valid?(min, max, type)
+      end
+
+      def ratio_valid?(ratio)
+        ratio > 0 && ratio < 1
+      end
+
+      def ratio_invalid?(ratio)
+        !ratio_valid?(ratio)
+      end
+
+      def constraint_validation(constraints)
+        validation = {}
+
+        validation_lists = [method(:general_constraints_validation), 
+                            method(:formula_type_constraints_validation)]
+    
+        validation_lists.each do |list|
+          list.call(constraints) do |type, min_or_max, min, max, ratio|
+
+            if type == 'ratio' && ratio_invalid?(ratio)
+              ratio_constraint_validation(constraints, validation, ratio)
+            elsif type != 'ratio' && public_send(min_or_max == 'min' ? 'min_constraint_invalid?' : 'max_constraint_invalid?', min, max, type)
+              not_ratio_constraint_validation(constraints, validation, type, min_or_max, min, max)
             end
           end
         end
 
-        generated_formula_stats = save_formulas(formulas)
-        new_formula_count += generated_formula_stats[:new]
-        existed_formula_count += generated_formula_stats[:existed]
+        validation
       end
 
-      { new: new_formula_count, existed: existed_formula_count }
-    end
+      def general_constraints_validation(constraints)
+        list = [['x', 'min', constraints['x_min'], constraints['x_max']],
+                ['x', 'max', constraints['x_min'], constraints['x_max']],
+                ['y', 'min', constraints['y_min'], constraints['y_max']],
+                ['y', 'max', constraints['y_min'], constraints['y_max']],
+                ['endpoint', 'min', constraints['endpoint_min'], constraints['endpoint_max']],
+                ['endpoint', 'max', constraints['endpoint_min'], constraints['endpoint_max']],
+                ['barrier', 'min', constraints['barrier_min'], constraints['barrier_max']],
+                ['barrier', 'max', constraints['barrier_min'], constraints['barrier_max']],
+                ['ratio', nil, nil, nil, constraints['ratio']]]
 
-    def self.formula_dimensions
-      (self.x_min..self.x_max).each_with_object([]) do |dimension, dimensions|
-        dimensions << { x: dimension, y: dimension -1 }
-        dimensions << { x: dimension, y: dimension }
+        list.each { |constraint_info| yield(*constraint_info) }
       end
-    end
 
-    def self.save_formulas(formulas)
-      new_formula_count = 0
-      existed_formula_count = 0
+      def formula_type_constraints_validation(constraints)
+        list = case self.to_s
+              when 'bridge'
+                [['bridge', 'min', constraints['bridge_min'], constraints['bridge_max']],
+                  ['bridge', 'max', constraints['bridge_min'], constraints['bridge_max']]]
+              when 'tunnel'
+                [['tunnel', 'min', constraints['tunnel_min'], constraints['tunnel_max']],
+                  ['tunnel', 'max', constraints['tunnel_min'], constraints['tunnel_max']]]
+              when 'portal'
+                [['portal', 'min', constraints['portal_min'], constraints['portal_max']],
+                  ['portal', 'max', constraints['portal_min'], constraints['portal_max']]]
+              else
+                []
+              end
+        
+        list.each { |constraint_info| yield(*constraint_info) }
+      end
 
-      formulas.each do |formula|
-        new_formula =  maze_formula_type_to_class(formula['maze_type']).new(formula)
-        if new_formula.exists?
-          existed_formula_count += 1
+      def ratio_constraint_validation(constraints, validation, ratio)
+        validation["#{constraints['formula_type']}_ratio_validation_css"] = 'is-invalid'
+        validation["#{constraints['formula_type']}_ratio_feedback_css"] = 'invalid-feedback'
+        validation["#{constraints['formula_type']}_ratio_feedback"] =
+          'The value must be between 0.01 and 0.99.'
+      end
+
+      def not_ratio_constraint_validation(constraints, validation, type, min_or_max, min, max)
+        validation["#{constraints['formula_type']}_#{type}_#{min_or_max}_validation_css"] = 'is-invalid'
+        validation["#{constraints['formula_type']}_#{type}_#{min_or_max}_feedback_css"] = 'invalid-feedback'
+        feedback = "#{constraints['formula_type']}_#{type}_#{min_or_max}_feedback"
+        constraint_to_validate = min_or_max == 'min' ? min : max
+        
+        if type == 'barrier' && constraint_to_validate < 0
+          validation[feedback] = "Value must be greater than or equal to 0."
+        elsif type != 'barrier' && constraint_to_validate < 1
+          validation[feedback] = "Value must be greater than or equal to 1."
+        elsif min_or_max == 'min'
+          validation[feedback] = "Value must be less than or equal to #{type} max value."
+        elsif min_or_max == 'max'
+          validation[feedback] = "Value must be greater than or equal to #{type} min value."
+        end
+      end
+
+      def update_constraints(constraints)
+        formula_class = maze_formula_type_to_class(constraints['formula_type'])
+        name_partial = "#{constraints['formula_type']}_formula"
+
+        constraints.each do |constraint, value|
+          next if constraint == 'formula_type'
+
+          formula_class.update_constraint_in_class(constraint, value)
+          update_constraint_in_db(name_partial, constraint, value)
+        end
+      end
+
+      def update_constraint_in_class(constraint, value)
+        case constraint
+        when "x_min"
+          self.x_min = value
+        when "x_max"
+          self.x_max = value
+        when "y_min"
+          self.y_min = value
+        when "y_max"
+          self.y_max = value
+        when "endpoint_min"
+          self.endpoint_min = value
+        when "endpoint_max"
+          self.endpoint_max = value
+        when "barrier_min"
+          self.barrier_min = value
+        when "barrier_max"
+          self.barrier_max = value
+        when "other_squares_to_normal_squares_ratio"
+          self.other_squares_to_normal_squares_ratio = value
+        when "bridge_min"
+          self.bridge_min = value
+        when "bridge_max"
+          self.bridge_max = value
+        when "tunnel_min"
+          self.tunnel_min = value
+        when "tunnel_max"
+          self.tunnel_max = value
+        when "portal_min"
+          self.portal_min = value
+        when "portal_max"
+          self.portal_max = value
+        end
+      end
+
+      def update_constraint_in_db(name_partial, constraint, value)
+        if constraint == 'ratio'
+          sql = 'UPDATE settings SET decimal_value = $1 WHERE name = $2;'
+          query(sql, value, "#{name_partial}_other_squares_to_normal_squares_ratio")
         else
-          new_formula.save!
-          new_formula_count += 1
+          sql = 'UPDATE settings SET integer_value = $1 WHERE name = $2;'
+          query(sql, value, "#{name_partial}_#{constraint}")
         end
       end
 
-      { new: new_formula_count, existed: existed_formula_count }
-    end
-
-    # generate new maze formula page popups
-    def self.form_popovers
-      popovers = build_popovers # rename build_popovers
-
-      popovers.keys.each do |element|
-        next if element == :maze_types
-        popovers[element][:body] << "<p><strong>Valid Ranges:</strong></p>"
-
-        maze_formula_classes.each do |formula_class|
-          range = case element
-                  when :x
-                    formula_class.x_range
-                  when :y
-                    formula_class.y_range
-                  when :endpoint
-                    formula_class.endpoint_range
-                  when :barrier
-                    formula_class.barrier_range
-                  when :bridge
-                    formula_class.bridge_range
-                  when :tunnel
-                    formula_class.tunnel_range
-                  when :portal
-                    formula_class.portal_range
-                  end
-          
-          popovers[element][:body] << "<p><strong>#{formula_class.to_s.capitalize}</strong> Maze: "
-          popovers[element][:body] << if range == [0, 0]
-                                        "not allowed"
-                                      else
-                                        "between #{range.first} and #{range.last}"
-                                      end
-          popovers[element][:body] << "</p>"
+      # get class(es)
+      def maze_formula_classes
+        MAZE_FORMULA_CLASS_NAMES.keys.each_with_object([]) do |maze_type, maze_formula_classes|
+          maze_formula_classes << maze_formula_type_to_class(maze_type)
         end
       end
 
-      popovers
-    end
+      def maze_formula_type_to_class(type)
+        class_name = 'MazeCraze::' + MAZE_FORMULA_CLASS_NAMES[type]
+        Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
+      end
 
-    def self.build_popovers # rename build_popovers
-      MazeCraze::Maze.types_popover.merge(MazeCraze::MazeSquare.types_popover).merge(maze_dimensions_popover)
-    end
+      # auto-generate maze formulas
+      def generate_formulas(background_job_id, classes = maze_formula_classes)
+        new_formula_count = 0
+        existed_formula_count = 0
 
-    def self.maze_dimensions_popover
-      { x: { title: 'Valid Widths', body: "<p>Here's a description of the width field.</p>" },
-        y: { title: 'Valid Heights', body: "<p>Here's a description of the height field.</p>" } }
-    end
+        classes.each do |maze_class|
+          formulas = maze_class.formula_dimensions.each_with_object([]) do |dimensions, formulas|
+            maze_class.endpoint_min.upto(maze_class.endpoint_max) do |num_endpoints|
+              maze_class.barrier_min.upto(maze_class.barrier_max) do |num_barriers|
+                next if num_endpoints == 1 && num_barriers == 0
+                maze_class.generate_formulas(dimensions, num_endpoints, num_barriers) do |formula|
+                  formula['background_job_id'] = background_job_id
+                  formulas << formula
+                end
+              end
+            end
+          end
 
-    # misc class methods
-    def self.retrieve_formula_values(id)
-      sql = "SELECT * FROM maze_formulas WHERE id = $1;"
-      query(sql, id)[0]
-    end
+          generated_formula_stats = save_formulas(formulas)
+          new_formula_count += generated_formula_stats[:new]
+          existed_formula_count += generated_formula_stats[:existed]
+        end
 
-    def self.status_list
-      %w(pending approved rejected)
-    end
+        { new: new_formula_count, existed: existed_formula_count }
+      end
 
-    def self.count_by_type_and_status(maze_type, status)
-      sql = "SELECT count(maze_type) FROM maze_formulas WHERE maze_type = $1 AND status = $2;"
-      query(sql, maze_type, status)
-    end
+      def formula_dimensions
+        (self.x_min..self.x_max).each_with_object([]) do |dimension, dimensions|
+          dimensions << { x: dimension, y: dimension -1 }
+          dimensions << { x: dimension, y: dimension }
+        end
+      end
 
-    def self.status_list_by_maze_type(maze_type)
-      sql = "SELECT id, x, y, endpoints, barriers, bridges, tunnels, portals, experiment, status FROM maze_formulas WHERE maze_type = $1 ORDER BY x, y, endpoints, barriers;"
-      query(sql, maze_type)
-    end
+      def save_formulas(formulas)
+        new_formula_count = 0
+        existed_formula_count = 0
 
-    def self.update_status(id, status)
-      sql = "UPDATE maze_formulas SET status = $1 WHERE id = $2;"
-      query(sql, status, id)
+        formulas.each do |formula|
+          new_formula =  maze_formula_type_to_class(formula['maze_type']).new(formula)
+          if new_formula.exists?
+            existed_formula_count += 1
+          else
+            new_formula.save!
+            new_formula_count += 1
+          end
+        end
+
+        { new: new_formula_count, existed: existed_formula_count }
+      end
+
+      # generate new maze formula page popups
+      def form_popovers
+        popovers = build_popovers # rename build_popovers
+
+        popovers.keys.each do |element|
+          next if element == :maze_types
+          popovers[element][:body] << "<p><strong>Valid Ranges:</strong></p>"
+
+          maze_formula_classes.each do |formula_class|
+            range = case element
+                    when :x
+                      formula_class.x_range
+                    when :y
+                      formula_class.y_range
+                    when :endpoint
+                      formula_class.endpoint_range
+                    when :barrier
+                      formula_class.barrier_range
+                    when :bridge
+                      formula_class.bridge_range
+                    when :tunnel
+                      formula_class.tunnel_range
+                    when :portal
+                      formula_class.portal_range
+                    end
+            
+            popovers[element][:body] << "<p><strong>#{formula_class.to_s.capitalize}</strong> Maze: "
+            popovers[element][:body] << if range == [0, 0]
+                                          "not allowed"
+                                        else
+                                          "between #{range.first} and #{range.last}"
+                                        end
+            popovers[element][:body] << "</p>"
+          end
+        end
+
+        popovers
+      end
+
+      def build_popovers # rename build_popovers
+        MazeCraze::Maze.types_popover.merge(MazeCraze::MazeSquare.types_popover).merge(maze_dimensions_popover)
+      end
+
+      def maze_dimensions_popover
+        { x: { title: 'Valid Widths', body: "<p>Here's a description of the width field.</p>" },
+          y: { title: 'Valid Heights', body: "<p>Here's a description of the height field.</p>" } }
+      end
+
+      # misc class methods
+      def retrieve_formula_values(id)
+        sql = "SELECT * FROM maze_formulas WHERE id = $1;"
+        query(sql, id)[0]
+      end
+
+      def status_list
+        %w(pending approved rejected)
+      end
+
+      def count_by_type_and_status(maze_type, status)
+        sql = "SELECT count(maze_type) FROM maze_formulas WHERE maze_type = $1 AND status = $2;"
+        query(sql, maze_type, status)
+      end
+
+      def status_list_by_maze_type(maze_type)
+        sql = "SELECT id, x, y, endpoints, barriers, bridges, tunnels, portals, experiment, status FROM maze_formulas WHERE maze_type = $1 ORDER BY x, y, endpoints, barriers;"
+        query(sql, maze_type)
+      end
+
+      def update_status(id, status)
+        sql = "UPDATE maze_formulas SET status = $1 WHERE id = $2;"
+        query(sql, status, id)
+      end
+
+      def x_range
+        [x_min, x_max]
+      end
+  
+      def y_range
+        [y_min, y_max]
+      end
+  
+      def endpoint_range
+        [endpoint_min, endpoint_max]
+      end
+  
+      def barrier_range
+        [barrier_min, barrier_max]
+      end
+  
+      def bridge_range
+        [0, 0]
+      end
+  
+      def tunnel_range
+        [0, 0]
+      end
+  
+      def portal_range
+        [0, 0]
+      end
     end
 
     attr_reader :background_job_id,
@@ -691,34 +721,6 @@ module MazeCraze
       value == '' ? 0 : value.to_i
     end
 
-    def self.x_range
-      [x_min, x_max]
-    end
-
-    def self.y_range
-      [y_min, y_max]
-    end
-
-    def self.endpoint_range
-      [endpoint_min, endpoint_max]
-    end
-
-    def self.barrier_range
-      [barrier_min, barrier_max]
-    end
-
-    def self.bridge_range
-      [0, 0]
-    end
-
-    def self.tunnel_range
-      [0, 0]
-    end
-
-    def self.portal_range
-      [0, 0]
-    end
-
     def count_pairs(maze, square_type)
       maze.count { |square| square.match(Regexp.new(Regexp.escape(square_type))) }
     end
@@ -811,7 +813,6 @@ module MazeCraze
         (dimensions[:x] * dimensions[:y]) > 
         other_squares_to_normal_squares_ratio
 
-        # next if (num_endpoints * 2 + num_barriers + num_bridges) > dimensions[:x] * dimensions[:y] / 2
         yield({ 'maze_type' => 'bridge',
                 'x' => dimensions[:x],
                 'y' => dimensions[:y],
@@ -903,7 +904,6 @@ module MazeCraze
         (dimensions[:x] * dimensions[:y]) > 
         other_squares_to_normal_squares_ratio
 
-        # next if (num_endpoints * 2 + num_barriers + num_tunnels * 2) > dimensions[:x] * dimensions[:y] / 2
         yield({ 'maze_type' => 'tunnel',
                 'x' => dimensions[:x],
                 'y' => dimensions[:y],
@@ -995,7 +995,6 @@ module MazeCraze
         (dimensions[:x] * dimensions[:y]) > 
         other_squares_to_normal_squares_ratio
 
-        # next if (num_endpoints * 2 + num_barriers + num_portals * 2) > dimensions[:x] * dimensions[:y] / 2
         yield({ 'maze_type' => 'portal',
                 'x' => dimensions[:x],
                 'y' => dimensions[:y],
