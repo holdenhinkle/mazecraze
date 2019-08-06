@@ -3,7 +3,6 @@ require 'singleton'
 module MazeCraze
   class BackgroundWorker
     include Singleton
-    # extend MazeCraze::Queryable
     include MazeCraze::Queryable
 
     attr_accessor :id, :deleted_jobs_to_skip_in_queue, :job_queue
@@ -81,6 +80,8 @@ module MazeCraze
           end
         end
       end
+
+      binding.pry if thread_obj.thread.nil?
     end
 
     private

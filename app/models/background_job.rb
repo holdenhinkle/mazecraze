@@ -180,14 +180,13 @@ module MazeCraze
 
     def cancel
       kill_thread
-
-      update_queue_order_for('cancel_job')
-      undo
-      reset
-
-      worker = MazeCraze::BackgroundWorker.instance
-      worker.enqueue_job(self)
-      worker.new_thread
+      update_queue_order_for('cancel_job') # not completed sometimes
+      binding.pry if queue_order == nil
+      undo # not completed sometimes
+      reset # not completed sometimes
+      binding.pry if status == 'running'
+      background_worker.enqueue_job(self)
+      background_worker.new_thread
     end
 
     def delete(job_status)
@@ -237,6 +236,7 @@ module MazeCraze
 
     def kill_thread
       background_thread = MazeCraze::BackgroundThread.thread_from_id(background_thread_id)
+      binding.pry if background_thread.nil?
       MazeCraze::BackgroundThread.all.delete(background_thread).kill_thread
     end
 

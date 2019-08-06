@@ -62,8 +62,8 @@ class AdminController < ApplicationController
   end
 
   post '/admin/background-jobs' do
-    worker = MazeCraze::BackgroundWorker.instance
     job = MazeCraze::BackgroundJob.job_from_id(params['job_id'])
+    worker = MazeCraze::BackgroundWorker.instance
 
     if params['delete_job']
       job.delete(params['job_status'])
@@ -194,13 +194,9 @@ class AdminController < ApplicationController
   end
 
   def new_background_job(job_type, job_params) # hacky?
-    # worker = MazeCraze::BackgroundWorker.instance # because we need @mutex
-
-    # MazeCraze::BackgroundJob.new({ type: job_type, params: job_params })
-
     MazeCraze::BackgroundJob.new({ type: job_type, params: job_params })
 
-    worker = MazeCraze::BackgroundWorker.instance # because we need @mutex
+    worker = MazeCraze::BackgroundWorker.instance
 
     if worker.dead?
       worker.start
