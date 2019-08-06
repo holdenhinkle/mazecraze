@@ -54,7 +54,6 @@ class AdminController < ApplicationController
     worker = MazeCraze::BackgroundWorker.instance
 
     if @background_workers_status = worker.alive? # this isn't a perfect indicator of whether or not the system alive or dead
-      # worker = MazeCraze::BackgroundWorker.instance
       @number_of_threads = MazeCraze::BackgroundThread.number_of_threads
       @thread_stats = MazeCraze::BackgroundThread.thread_details(worker.id)
     end
@@ -75,7 +74,8 @@ class AdminController < ApplicationController
       if worker_id != '' && thread_id == ''
         worker.skip_job_in_queue(job_id)
         job.delete_from_db
-        job.update_queue_order_because_of_deleted_job
+        job.synchronize_queue_order_updates('delete_job')
+        # job.update_queue_order_because_of_deleted_job
       end
 
       # if job is running

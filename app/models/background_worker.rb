@@ -79,14 +79,31 @@ module MazeCraze
           if job && deleted_jobs_to_skip_in_queue.include?(job.id)
             deleted_jobs_to_skip_in_queue.delete(job.id)
             next
+          # elsif job
+          #   thread_obj.mode = 'processing'
+          #   thread_obj.background_job_id = job.id
+          #   job.update_job_is_running(thread_obj.id)
+          #   mutex.synchronize do
+          #     MazeCraze::BackgroundJob.queue_count -= 1
+          #     MazeCraze::BackgroundJob.decrement_queued_jobs_queue_order
+          #   end
+          #   job.run
+          # end
+
           elsif job
             thread_obj.mode = 'processing'
             thread_obj.background_job_id = job.id
-            job.update_job_is_running(thread_obj.id)
-            mutex.synchronize do
-              MazeCraze::BackgroundJob.queue_count -= 1
-              MazeCraze::BackgroundJob.decrement_queued_jobs_queue_order
-            end
+
+            job.update_job_thread_id(thread_obj.id)
+            job.update_job_status('running')
+
+            job.synchronize_queue_order_updates('new_thread')
+
+            # mutex.synchronize do
+            #   job.update_queue_order(nil)
+            #   MazeCraze::BackgroundJob.queue_count -= 1
+            #   MazeCraze::BackgroundJob.decrement_queued_jobs_queue_order
+            # end
             job.run
           end
         end
@@ -101,8 +118,11 @@ module MazeCraze
       background_thread = MazeCraze::BackgroundThread.thread_from_id(thread_id)
       MazeCraze::BackgroundThread.all.delete(background_thread).kill_thread
       job = MazeCraze::BackgroundJob.job_from_id(job_id)
-      job.queue_order = job.class.queue_count += 1
-      job.update_queue_order
+     
+      job.synchronize_queue_order_updates('cancel_job')
+      # job.queue_order = job.class.queue_count += 1 # mutex
+      # job.update_queue_order # mutex
+
       job.reset
       binding.pry if job.status == 'running'
       job.undo
