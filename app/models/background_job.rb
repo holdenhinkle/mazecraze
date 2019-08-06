@@ -190,8 +190,18 @@ module MazeCraze
       worker.new_thread
     end
 
-    def delete
-
+    def delete(job_status)
+      case job_status
+      when 'running'
+        kill_thread
+        undo
+        delete_from_db
+        background_worker.new_thread
+      when 'queued'
+        background_worker.skip_job_in_queue(id)
+        delete_from_db
+        update_queue_order_for('delete_job')
+      end
     end
 
     def reset
@@ -199,7 +209,7 @@ module MazeCraze
       update_job_thread_id(nil)
     end
 
-    def undo # refactor
+    def undo
       table_name = case type
                   when 'generate_maze_formulas'
                     'maze_formulas'
@@ -221,12 +231,16 @@ module MazeCraze
 
     private
 
+    def background_worker
+      MazeCraze::BackgroundWorker.instance
+    end
+
     def kill_thread
       background_thread = MazeCraze::BackgroundThread.thread_from_id(background_thread_id)
       MazeCraze::BackgroundThread.all.delete(background_thread).kill_thread
     end
 
-    def generate_maze_formulas # refactor
+    def generate_maze_formulas
       if params.empty?
         generated_formula_stats = MazeCraze::MazeFormula.generate_formulas(id.to_i)
       else

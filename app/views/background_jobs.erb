@@ -102,9 +102,8 @@
               <td scope="col">
                 <form action="/admin/background-jobs" method="post">
                   <input type="hidden" name="delete_job" value="true">
-                  <input type="hidden" name="id" value="<%= job['id'] %>">
-                  <input type="hidden" name="background_worker_id" value="<%= job['background_worker_id'] %>">
-                  <input type="hidden" name="background_thread_id" value="<%= job['background_thread_id'] %>">
+                  <input type="hidden" name="job_id" value="<%= job['id'] %>">
+                  <input type="hidden" name="job_status" value="<%= job['status'] %>">
                   <button type="type" class="btn btn-danger btn-sm">Delete</button>
                 </form>
               </td>
@@ -113,16 +112,14 @@
               <td scope="col">
                 <form action="/admin/background-jobs" method="post">
                   <input type="hidden" name="cancel_job" value="true">
-                  <input type="hidden" name="id" value="<%= job['id'] %>">
-                  <input type="hidden" name="background_worker_id" value="<%= job['background_worker_id'] %>">
-                  <input type="hidden" name="background_thread_id" value="<%= job['background_thread_id'] %>">
+                  <input type="hidden" name="job_id" value="<%= job['id'] %>">
+                  <input type="hidden" name="job_status" value="<%= job['status'] %>">
                   <button type="type" class="btn btn-danger btn-sm">Cancel</button>
                 </form>
                 <form action="/admin/background-jobs" method="post">
                   <input type="hidden" name="delete_job" value="true">
-                  <input type="hidden" name="id" value="<%= job['id'] %>">
-                  <input type="hidden" name="background_worker_id" value="<%= job['background_worker_id'] %>">
-                  <input type="hidden" name="background_thread_id" value="<%= job['background_thread_id'] %>">
+                  <input type="hidden" name="job_id" value="<%= job['id'] %>">
+                  <input type="hidden" name="job_status" value="<%= job['status'] %>">
                   <button type="type" class="btn btn-danger btn-sm">Delete</button>
                 </form>
               </td>
