@@ -69,7 +69,9 @@ CREATE TABLE background_jobs (
   params text NOT NULL,
   status job_status NOT NULL DEFAULT 'queued',
   created timestamp NOT NULL DEFAULT NOW(),
-  updated timestamp NOT NULL DEFAULT NOW()
+  updated timestamp NOT NULL DEFAULT NOW(),
+  start_time timestamp NOT NULL DEFAULT NOW(),
+  stop_time timestamp NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE admin_notifications (
