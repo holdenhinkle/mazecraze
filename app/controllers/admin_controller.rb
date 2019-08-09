@@ -19,8 +19,8 @@ class AdminController < ApplicationController
     if params['number_of_threads']
       number_of_threads = params['number_of_threads'].to_i
       worker = MazeCraze::BackgroundWorker.instance
-      queued_jobs = MazeCraze::BackgroundJob.all_jobs_of_status_type('queued')
-      running_jobs = MazeCraze::BackgroundJob.all_jobs_of_status_type('running')
+      queued_jobs = MazeCraze::BackgroundJob.jobs_of_status_type('queued')
+      running_jobs = MazeCraze::BackgroundJob.jobs_of_status_type('running')
 
       MazeCraze::BackgroundThread.update_number_of_threads(number_of_threads)
       worker.stop
@@ -62,8 +62,11 @@ class AdminController < ApplicationController
   end
 
   post '/admin/background-jobs' do
-    job = MazeCraze::BackgroundJob.job_from_id(params['job_id'])
-    worker = MazeCraze::BackgroundWorker.instance
+    if params['delete_job'] || params['cancel_job']
+      job = MazeCraze::BackgroundJob.job_from_id(params['job_id'])
+    elsif params['start'] || params['stop'] || params['restart']
+      worker = MazeCraze::BackgroundWorker.instance
+    end
 
     if params['delete_job']
       job.delete(params['job_status'])
@@ -90,7 +93,7 @@ class AdminController < ApplicationController
     end
 
     @title = "#{status.capitalize} Background Jobs - Maze Craze Admin"
-    @jobs = MazeCraze::BackgroundJob.all_jobs_of_status_type(status)
+    @jobs = MazeCraze::BackgroundJob.jobs_of_status_type(status)
     erb :background_jobs_status
   end
 
@@ -194,14 +197,15 @@ class AdminController < ApplicationController
   end
 
   def new_background_job(job_type, job_params)
-    MazeCraze::BackgroundJob.new({ type: job_type, params: job_params })
+    job_class = MazeCraze::BackgroundJob.job_type_to_class(job_type)
+    job = job_class.new({ 'job_type' => job_type, 'params' => job_params })
 
     worker = MazeCraze::BackgroundWorker.instance
 
     if worker.dead?
       worker.start
     else
-      worker.enqueue_job(MazeCraze::BackgroundJob.all.last)
+      worker.enqueue_job(job.id)
       worker.start if worker.dead?
     end
   end

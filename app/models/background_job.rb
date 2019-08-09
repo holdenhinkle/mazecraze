@@ -3,30 +3,45 @@ module MazeCraze
     extend MazeCraze::Queryable
     include MazeCraze::Queryable
 
-    JOB_TYPES = %w(generate_maze_formulas
-                   generate_maze_permutations
-                   generate_maze_candidates).freeze
- 
+    JOB_TYPE_CLASS_NAMES = { 
+      'generate_maze_formulas' => 'GenerateMazeFormulasJob',
+      'generate_maze_permutations' => 'GenerateMazePermutationJob',
+      'generate_maze_candidates' => 'GenerateMazeCandidateJob'
+    }
+
     JOB_STATUSES = %w(running queued completed failed).freeze
 
-    @all = []
-    @queue_count = 0
-    @mutex = Mutex.new
-
     class << self
-      attr_reader :mutex
-      attr_accessor :all, :queue_count
+      def queue_count
+        sql = "SELECT COUNT(status) FROM background_jobs WHERE status = $1;"
+        query(sql, 'queued').first['count'].to_i
+      end
+
+      def job_type_to_class(type)
+        class_name = 'MazeCraze::' + JOB_TYPE_CLASS_NAMES[type]
+        Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
+      end
 
       def job_from_id(job_id)
-        all.each { |job| return job if job.id == job_id }
+        sql = "SELECT * FROM background_jobs WHERE id = $1;"
+        job = query(sql, job_id)[0]
+        job_type_to_class(job['job_type']).new(job)
       end
 
       def each_running_job
-        all.each { |job| yield(job) if job.status == 'running'}
+        jobs = jobs_of_status_type('running').map do |job, _|
+          job_from_id(job['id'])
+        end
+
+        jobs.each { |job| yield(job) }
       end
 
       def each_queued_job
-        all.each { |job| yield(job) if job.status == 'queued'}
+        jobs = jobs_of_status_type('queued').map do |job, _|
+          job_from_id(job['id'])
+        end
+
+        jobs.each { |job| yield(job) }
       end
 
       def all_jobs
@@ -38,7 +53,7 @@ module MazeCraze
         end
       end
 
-      def all_jobs_of_status_type(status)
+      def jobs_of_status_type(status)
         sql = "SELECT * FROM background_jobs WHERE status = $1 ORDER BY created DESC;"
         query(sql, status)
       end
@@ -68,7 +83,6 @@ module MazeCraze
 
       def update_running_jobs_queue_order_upon_stop(running_jobs)
         running_jobs.each_with_index do |job, index|
-          self.queue_count += 1
           job = job_from_id(job['id'])
           job.update_queue_order(index + 1)
         end
@@ -92,13 +106,21 @@ module MazeCraze
                   :background_thread_id, :status
 
     def initialize(job)
-      self.class.all << self
-      @id = job[:id]
-      @type = job[:type]
-      @params = job[:params]
-      @status = 'queued'
-      update_queue_order_for('initialize_job')
-      save!
+      @type = job['job_type']
+
+      if job['id']
+        @id = job['id'].to_i
+        @queue_order = job['queue_order'].to_i
+        @background_worker_id = job['background_worker_id'].to_i
+        @background_thread_id = job['background_thread_id'].to_i
+        @params = JSON.parse(job['params'])
+        @status = job['status']
+      else
+        @params = job['params']
+        @status = 'queued'
+        @id = save!
+        update_queue_order_for('new_job')
+      end
     end
 
     def update_queue_order_for(sequence, thread = nil)
@@ -116,26 +138,25 @@ module MazeCraze
     def queue_order_sequence(sequence)
       self.class.mutex.synchronize do
         case sequence
-        when 'initialize_job' then update_queue_order_for_initialize_job
-        when 'running_job' then update_queue_order_for_new_running_job
+        when 'new_job' then update_queue_order_for_new_job
+        when 'running_job' then update_queue_order_for_running_job
         when 'cancel_job' then update_queue_order_for_cancel_job
         when 'delete_job' then update_queue_order_for_delete_job
         end
       end
     end
 
-    def update_queue_order_for_initialize_job
-      self.queue_order = self.class.queue_count += 1
+    def update_queue_order_for_new_job
+      update_queue_order(self.class.queue_count)
     end
 
-    def update_queue_order_for_new_running_job
-      self.class.queue_count -= 1
+    def update_queue_order_for_running_job
       update_queue_order(nil)
       self.class.decrement_queued_jobs_queue_order
     end
 
     def update_queue_order_for_cancel_job
-      update_queue_order(self.class.queue_count += 1)
+      update_queue_order(self.class.queue_count + 1)
     end
 
     def update_queue_order_for_delete_job
@@ -148,7 +169,7 @@ module MazeCraze
 
     def save!
       sql = "INSERT INTO background_jobs (job_type, params, status, queue_order) VALUES ($1, $2, $3, $4) RETURNING id;"
-      self.id = query(sql, type, params.to_json, status, queue_order).first['id']
+      query(sql, type, params.to_json, status, queue_order).first['id']
     end
 
     def update_job_status(new_job_status)
@@ -169,13 +190,10 @@ module MazeCraze
       query(sql, queue_order, id)
     end
 
-    def run(thread_obj)
+    def prepare_to_run(thread_obj)
       update_job_thread_id(thread_obj.id)
       update_job_status('running')
       update_queue_order_for('running_job', thread_obj.thread)
-
-      send(type) if respond_to?(type.to_sym, :include_private) &&
-                    JOB_TYPES.include?(type)
     end
 
     def cancel
@@ -185,7 +203,7 @@ module MazeCraze
       undo # not completed sometimes
       reset # not completed sometimes
       binding.pry if status == 'running'
-      background_worker.enqueue_job(self)
+      background_worker.enqueue_job(id)
       background_worker.new_thread
     end
 
@@ -208,22 +226,7 @@ module MazeCraze
       update_job_thread_id(nil)
     end
 
-    def undo
-      table_name = case type
-                   when 'generate_maze_formulas'
-                     'maze_formulas'
-                   when 'generate_maze_permutations'
-                     'maze_formula_set_permutations'
-                   when 'generate_maze_candidates'
-                     'maze_candidates'
-                   end
-
-      sql = "DELETE FROM #{table_name} WHERE background_job_id = $1;"
-      query(sql, id)
-    end
-
     def delete_from_db
-      self.class.all.delete(self)
       sql = "DELETE FROM background_jobs WHERE id = $1;"
       query(sql, id)
     end
@@ -239,19 +242,51 @@ module MazeCraze
       binding.pry if background_thread.nil?
       MazeCraze::BackgroundThread.all.delete(background_thread).kill_thread
     end
+  end
 
-    def generate_maze_formulas
+  class GenerateMazeFormulasJob < BackgroundJob
+    @mutex = Mutex.new
+
+    class << self
+      attr_reader :mutex
+    end
+
+    def run
       if params.empty?
         generated_formula_stats = MazeCraze::MazeFormula.generate_formulas(id.to_i)
       else
         maze_formula_class = MazeCraze::MazeFormula.maze_formula_type_to_class(params['maze_type'])
         generated_formula_stats = MazeCraze::MazeFormula.generate_formulas(id.to_i, [maze_formula_class]) # refactor - i don't like that I have to pass a one element array
       end
+
       new_message = "#{generated_formula_stats[:new]} new maze formulas were created."
       existed_message = "#{generated_formula_stats[:existed]} formulas already existed."
       MazeCraze::AdminNotification.new(new_message + ' ' + existed_message).save!
       update_job_status('completed')
       # remove job from jobs array - doesn't need to exist in memory anymore because it will never be used again
+    end
+
+    def undo
+      sql = "DELETE FROM maze_formulas WHERE background_job_id = $1;"
+      query(sql, id)
+    end
+  end
+
+  class GenerateMazePermutationJob < BackgroundJob
+    def run; end
+
+    def undo
+      sql = "DELETE FROM maze_formula_set_permutations WHERE background_job_id = $1;"
+      query(sql, id)
+    end
+  end
+
+  class GenerateMazeCandidateJob < BackgroundJob
+    def run; end
+
+    def undo
+      sql = "DELETE FROM maze_candidates WHERE background_job_id = $1;"
+      query(sql, id)
     end
   end
 end

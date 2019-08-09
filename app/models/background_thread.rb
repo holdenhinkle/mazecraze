@@ -68,7 +68,7 @@ module MazeCraze
 
     def save!
       sql = 'INSERT INTO background_threads (background_worker_id, status) VALUES ($1, $2) RETURNING id;'
-      query(sql, background_worker_id, status).first['id']
+      query(sql, background_worker_id, status).first['id'].to_i
     end
 
     def update_thread_status_to_dead

@@ -9,7 +9,7 @@ module MazeCraze
 
     def initialize
       @id = save!
-      start if MazeCraze::BackgroundJob.all_jobs_of_status_type('queued').any?
+      start if MazeCraze::BackgroundJob.jobs_of_status_type('queued').any?
     end
 
     def start
@@ -35,17 +35,17 @@ module MazeCraze
     end
 
     def enqueue_jobs
-      queued_jobs = MazeCraze::BackgroundJob.all.select do |job|
-        job.status == 'queued'
-      end
+      queued_jobs = MazeCraze::BackgroundJob.jobs_of_status_type('queued')
 
-      queued_jobs.sort_by(&:queue_order).each { |job| enqueue_job(job) }
+      sorted_jobs = queued_jobs.each.sort_by { |job, _| job['queue_order'] }
+
+      sorted_jobs.each { |job, _| enqueue_job(job['id'].to_i) }
     end
 
-    def enqueue_job(job)
-      job_queue << job
+    def enqueue_job(job_id)
+      job_queue << job_id
       sql = 'UPDATE background_jobs SET background_worker_id = $1, updated = $2 WHERE id = $3;'
-      query(sql, id, 'NOW()', job.id)
+      query(sql, id, 'NOW()', job_id)
     end
 
     def skip_job_in_queue(job_id)
@@ -70,12 +70,13 @@ module MazeCraze
 
         while job_queue_open?
           thread_wait(thread_obj)
-          job = wait_for_job
+          job_id = wait_for_job
 
-          if job && deleted_jobs_to_skip_in_queue.include?(job.id)
-            deleted_jobs_to_skip_in_queue.delete(job.id)
+          if job_id && deleted_jobs_to_skip_in_queue.include?(job_id)
+            deleted_jobs_to_skip_in_queue.delete(job_id)
             next
-          elsif job
+          elsif job_id
+            job = MazeCraze::BackgroundJob.job_from_id(job_id)
             thread_process(thread_obj, job)
           end
         end
@@ -94,12 +95,13 @@ module MazeCraze
     def thread_process(thread_obj, job)
       thread_obj.mode = 'processing'
       thread_obj.background_job_id = job.id
-      job.run(thread_obj)
+      job.prepare_to_run(thread_obj)
+      job.run
     end
 
     def save!
       sql = "INSERT INTO background_workers DEFAULT VALUES RETURNING id;"
-      query(sql).first['id']
+      query(sql).first['id'].to_i
     end
 
     def update_worker_status(status)
