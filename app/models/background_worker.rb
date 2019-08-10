@@ -13,6 +13,7 @@ module MazeCraze
     end
 
     def start
+      housekeeping
       update_worker_status('alive')
       self.job_queue = Queue.new
       self.deleted_jobs_to_skip_in_queue = []
@@ -87,6 +88,11 @@ module MazeCraze
 
     private
 
+    def housekeeping
+      MazeCraze::BackgroundThread.sanitize_background_threads_table
+      MazeCraze::BackgroundJob.sanitize_background_jobs_table
+    end
+
     def thread_wait(thread_obj)
       thread_obj.mode = 'waiting'
       thread_obj.background_job_id = nil
@@ -96,7 +102,6 @@ module MazeCraze
       thread_obj.mode = 'processing'
       thread_obj.background_job_id = job.id
       job.prepare_to_run(thread_obj)
-      job.run
     end
 
     def save!

@@ -12,6 +12,14 @@ module MazeCraze
     JOB_STATUSES = %w(running queued completed failed).freeze
 
     class << self
+      def sanitize_background_jobs_table
+        sql = 'UPDATE background_jobs SET status = $1 WHERE status = $2;'
+        query(sql, 'queued', 'running')
+
+        sql = 'UPDATE background_jobs SET background_worker_id = $1, background_thread_id = $2 WHERE status = $3 OR status = $4;'
+        query(sql, nil, nil, 'queued', 'running')
+      end
+
       def queue_count
         sql = "SELECT COUNT(status) FROM background_jobs WHERE status = $1;"
         query(sql, 'queued').first['count'].to_i
