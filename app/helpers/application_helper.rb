@@ -31,13 +31,13 @@ module ApplicationHelper
   def elapsed_time(start_timestamp)
     start = convert_timestamp_to_time(start_timestamp)
     now = Time.now
-    "#{format('%.4f', (now - start))} seconds"
+    time_difference_to_s(now, start)
   end
 
   def total_time(start_timestamp, finish_timestamp)
     start = convert_timestamp_to_time(start_timestamp)
     finish = convert_timestamp_to_time(finish_timestamp)
-    "#{format('%.4f', (finish - start))} seconds"
+    time_difference_to_s(finish, start)
   end
 
   def convert_timestamp_to_time(timestamp)
@@ -45,6 +45,10 @@ module ApplicationHelper
     year, month, day = parse_date(date)
     hours, minutes, seconds = parse_time(time)
     Time.new(year, month, day, hours, minutes, seconds)
+  end
+
+  def time_difference_to_s(new_time, old_time)
+    "#{format('%.4f', (new_time - old_time))} seconds"
   end
 
   def parse_date(date)
