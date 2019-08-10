@@ -23,6 +23,50 @@ module ApplicationHelper
     end.join(', ')
   end
 
+  def format_timestamp(timestamp)
+    time = convert_timestamp_to_time(timestamp)
+    "#{date(time)}, #{time(time)}"
+  end
+
+  def elapsed_time(start_timestamp)
+    start = convert_timestamp_to_time(start_timestamp)
+    now = Time.now
+    "#{format('%.4f', (now - start))} seconds"
+  end
+
+  def total_time(start_timestamp, finish_timestamp)
+    start = convert_timestamp_to_time(start_timestamp)
+    finish = convert_timestamp_to_time(finish_timestamp)
+    "#{format('%.4f', (finish - start))} seconds"
+  end
+
+  def convert_timestamp_to_time(timestamp)
+    date, time = timestamp.split(' ')
+    year, month, day = parse_date(date)
+    hours, minutes, seconds = parse_time(time)
+    Time.new(year, month, day, hours, minutes, seconds)
+  end
+
+  def parse_date(date)
+    date.split('-').each(&:to_i)
+  end
+
+  def parse_time(time)
+    hours, minutes, seconds = time.split(':')
+    hours = hours.to_i
+    minutes = minutes.to_i
+    seconds = seconds.to_f
+    return hours, minutes, seconds
+  end
+
+  def date(date)
+    date.strftime("%d/%m/%Y")
+  end
+
+  def time(time)
+    time.strftime("%I:%M %p")
+  end
+
   # def replace_underscores_with_space(str)
   #   return str unless str.include?('_')
   #   str.gsub!('_', ' ')

@@ -72,8 +72,18 @@
           <% if status == 'running' || status == 'failed' %>
             <th scope="col">Worker ID</th>
             <th scope="col">Thread ID</th>
-          <% end %>                      
-          <th scope="col">Updated</th>
+          <% end %>
+          <% if status == 'running' %>
+            <th scope="col">Start Time</th>
+            <th scope="col">Elapsed Time</th>
+          <% end %>
+          <% if status == 'completed' %>
+            <th scope="col">Finish Time</th>
+            <th scope="col">Total Time</th>
+          <% end %>
+          <% if status == 'queued' || status == 'failed' %>
+            <th scope="col">Last Updated</th>
+          <% end %>
           <% unless status == 'completed' %>
             <th scope="col"></th>
           <% end %>
@@ -97,7 +107,17 @@
               <td><%= job['background_worker_id'] %></td>          
               <td><%= job['background_thread_id'] %></td>
             <% end %>
-            <td><%= job['updated'] %></td>
+            <% if status == 'queued' || status == 'failed' %>
+              <td><%= format_timestamp(job['updated']) %></td>
+            <% end %>
+            <% if status == 'running' %>
+              <td><%= format_timestamp(job['start_time']) %></td>
+              <td><%= elapsed_time(job['start_time']) %></td>
+            <% end %>
+            <% if status == 'completed' %>
+              <td><%= format_timestamp(job['finish_time']) %></td>
+              <td><%= total_time(job['start_time'], job['finish_time']) %></td>
+            <% end %>
             <% if status == 'queued' %>
               <td scope="col">
                 <form action="/admin/background-jobs" method="post">

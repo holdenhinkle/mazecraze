@@ -190,10 +190,35 @@ module MazeCraze
       query(sql, queue_order, id)
     end
 
+    def update_start_time
+      sql = 'UPDATE background_jobs SET start_time = $1, updated = $2 WHERE id = $3;'
+      query(sql, 'NOW()', 'NOW()', id)
+    end
+
+    def update_finish_time
+      sql = 'UPDATE background_jobs SET finish_time = $1, updated = $2 WHERE id = $3;'
+      query(sql, 'NOW()', 'NOW()', id)
+    end
+
     def prepare_to_run(thread_obj)
       update_job_thread_id(thread_obj.id)
       update_job_status('running')
       update_queue_order_for('running_job', thread_obj.thread)
+      start
+    end
+
+    def start
+      update_start_time
+      results = run
+      update_finish_time
+      finish(results)
+    end
+
+    def finish(results)
+      update_job_status('completed')
+      alert = "#{results[:new]} formulas were created. "
+      alert << "#{results[:existed]} formulas already existed."
+      MazeCraze::AdminNotification.new(alert).save!
     end
 
     def cancel
@@ -253,17 +278,12 @@ module MazeCraze
 
     def run
       if params.empty?
-        generated_formula_stats = MazeCraze::MazeFormula.generate_formulas(id.to_i)
+        formula_classes = MazeCraze::MazeFormula.maze_formula_classes
+        MazeCraze::MazeFormula.generate_formulas(id, formula_classes)
       else
-        maze_formula_class = MazeCraze::MazeFormula.maze_formula_type_to_class(params['maze_type'])
-        generated_formula_stats = MazeCraze::MazeFormula.generate_formulas(id.to_i, [maze_formula_class]) # refactor - i don't like that I have to pass a one element array
+        formula_class = MazeCraze::MazeFormula.maze_formula_type_to_class(params['maze_type'])
+        MazeCraze::MazeFormula.generate_formulas(id, formula_class)
       end
-
-      new_message = "#{generated_formula_stats[:new]} new maze formulas were created."
-      existed_message = "#{generated_formula_stats[:existed]} formulas already existed."
-      MazeCraze::AdminNotification.new(new_message + ' ' + existed_message).save!
-      update_job_status('completed')
-      # remove job from jobs array - doesn't need to exist in memory anymore because it will never be used again
     end
 
     def undo

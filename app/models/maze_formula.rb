@@ -354,9 +354,13 @@ module MazeCraze
 
       # get class(es)
       def maze_formula_classes
-        MAZE_FORMULA_CLASS_NAMES.keys.each_with_object([]) do |maze_type, maze_formula_classes|
+        maze_formula_classes = []
+
+        MAZE_FORMULA_CLASS_NAMES.keys.each do |maze_type|
           maze_formula_classes << maze_formula_type_to_class(maze_type)
         end
+
+        maze_formula_classes
       end
 
       def maze_formula_type_to_class(type)
@@ -365,9 +369,11 @@ module MazeCraze
       end
 
       # auto-generate maze formulas
-      def generate_formulas(background_job_id, classes = maze_formula_classes)
-        new_formula_count = 0
-        existed_formula_count = 0
+      def generate_formulas(background_job_id, classes)
+        classes = [classes] if !classes.is_a? Array
+
+        new_count = 0
+        existed_count = 0
 
         classes.each do |maze_class|
           formulas = maze_class.formula_dimensions.each_with_object([]) do |dimensions, formulas|
@@ -382,12 +388,13 @@ module MazeCraze
             end
           end
 
-          generated_formula_stats = save_formulas(formulas)
-          new_formula_count += generated_formula_stats[:new]
-          existed_formula_count += generated_formula_stats[:existed]
+          results = save_formulas(formulas)
+
+          new_count += results[:new]
+          existed_count += results[:existed]
         end
 
-        { new: new_formula_count, existed: existed_formula_count }
+        { new: new_count, existed: existed_count }
       end
 
       def formula_dimensions
