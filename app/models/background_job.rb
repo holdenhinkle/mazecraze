@@ -18,6 +18,14 @@ module MazeCraze
 
         sql = 'UPDATE background_jobs SET background_worker_id = $1, background_thread_id = $2 WHERE status = $3 OR status = $4;'
         query(sql, nil, nil, 'queued', 'running')
+
+        sql = 'SELECT queue_order FROM background_jobs WHERE status = $1 ORDER BY $2;'
+        results = query(sql, 'queued', 'queue_order')
+
+        update_queue_order_sql = 'UPDATE background_jobs SET queue_order = $1;'
+        results.each_with_index do |job, index|
+          queury(update_queue_order_sql, index + 1)
+        end
       end
 
       def queue_count
