@@ -139,6 +139,21 @@ module MazeCraze
       end
     end
 
+    def save!
+      sql = "INSERT INTO background_jobs (job_type, params, status, queue_order) VALUES ($1, $2, $3, $4) RETURNING id;"
+      query(sql, type, params.to_json, status, queue_order).first['id']
+    end
+
+    def set_start_time
+      sql = 'UPDATE background_jobs SET start_time = $1, updated = $2 WHERE id = $3;'
+      query(sql, 'NOW()', 'NOW()', id)
+    end
+
+    def set_finish_time
+      sql = 'UPDATE background_jobs SET finish_time = $1, updated = $2 WHERE id = $3;'
+      query(sql, 'NOW()', 'NOW()', id)
+    end
+
     def update_queue_order_for(sequence, thread = nil)
       if thread
         queue_order_sequence(sequence)
@@ -183,11 +198,6 @@ module MazeCraze
       end
     end
 
-    def save!
-      sql = "INSERT INTO background_jobs (job_type, params, status, queue_order) VALUES ($1, $2, $3, $4) RETURNING id;"
-      query(sql, type, params.to_json, status, queue_order).first['id']
-    end
-
     def update_job_status(new_job_status)
       self.status = new_job_status
       sql = "UPDATE background_jobs SET status = $1, updated = $2 WHERE id = $3;"
@@ -208,12 +218,7 @@ module MazeCraze
 
     def update_start_time
       sql = 'UPDATE background_jobs SET start_time = $1, updated = $2 WHERE id = $3;'
-      query(sql, 'NOW()', 'NOW()', id)
-    end
-
-    def update_finish_time
-      sql = 'UPDATE background_jobs SET finish_time = $1, updated = $2 WHERE id = $3;'
-      query(sql, 'NOW()', 'NOW()', id)
+      query(sql, nil, 'NOW()', id)
     end
 
     def prepare_to_run(thread_obj)
@@ -224,9 +229,9 @@ module MazeCraze
     end
 
     def start
-      update_start_time
+      set_start_time
       results = run
-      update_finish_time
+      set_finish_time
       finish(results)
     end
 
@@ -265,6 +270,7 @@ module MazeCraze
     def reset
       update_job_status('queued')
       update_job_thread_id(nil)
+      update_start_time
     end
 
     def delete_from_db
