@@ -5,6 +5,12 @@ module MazeCraze
     include Singleton
     include MazeCraze::Queryable
 
+    @mutex = Mutex.new
+
+    class << self
+      attr_reader :mutex
+    end
+
     attr_accessor :id, :deleted_jobs_to_skip_in_queue, :job_queue
 
     def initialize
@@ -13,7 +19,7 @@ module MazeCraze
     end
 
     def start
-      housekeeping
+      # housekeeping
       update_worker_status('alive')
       self.job_queue = Queue.new
       self.deleted_jobs_to_skip_in_queue = []

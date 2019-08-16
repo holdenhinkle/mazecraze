@@ -1,4 +1,4 @@
-CREATE TYPE formula_status AS ENUM ('pending', 'approved', 'rejected');
+CREATE TYPE formula_status AS ENUM ('pending', 'completed', 'queued');
 
 CREATE TABLE maze_formulas (
   id serial PRIMARY KEY,
@@ -58,7 +58,7 @@ CREATE TABLE background_threads (
 
 CREATE TYPE job_type AS ENUM ('generate_maze_formulas', 'generate_maze_permutations', 'generate_maze_candidates');
 
-CREATE TYPE job_status AS ENUM ('queued', 'running', 'completed', 'failed');
+CREATE TYPE job_status AS ENUM ('queued', 'running', 'completed');
 
 CREATE TABLE background_jobs (
   id serial PRIMARY KEY,
@@ -137,8 +137,8 @@ INSERT INTO settings (name, integer_value)
 
 INSERT INTO settings (name, decimal_value) 
   VALUES
-    ('simple_formula_other_squares_to_normal_squares_ratio', .6),
-    ('bridge_formula_other_squares_to_normal_squares_ratio', .6),
-    ('tunnel_formula_other_squares_to_normal_squares_ratio', .6),
-    ('portal_formula_other_squares_to_normal_squares_ratio', .6)
+    ('simple_formula_other_squares_to_normal_squares_ratio', .5),
+    ('bridge_formula_other_squares_to_normal_squares_ratio', .5),
+    ('tunnel_formula_other_squares_to_normal_squares_ratio', .5),
+    ('portal_formula_other_squares_to_normal_squares_ratio', .5)
 ;

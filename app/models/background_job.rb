@@ -4,12 +4,12 @@ module MazeCraze
     include MazeCraze::Queryable
 
     JOB_TYPE_CLASS_NAMES = { 
-      'generate_maze_formulas' => 'GenerateMazeFormulasJob',
-      'generate_maze_permutations' => 'GenerateMazePermutationJob',
-      'generate_maze_candidates' => 'GenerateMazeCandidateJob'
+      'generate_maze_formulas' => 'GenerateMazeFormulas',
+      'generate_maze_permutations' => 'GenerateMazePermutations',
+      'generate_maze_candidates' => 'GenerateMazeCandidates'
     }
 
-    JOB_STATUSES = %w(running queued completed failed).freeze
+    JOB_STATUSES = %w(running queued completed).freeze
 
     class << self
       def sanitize_background_jobs_table
@@ -19,13 +19,14 @@ module MazeCraze
         sql = 'UPDATE background_jobs SET background_worker_id = $1, background_thread_id = $2 WHERE status = $3 OR status = $4;'
         query(sql, nil, nil, 'queued', 'running')
 
-        sql = 'SELECT queue_order FROM background_jobs WHERE status = $1 ORDER BY $2;'
-        results = query(sql, 'queued', 'queue_order')
+        # THE FOLLOWING REVERSES THE QUEUE ORDER
+        # sql = 'SELECT id, queue_order FROM background_jobs WHERE status = $1 ORDER BY $2;'
+        # results = query(sql, 'queued', 'queue_order')
 
-        update_queue_order_sql = 'UPDATE background_jobs SET queue_order = $1;'
-        results.each_with_index do |job, index|
-          queury(update_queue_order_sql, index + 1)
-        end
+        # update_queue_order_sql = 'UPDATE background_jobs SET queue_order = $1 WHERE id = $2;'
+        # results.each_with_index do |job, index|
+        #   query(update_queue_order_sql, index + 1, job['id'])
+        # end
       end
 
       def queue_count
@@ -79,7 +80,7 @@ module MazeCraze
       end
 
       def duplicate_jobs(type, params = nil)
-        sql = 'SELECT * FROM background_jobs WHERE job_type = $1 AND params = $2;'
+        sql = "SELECT * FROM background_jobs WHERE job_type = $1 AND params = $2;"
         query(sql, type, params.to_json)
       end
 
@@ -144,16 +145,6 @@ module MazeCraze
       query(sql, type, params.to_json, status, queue_order).first['id']
     end
 
-    def set_start_time
-      sql = 'UPDATE background_jobs SET start_time = $1, updated = $2 WHERE id = $3;'
-      query(sql, 'NOW()', 'NOW()', id)
-    end
-
-    def set_finish_time
-      sql = 'UPDATE background_jobs SET finish_time = $1, updated = $2 WHERE id = $3;'
-      query(sql, 'NOW()', 'NOW()', id)
-    end
-
     def update_queue_order_for(sequence, thread = nil)
       if thread
         queue_order_sequence(sequence)
@@ -167,7 +158,7 @@ module MazeCraze
     end
 
     def queue_order_sequence(sequence)
-      self.class.mutex.synchronize do
+      MazeCraze::BackgroundWorker.mutex.synchronize do
         case sequence
         when 'new_job' then update_queue_order_for_new_job
         when 'running_job' then update_queue_order_for_running_job
@@ -218,28 +209,20 @@ module MazeCraze
 
     def update_start_time
       sql = 'UPDATE background_jobs SET start_time = $1, updated = $2 WHERE id = $3;'
-      query(sql, nil, 'NOW()', id)
+      query(sql, 'NOW()', 'NOW()', id)
     end
+
+    def update_finish_time
+      sql = 'UPDATE background_jobs SET finish_time = $1, updated = $2 WHERE id = $3;'
+      query(sql, 'NOW()', 'NOW()', id)
+    end
+
 
     def prepare_to_run(thread_obj)
       update_job_thread_id(thread_obj.id)
       update_job_status('running')
       update_queue_order_for('running_job', thread_obj.thread)
       start
-    end
-
-    def start
-      set_start_time
-      results = run
-      set_finish_time
-      finish(results)
-    end
-
-    def finish(results)
-      update_job_status('completed')
-      alert = "#{results[:new]} formulas were created. "
-      alert << "#{results[:existed]} formulas already existed."
-      MazeCraze::AdminNotification.new(alert).save!
     end
 
     def cancel
@@ -270,7 +253,7 @@ module MazeCraze
     def reset
       update_job_status('queued')
       update_job_thread_id(nil)
-      update_start_time
+      # update_start_time
     end
 
     def delete_from_db
@@ -291,11 +274,25 @@ module MazeCraze
     end
   end
 
-  class GenerateMazeFormulasJob < BackgroundJob
+  class GenerateMazeFormulas < BackgroundJob
     @mutex = Mutex.new
 
     class << self
       attr_reader :mutex
+    end
+
+    def start
+      update_start_time
+      results = run
+      update_finish_time
+      finish(results)
+    end
+
+    def finish(results)
+      update_job_status('completed')
+      alert = "#{results[:new]} formulas were created. "
+      alert << "#{results[:existed]} formulas already existed."
+      MazeCraze::AdminNotification.new(alert).save!
     end
 
     def run
@@ -314,8 +311,33 @@ module MazeCraze
     end
   end
 
-  class GenerateMazePermutationJob < BackgroundJob
-    def run; end
+  class GenerateMazePermutations < BackgroundJob
+    def start
+      update_start_time
+      # results = run
+      formula_id = run
+      update_finish_time
+      # finish(results)
+      finish(formula_id)
+    end
+
+    def finish(formula_id)
+      update_job_status('completed')
+      MazeCraze::MazeFormula.update_status(formula_id, 'completed')
+      # alert = "#{results[:new]} formulas were created. "
+      # alert << "#{results[:existed]} formulas already existed."
+      # MazeCraze::AdminNotification.new(alert).save!
+    end
+
+    def run
+      formula_values = MazeCraze::MazeFormula.retrieve_formula_values(params['formula_id'])
+      formula = MazeCraze::MazeFormula.maze_formula_type_to_class(formula_values['maze_type']).new(formula_values)
+      # formula.generate_permutations(params[:formula_id], id)
+      formula.generate_permutations
+      # formula.generate_candidates(params[:formula_id])
+      # formula.update_status(params[:formula_id], params[:update_status_to]) # change to instance method
+      formula.id
+    end
 
     def undo
       sql = "DELETE FROM maze_formula_set_permutations WHERE background_job_id = $1;"
@@ -323,7 +345,7 @@ module MazeCraze
     end
   end
 
-  class GenerateMazeCandidateJob < BackgroundJob
+  class GenerateMazeCandidates < BackgroundJob
     def run; end
 
     def undo

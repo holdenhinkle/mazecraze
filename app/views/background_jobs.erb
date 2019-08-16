@@ -30,7 +30,7 @@
               <button type="type" class="btn btn-secondary mb-3">Restart</button>
             </form>
           <% end %>
-          <p>Change the number of threads on the <a href="/admin/settings" class="text-primary">settings</a> page.</p>
+          <p>Change the number of threads on the <a href="/admin/settings" class="text-primary">Settings</a> page.</p>
         </div>
       </div>
       <p class='pt-3'>If you press 'Stop', all jobs that are running will be cancelled and put back in the queue.</p>
@@ -69,7 +69,7 @@
           <% if status == 'queued' %>
             <th scope="col">Assigned to Worker ID</th>
           <% end %>  
-          <% if status == 'running' || status == 'failed' %>
+          <% if status == 'running' %>
             <th scope="col">Worker ID</th>
             <th scope="col">Thread ID</th>
           <% end %>
@@ -81,7 +81,7 @@
             <th scope="col">Finish Time</th>
             <th scope="col">Total Time</th>
           <% end %>
-          <% if status == 'queued' || status == 'failed' %>
+          <% if status == 'queued' %>
             <th scope="col">Last Updated</th>
           <% end %>
           <% unless status == 'completed' %>
@@ -96,18 +96,18 @@
             <th scope='row'><%= index + 1 %></th>
             <td><%= job['id'] %></td>
             <% if status == 'queued' %>
-              <td scope="col"><%= job['queue_order'] %></td>
+              <td><%= job['queue_order'] %></td>
             <% end %>
             <td><%= capitalize_words(underscores_to_spaces(job['job_type'])) %></td>
             <td><%= format_background_job_params(job['params']) %></td>
             <% if status == 'queued' %>
               <td><%= job['background_worker_id'] %></td>
             <% end %>  
-            <% if status == 'running' || status == 'failed' %>  
+            <% if status == 'running' %>  
               <td><%= job['background_worker_id'] %></td>          
               <td><%= job['background_thread_id'] %></td>
             <% end %>
-            <% if status == 'queued' || status == 'failed' %>
+            <% if status == 'queued' %>
               <td><%= format_timestamp(job['updated']) %></td>
             <% end %>
             <% if status == 'running' %>
@@ -119,7 +119,7 @@
               <td><%= total_time(job['start_time'], job['finish_time']) %></td>
             <% end %>
             <% if status == 'queued' %>
-              <td scope="col">
+              <td>
                 <form action="/admin/background-jobs" method="post">
                   <input type="hidden" name="delete_job" value="true">
                   <input type="hidden" name="job_id" value="<%= job['id'] %>">
@@ -128,28 +128,29 @@
                 </form>
               </td>
             <% end %>
-            <% if status == 'running' %>
-              <td scope="col">
+            <% if status == 'running' && job['job_type'] == 'generate maze formulas' %>
+              <td class="mc_multiple_buttons">
+                <form action="/admin/background-jobs" method="post">
+                  <input type="hidden" name="cancel_job" value="true">
+                  <input type="hidden" name="job_id" value="<%= job['id'] %>">
+                  <input type="hidden" name="job_status" value="<%= job['status'] %>">
+                  <button type="type" class="btn btn-danger btn-sm mr-2">Cancel</button>
+                </form>
+                <form action="/admin/background-jobs" method="post">
+                  <input type="hidden" name="delete_job" value="true">
+                  <input type="hidden" name="job_id" value="<%= job['id'] %>">
+                  <input type="hidden" name="job_status" value="<%= job['status'] %>">
+                  <button type="type" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+              </td>
+            <% end %>
+            <% if status == 'running' && job['job_type'] != 'generate maze formulas' %>
+              <td>
                 <form action="/admin/background-jobs" method="post">
                   <input type="hidden" name="cancel_job" value="true">
                   <input type="hidden" name="job_id" value="<%= job['id'] %>">
                   <input type="hidden" name="job_status" value="<%= job['status'] %>">
                   <button type="type" class="btn btn-danger btn-sm">Cancel</button>
-                </form>
-                <form action="/admin/background-jobs" method="post">
-                  <input type="hidden" name="delete_job" value="true">
-                  <input type="hidden" name="job_id" value="<%= job['id'] %>">
-                  <input type="hidden" name="job_status" value="<%= job['status'] %>">
-                  <button type="type" class="btn btn-danger btn-sm">Delete</button>
-                </form>
-              </td>
-            <% end %>
-            <% if status == 'failed' %>
-              <td scope="col">
-                <form action="/admin/background-jobs" method="post">
-                  <input type="hidden" name="id" value="<%= job['id'] %>">
-                  <input type="hidden" name="queue_job" value="true">
-                  <button type="type" class="btn btn-success btn-sm">Try again</button>
                 </form>
               </td>
             <% end %>

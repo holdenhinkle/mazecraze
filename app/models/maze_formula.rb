@@ -8,6 +8,8 @@ module MazeCraze
                                  'tunnel' => 'TunnelMazeFormula',
                                  'portal' => 'PortalMazeFormula' }
 
+    FORMULA_STATUSES = %w(queued pending completed).freeze
+
     # set and manage maze formula class constraints
     class << self
       def set_maze_formula_constraints
@@ -475,10 +477,6 @@ module MazeCraze
         query(sql, id)[0]
       end
 
-      def status_list
-        %w(pending approved rejected)
-      end
-
       def count_by_type_and_status(maze_type, status)
         sql = "SELECT count(maze_type) FROM maze_formulas WHERE maze_type = $1 AND status = $2;"
         query(sql, maze_type, status)
@@ -523,12 +521,15 @@ module MazeCraze
       end
     end
 
-    attr_reader :background_job_id,
+    attr_reader :id, :background_job_id,
                 :maze_type, :x, :y,
                 :endpoints, :barriers, :experiment,
                 :unique_square_set
 
+    attr_accessor :id
+
     def initialize(formula)
+      @id = formula['id']
       @background_job_id = formula['background_job_id']
       @maze_type = formula['maze_type']
       @x = integer_value(formula['x'])
@@ -674,11 +675,16 @@ module MazeCraze
       'Portal squares are only allowed on portal mazes.'
     end
 
-    def generate_permutations(id)
-      save_permutations(maze_permutations(id), id)
+    # def generate_permutations(id)
+    #   save_permutations(maze_permutations(id), id)
+    # end
+
+    def generate_permutations
+      save_permutations(maze_permutations)
     end
 
-    def maze_permutations(id)
+    # def maze_permutations(id)
+    def maze_permutations
       unique_square_set_permutations.each_with_object([]) do |unique_square_permutation, permutations|
         unique_squares_length = unique_square_permutation.length
         permutations << unique_square_permutation + Array.new(x * y - unique_squares_length, 'normal')
@@ -699,10 +705,10 @@ module MazeCraze
       end
     end
 
-    def save_permutations(permutations, id)
+    def save_permutations(permutations)
       permutations.each do |permutation|
-        permutation = MazeCraze::MazePermutation.new(permutation, x, y)
-        permutation.save!(id) unless permutation.exists?
+        permutation = MazeCraze::MazePermutation.new(permutation, id, background_job_id, x, y)
+        permutation.save! unless permutation.exists?
       end
     end
 
@@ -798,7 +804,7 @@ module MazeCraze
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
       SQL
 
-      query(sql.gsub!("\n", ""), background_job_id, maze_type, unique_square_set, x, y, endpoints,
+      self.id = query(sql.gsub!("\n", ""), background_job_id, maze_type, unique_square_set, x, y, endpoints,
       barriers, experiment)
     end
   end

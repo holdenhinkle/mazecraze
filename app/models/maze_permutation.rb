@@ -2,10 +2,12 @@ module MazeCraze
   class MazePermutation
     include MazeCraze::Queryable
 
-    attr_reader :permutation
+    attr_reader :permutation, :maze_formula_id, :background_job_id
 
-    def initialize(permutation, x, y)
+    def initialize(permutation, maze_id, job_id, x, y)
       @permutation = permutation
+      @maze_formula_id = maze_id
+      @background_job_id = job_id
       @rotate = MazeCraze::MazeRotate.new(x, y)
       @invert = MazeCraze::MazeInvert.new(x, y)
     end
@@ -34,9 +36,9 @@ module MazeCraze
       exists
     end
 
-    def save!(id)
-      sql = "INSERT INTO maze_formula_set_permutations (maze_formula_id, permutation) VALUES($1, $2);"
-      query(sql, id, permutation)
+    def save!
+      sql = "INSERT INTO maze_formula_set_permutations (background_job_id, maze_formula_id, permutation) VALUES($1, $2, $3);"
+      query(sql, background_job_id, maze_formula_id, permutation)
     end
 
     private

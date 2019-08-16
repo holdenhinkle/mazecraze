@@ -19,7 +19,7 @@
   <% @maze_types.each do |type| %>
     <h2><%= type.to_s.capitalize %></h2>
     <nav class="nav flex-column">
-    <% @formula_status_list.each do |status| %>
+    <% @formula_statuses.each do |status| %>
       <a class="nav-link" href="/admin/mazes/formulas/<%= type %>#<%= status %>"><%= status %>: <%= @maze_status_counts[type][status][0]['count'] %></a>
     <% end %>
     </nav>

@@ -126,12 +126,12 @@ class AdminController < ApplicationController
   get '/admin/mazes/formulas' do
     @title = "Maze Formulas - Maze Craze Admin"
     @maze_types = MazeCraze::Maze::MAZE_TYPE_CLASS_NAMES.keys
-    @formula_status_list = MazeCraze::MazeFormula.status_list #RENAME THIS METHOD
+    @formula_statuses = MazeCraze::MazeFormula::FORMULA_STATUSES
     @maze_status_counts = {}
 
     @maze_types.each do |type|
       status_counts_by_maze_type = {}
-      @formula_status_list.each do |status|
+      @formula_statuses.each do |status|
         status_counts_by_maze_type[status] = MazeCraze::MazeFormula.count_by_type_and_status(type, status)
       end
       @maze_status_counts[type] = status_counts_by_maze_type
@@ -147,7 +147,7 @@ class AdminController < ApplicationController
     job_params = []
 
     if MazeCraze::BackgroundJob.duplicate_job?(job_type, job_params)
-      session[:error] = duplicate_jobs_error_message(job_type, job_params)
+      session[:error] = duplicate_job_error_message(job_type, job_params)
     else
       new_background_job(job_type, job_params)
       session[:success] = "The task 'Generate Maze Formulas' was sent to the queue. You will be notified when it's complete."
@@ -183,12 +183,10 @@ class AdminController < ApplicationController
   end
 
   get '/admin/mazes/formulas/:type' do
-    @maze_type = params[:type]
-
-    if MazeCraze::Maze::MAZE_TYPE_CLASS_NAMES.keys.include?(@maze_type)
-      @title = "#{@maze_type} Maze Formulas - Maze Craze Admin"
-      @formula_status_list = MazeCraze::MazeFormula.status_list #RENAME THIS METHOD
-      @formulas = MazeCraze::MazeFormula.status_list_by_maze_type(@maze_type)
+    if MazeCraze::Maze::MAZE_TYPE_CLASS_NAMES.keys.include?(params[:type])
+      @title = "#{params[:type]} Maze Formulas - Maze Craze Admin"
+      @formula_statuses = MazeCraze::MazeFormula::FORMULA_STATUSES
+      @formulas = MazeCraze::MazeFormula.status_list_by_maze_type(params[:type])
       erb :mazes_formulas_type
     else
       session[:error] = "Invalid maze type."
@@ -210,7 +208,7 @@ class AdminController < ApplicationController
     end
   end
 
-  def duplicate_jobs_error_message(job, params)
+  def duplicate_job_error_message(job, params)
     duplicate_jobs = MazeCraze::BackgroundJob.duplicate_jobs(job, params)
 
     message = if duplicate_jobs.values.length > 1
@@ -228,32 +226,44 @@ class AdminController < ApplicationController
     message << jobs.join(', ') + '.'
   end
 
-  post '/admin/mazes/formulas/:type' do
-    if params[:update_status_to] == 'approved'
-      formula_values = MazeCraze::MazeFormula.retrieve_formula_values(params[:formula_id])
-      @formula = MazeCraze::MazeFormula.maze_formula_type_to_class(formula_values['maze_type']).new(formula_values)
-      @formula.generate_permutations(params[:formula_id])
-      @formula.generate_candidates(params[:formula_id])
-      MazeCraze::MazeFormula.update_status(params[:formula_id], params[:update_status_to]) # change to instance method
-      session[:success] = "The status for Maze Formula ID:#{params[:formula_id]} was updated to '#{params[:update_status_to]}'."
-    elsif params['generate_formulas']
-      job_type = 'generate_maze_formulas'
-      job_params = { 'maze_type' => params['maze_type'] }
-      if MazeCraze::BackgroundJob.duplicate_job?(job_type, job_params)
-        session[:error] = duplicate_jobs_error_message(job_type, job_params)
+  post '/admin/mazes/formulas/:type' do # refactor
+    if params['job_type'] == 'generate_maze_permutations'
+      error_intro = "Jobs for the following formulas were already created: "
+      duplicate_job_errors = []
+      queued_job_ids = []
+      params['formula_ids'].each do |id|
+        job_params = { 'formula_id' => id  }
+        if MazeCraze::BackgroundJob.duplicate_job?(params['job_type'], job_params)
+          duplicate_job = MazeCraze::BackgroundJob.duplicate_jobs(params['job_type'], job_params).first
+          duplicate_job_errors << "ID \##{id} (Job ID \##{duplicate_job['id']} (Status: #{duplicate_job['status'].capitalize})"
+        else
+          MazeCraze::MazeFormula.update_status(id, 'queued')
+          new_background_job(params['job_type'], job_params)
+          queued_job_ids.push(id)
+        end
+      end
+      session[:success] = "Jobs for the following formulas were created and queued: #{queued_job_ids.join(', ')}." if queued_job_ids.any?
+      session[:error] = error_intro + duplicate_job_errors.join(', ') if !duplicate_job_errors.empty?
+
+    elsif params['job_type'] == 'generate_maze_formulas'
+      job_params = { 'maze_type' => params['type'] }
+
+      if MazeCraze::BackgroundJob.duplicate_job?(params['job_type'], job_params)
+        session[:error] = duplicate_job_error_message(params['job_type'], job_params)
       else
-        new_background_job(job_type, job_params)
-        session[:success] = "The task 'Generate #{params['maze_type'].capitalize} Maze Formulas' was sent to the queue. You will be notified when it's complete."
+        new_background_job(params['job_type'], job_params)
+        session[:success] = "The job 'Generate #{params['type'].capitalize} Maze Formulas' was created and queued."
       end
     end
-    redirect "/admin/mazes/formulas/#{params['maze_type']}"
+
+    redirect "/admin/mazes/formulas/#{params['type']}"
   end
 
   get '/admin/mazes/formulas/:type/:id' do
     # add :type validation
     @title = "Mazes - maze Craze Admin"
     @maze_types = MazeCraze::Maze::MAZE_TYPE_CLASS_NAMES.keys
-    @formula_status_list = MazeCraze::MazeFormula.status_list #RENAME THIS METHOD
+    @formula_statuses = MazeCraze::MazeFormula::FORMULA_STATUSES
     erb :mazes_formulas_id
   end
 end
