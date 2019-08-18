@@ -712,7 +712,7 @@ module MazeCraze
       end
     end
 
-    def generate_candidates(id)
+    def generate_candidates
       sql = <<~SQL
         SELECT maze_formula_set_permutations.id AS id, maze_type, x, y, endpoints, permutation 
         FROM maze_formula_set_permutations 
@@ -722,9 +722,9 @@ module MazeCraze
 
       results = query(sql.gsub!("\n", ""), id)
 
-      results.each do |tuple|
-        maze = MazeCraze::Maze.maze_type_to_class(tuple["maze_type"]).new(tuple)
-        maze.save_candidate!(tuple['id']) if maze.solutions.any?
+      results.each do |permutation|
+        maze = MazeCraze::Maze.maze_type_to_class(permutation["maze_type"]).new(permutation)
+        maze.save_candidate!(background_job_id, permutation['id']) if maze.solutions.any?
       end
     end
 

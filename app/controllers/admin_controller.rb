@@ -149,7 +149,7 @@ class AdminController < ApplicationController
     if MazeCraze::BackgroundJob.duplicate_job?(job_type, job_params)
       session[:error] = duplicate_job_error_message(job_type, job_params)
     else
-      new_background_job(job_type, job_params)
+      MazeCraze::BackgroundJob.new_background_job(job_type, job_params)
       session[:success] = "The task 'Generate Maze Formulas' was sent to the queue. You will be notified when it's complete."
     end
 
@@ -194,20 +194,6 @@ class AdminController < ApplicationController
     end
   end
 
-  def new_background_job(job_type, job_params)
-    job_class = MazeCraze::BackgroundJob.job_type_to_class(job_type)
-    job = job_class.new({ 'job_type' => job_type, 'params' => job_params })
-
-    worker = MazeCraze::BackgroundWorker.instance
-
-    if worker.dead?
-      worker.start
-    else
-      worker.enqueue_job(job.id)
-      worker.start if worker.dead?
-    end
-  end
-
   def duplicate_job_error_message(job, params)
     duplicate_jobs = MazeCraze::BackgroundJob.duplicate_jobs(job, params)
 
@@ -238,7 +224,7 @@ class AdminController < ApplicationController
           duplicate_job_errors << "ID \##{id} (Job ID \##{duplicate_job['id']} (Status: #{duplicate_job['status'].capitalize})"
         else
           MazeCraze::MazeFormula.update_status(id, 'queued')
-          new_background_job(params['job_type'], job_params)
+          MazeCraze::BackgroundJob.new_background_job(params['job_type'], job_params)
           queued_job_ids.push(id)
         end
       end
@@ -251,7 +237,7 @@ class AdminController < ApplicationController
       if MazeCraze::BackgroundJob.duplicate_job?(params['job_type'], job_params)
         session[:error] = duplicate_job_error_message(params['job_type'], job_params)
       else
-        new_background_job(params['job_type'], job_params)
+        MazeCraze::BackgroundJob.new_background_job(params['job_type'], job_params)
         session[:success] = "The job 'Generate #{params['type'].capitalize} Maze Formulas' was created and queued."
       end
     end

@@ -12,6 +12,20 @@ module MazeCraze
     JOB_STATUSES = %w(running queued completed).freeze
 
     class << self
+      def new_background_job(job_type, job_params)
+        job_class = job_type_to_class(job_type)
+        job = job_class.new({ 'job_type' => job_type, 'params' => job_params })
+
+        worker = MazeCraze::BackgroundWorker.instance
+
+        if worker.dead?
+          worker.start
+        else
+          worker.enqueue_job(job.id)
+          worker.start if worker.dead?
+        end
+      end
+
       def sanitize_background_jobs_table
         sql = 'UPDATE background_jobs SET status = $1 WHERE status = $2;'
         query(sql, 'queued', 'running')
@@ -275,24 +289,12 @@ module MazeCraze
   end
 
   class GenerateMazeFormulas < BackgroundJob
-    @mutex = Mutex.new
-
-    class << self
-      attr_reader :mutex
-    end
-
     def start
       update_start_time
       results = run
       update_finish_time
-      finish(results)
-    end
-
-    def finish(results)
-      update_job_status('completed')
-      alert = "#{results[:new]} formulas were created. "
-      alert << "#{results[:existed]} formulas already existed."
-      MazeCraze::AdminNotification.new(alert).save!
+      finish
+      save_results(results)
     end
 
     def run
@@ -305,6 +307,16 @@ module MazeCraze
       end
     end
 
+    def finish
+      update_job_status('completed')
+    end
+
+    def save_results(results)
+      alert = "#{results[:new]} formulas were created. "
+      alert << "#{results[:existed]} formulas already existed."
+      MazeCraze::AdminNotification.new(alert).save!
+    end
+
     def undo
       sql = "DELETE FROM maze_formulas WHERE background_job_id = $1;"
       query(sql, id)
@@ -315,18 +327,10 @@ module MazeCraze
     def start
       update_start_time
       # results = run
-      formula_id = run
+      run
       update_finish_time
-      # finish(results)
-      finish(formula_id)
-    end
-
-    def finish(formula_id)
-      update_job_status('completed')
-      MazeCraze::MazeFormula.update_status(formula_id, 'completed')
-      # alert = "#{results[:new]} formulas were created. "
-      # alert << "#{results[:existed]} formulas already existed."
-      # MazeCraze::AdminNotification.new(alert).save!
+      finish
+      create_resulting_job
     end
 
     def run
@@ -339,6 +343,20 @@ module MazeCraze
       formula.id
     end
 
+    def finish
+      update_job_status('completed')
+      MazeCraze::MazeFormula.update_status(params['formula_id'], 'completed')
+      # alert = "#{results[:new]} formulas were created. "
+      # alert << "#{results[:existed]} formulas already existed."
+      # MazeCraze::AdminNotification.new(alert).save!
+    end
+
+    def create_resulting_job
+      job_type = 'generate_maze_candidates'
+      job_params = { 'formula_id' => params['formula_id'] }
+      self.class.new_background_job(job_type, job_params)
+    end
+
     def undo
       sql = "DELETE FROM maze_formula_set_permutations WHERE background_job_id = $1;"
       query(sql, id)
@@ -346,7 +364,27 @@ module MazeCraze
   end
 
   class GenerateMazeCandidates < BackgroundJob
-    def run; end
+    def start
+      update_start_time
+      # results = run
+      run
+      update_finish_time
+      finish
+    end
+
+    def run
+      formula_values = MazeCraze::MazeFormula.retrieve_formula_values(params['formula_id'])
+      formula = MazeCraze::MazeFormula.maze_formula_type_to_class(formula_values['maze_type']).new(formula_values)
+      formula.generate_candidates
+    end
+
+    def finish
+      update_job_status('completed')
+      # update maze permutation to completed
+      # alert = "#{results[:new]} formulas were created. "
+      # alert << "#{results[:existed]} formulas already existed."
+      # MazeCraze::AdminNotification.new(alert).save!
+    end
 
     def undo
       sql = "DELETE FROM maze_candidates WHERE background_job_id = $1;"
