@@ -3,6 +3,45 @@ module MazeCraze
     include MazeCraze::MazeNavigate
     include MazeCraze::MazeSolve
     include MazeCraze::Queryable
+    extend MazeCraze::Queryable
+
+    class << self
+      def maze_type_to_class(type)
+        class_name = 'MazeCraze::' + MAZE_TYPE_CLASS_NAMES[type]
+        Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
+      end
+
+      def generate_mazes(maze_formula_id, background_job_id)
+        sql = <<~SQL
+          SELECT set_permutations.id AS id, maze_type, x, y, endpoints, permutation 
+          FROM set_permutations 
+          LEFT JOIN maze_formulas ON maze_formula_id = maze_formulas.id 
+          WHERE maze_formulas.id = $1;
+        SQL
+  
+        results = query(sql.gsub!("\n", ""), maze_formula_id)
+  
+        results.each do |permutation|
+          maze = Maze.maze_type_to_class(permutation["maze_type"]).new(permutation)
+          maze.save!(background_job_id, permutation['id']) if maze.solutions.any?
+        end
+      end
+  
+      def types_popover
+        popover = { maze_types: { title: 'Maze Types', body: '' } }
+        types_popovers.values.each do |content|
+          popover[:maze_types][:body] << "<p><strong>#{content[:title]}</strong><br>#{content[:body]}</p>"
+        end
+        popover
+      end
+  
+      def types_popovers
+        MAZE_TYPE_CLASS_NAMES.values.each_with_object({}) do |class_name, popover_content|
+          maze_class = Kernel.const_get('MazeCraze::' + class_name) if Kernel.const_defined?('MazeCraze::' + class_name)
+          popover_content[maze_class.to_symbol] = maze_class.popover
+        end
+      end
+    end
     
     MAZE_TYPE_CLASS_NAMES = { 'simple' => 'SimpleMaze',
                               'bridge' => 'BridgeMaze',
@@ -25,34 +64,14 @@ module MazeCraze
       end
     end
 
-    def save_candidate!(background_job_id, maze_formula_set_permutation_id)
+    def save!(background_job_id, set_permutation_id)
       sql = <<~SQL
-        INSERT INTO maze_candidates 
-        (background_job_id, maze_formula_set_permutation_id, number_of_solutions, solutions) 
+        INSERT INTO mazes 
+        (background_job_id, set_permutation_id, number_of_solutions, solutions) 
         VALUES ($1, $2, $3, $4);
       SQL
 
-      query(sql.gsub!("\n", ""), background_job_id, maze_formula_set_permutation_id, @solutions.length, @solutions)
-    end
-
-    def self.maze_type_to_class(type)
-      class_name = 'MazeCraze::' + MAZE_TYPE_CLASS_NAMES[type]
-      Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
-    end
-
-    def self.types_popover
-      popover = { maze_types: { title: 'Maze Types', body: '' } }
-      types_popovers.values.each do |content|
-        popover[:maze_types][:body] << "<p><strong>#{content[:title]}</strong><br>#{content[:body]}</p>"
-      end
-      popover
-    end
-
-    def self.types_popovers
-      MAZE_TYPE_CLASS_NAMES.values.each_with_object({}) do |class_name, popover_content|
-        maze_class = Kernel.const_get('MazeCraze::' + class_name) if Kernel.const_defined?('MazeCraze::' + class_name)
-        popover_content[maze_class.to_symbol] = maze_class.popover
-      end
+      query(sql.gsub!("\n", ""), background_job_id, set_permutation_id, @solutions.length, @solutions)
     end
 
     def valid?

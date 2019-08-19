@@ -524,7 +524,7 @@ module MazeCraze
     attr_reader :id, :background_job_id,
                 :maze_type, :x, :y,
                 :endpoints, :barriers, :experiment,
-                :unique_square_set
+                :set
 
     attr_accessor :id
 
@@ -537,10 +537,10 @@ module MazeCraze
       @endpoints = integer_value(formula['endpoints'])
       @barriers = integer_value(formula['barriers'])
       @experiment = formula[:experiment] ? true : false
-      @unique_square_set = if formula['unique_square_set']
-                            JSON.parse(formula['unique_square_set'])
+      @set = if formula['set']
+                            JSON.parse(formula['set'])
                           else
-                            create_unique_square_set
+                            create_set
                           end
     end
 
@@ -675,58 +675,21 @@ module MazeCraze
       'Portal squares are only allowed on portal mazes.'
     end
 
-    # def generate_permutations(id)
-    #   save_permutations(maze_permutations(id), id)
+    # def generate_candidates
+    #   sql = <<~SQL
+    #     SELECT set_permutations.id AS id, maze_type, x, y, endpoints, permutation 
+    #     FROM set_permutations 
+    #     LEFT JOIN maze_formulas ON maze_formula_id = maze_formulas.id 
+    #     WHERE maze_formulas.id = $1;
+    #   SQL
+
+    #   results = query(sql.gsub!("\n", ""), id)
+
+    #   results.each do |permutation|
+    #     maze = MazeCraze::Maze.maze_type_to_class(permutation["maze_type"]).new(permutation)
+    #     maze.save_candidate!(background_job_id, permutation['id']) if maze.solutions.any?
+    #   end
     # end
-
-    def generate_permutations
-      save_permutations(maze_permutations)
-    end
-
-    # def maze_permutations(id)
-    def maze_permutations
-      unique_square_set_permutations.each_with_object([]) do |unique_square_permutation, permutations|
-        unique_squares_length = unique_square_permutation.length
-        permutations << unique_square_permutation + Array.new(x * y - unique_squares_length, 'normal')
-        unique_squares_length.downto(1) do |left_boundry|
-          left_boundry.upto(x * y - (unique_squares_length - left_boundry) - 1) do |right_boundry|
-            new_permutation = permutations.last.clone
-            new_permutation[right_boundry - 1], new_permutation[right_boundry] = 'normal', new_permutation[right_boundry - 1]
-            permutations << new_permutation
-          end
-        end
-      end
-    end
-
-    def unique_square_set_permutations
-      unique_square_set.permutation.to_a.each_with_object([]) do |permutation, permutations| 
-        next if permutation.last == 'normal'
-        permutations << permutation
-      end
-    end
-
-    def save_permutations(permutations)
-      permutations.each do |permutation|
-        permutation = MazeCraze::MazePermutation.new(permutation, id, background_job_id, x, y)
-        permutation.save! unless permutation.exists?
-      end
-    end
-
-    def generate_candidates
-      sql = <<~SQL
-        SELECT maze_formula_set_permutations.id AS id, maze_type, x, y, endpoints, permutation 
-        FROM maze_formula_set_permutations 
-        LEFT JOIN maze_formulas ON maze_formula_id = maze_formulas.id 
-        WHERE maze_formulas.id = $1;
-      SQL
-
-      results = query(sql.gsub!("\n", ""), id)
-
-      results.each do |permutation|
-        maze = MazeCraze::Maze.maze_type_to_class(permutation["maze_type"]).new(permutation)
-        maze.save_candidate!(background_job_id, permutation['id']) if maze.solutions.any?
-      end
-    end
 
     private
 
@@ -768,11 +731,11 @@ module MazeCraze
               'portals' => 0 })
     end
 
-    def create_unique_square_set(maze = [])
+    def create_set(maze = [])
       if (count_pairs(maze, 'endpoint') / 2) != endpoints
-        create_unique_square_set(maze << format_pair(maze, 'endpoint'))
+        create_set(maze << format_pair(maze, 'endpoint'))
       elsif maze.count('barrier') != barriers
-        create_unique_square_set(maze << 'barrier')
+        create_set(maze << 'barrier')
       else
         maze << 'normal'
       end
@@ -800,11 +763,11 @@ module MazeCraze
     def save!
       sql = <<~SQL
         INSERT INTO maze_formulas 
-        (background_job_id, maze_type, unique_square_set, x, y, endpoints, barriers, experiment) 
+        (background_job_id, maze_type, set, x, y, endpoints, barriers, experiment) 
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
       SQL
 
-      self.id = query(sql.gsub!("\n", ""), background_job_id, maze_type, unique_square_set, x, y, endpoints,
+      self.id = query(sql.gsub!("\n", ""), background_job_id, maze_type, set, x, y, endpoints,
       barriers, experiment)
     end
   end
@@ -856,13 +819,13 @@ module MazeCraze
       end
     end
 
-    def create_unique_square_set(maze = [])
+    def create_set(maze = [])
       if (count_pairs(maze, 'endpoint') / 2) != endpoints
-        create_unique_square_set(maze << format_pair(maze, 'endpoint'))
+        create_set(maze << format_pair(maze, 'endpoint'))
       elsif maze.count('bridge') != bridges
-        create_unique_square_set(maze << 'bridge')
+        create_set(maze << 'bridge')
       elsif maze.count('barrier') != barriers
-        create_unique_square_set(maze << 'barrier')
+        create_set(maze << 'barrier')
       else
         maze << 'normal'
       end
@@ -891,11 +854,11 @@ module MazeCraze
     def save!
       sql = <<~SQL
         INSERT INTO maze_formulas 
-        (background_job_id, maze_type, unique_square_set, x, y, endpoints, barriers, bridges, experiment) 
+        (background_job_id, maze_type, set, x, y, endpoints, barriers, bridges, experiment) 
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
       SQL
 
-      query(sql.gsub!("\n", ""), background_job_id, maze_type, unique_square_set, x, y, endpoints,
+      query(sql.gsub!("\n", ""), background_job_id, maze_type, set, x, y, endpoints,
       barriers, bridges, experiment)
     end
   end
@@ -947,13 +910,13 @@ module MazeCraze
       end
     end
 
-    def create_unique_square_set(maze = [])
+    def create_set(maze = [])
       if (count_pairs(maze, 'endpoint') / 2) != endpoints
-        create_unique_square_set(maze << format_pair(maze, 'endpoint'))
+        create_set(maze << format_pair(maze, 'endpoint'))
       elsif (count_pairs(maze, 'tunnel') / 2) != tunnels
-        create_unique_square_set(maze << format_pair(maze, 'tunnel'))
+        create_set(maze << format_pair(maze, 'tunnel'))
       elsif maze.count('barrier') != barriers
-        create_unique_square_set(maze << 'barrier')
+        create_set(maze << 'barrier')
       else
         maze << 'normal'
       end
@@ -982,11 +945,11 @@ module MazeCraze
     def save!
       sql = <<~SQL
         INSERT INTO maze_formulas 
-        (background_job_id, maze_type, unique_square_set, x, y, endpoints, barriers, tunnels, experiment) 
+        (background_job_id, maze_type, set, x, y, endpoints, barriers, tunnels, experiment) 
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
       SQL
 
-      query(sql.gsub!("\n", ""), background_job_id, maze_type, unique_square_set, x, y, endpoints,
+      query(sql.gsub!("\n", ""), background_job_id, maze_type, set, x, y, endpoints,
       barriers, tunnels, experiment)
     end
   end
@@ -1038,13 +1001,13 @@ module MazeCraze
       end
     end
 
-    def create_unique_square_set(maze = [])
+    def create_set(maze = [])
       if (count_pairs(maze, 'endpoint') / 2) != endpoints
-        create_unique_square_set(maze << format_pair(maze, 'endpoint'))
+        create_set(maze << format_pair(maze, 'endpoint'))
       elsif (count_pairs(maze, 'portal') / 2) != portals
-        create_unique_square_set(maze << format_pair(maze, 'portal'))
+        create_set(maze << format_pair(maze, 'portal'))
       elsif maze.count('barrier') != barriers
-        create_unique_square_set(maze << 'barrier')
+        create_set(maze << 'barrier')
       else
         maze << 'normal'
       end
@@ -1073,11 +1036,11 @@ module MazeCraze
     def save!
       sql = <<~SQL
         INSERT INTO maze_formulas 
-        (background_job_id, maze_type, unique_square_set, x, y, endpoints, barriers, portals, experiment) 
+        (background_job_id, maze_type, set, x, y, endpoints, barriers, portals, experiment) 
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
       SQL
 
-      query(sql.gsub!("\n", ""), background_job_id, maze_type, unique_square_set, x, y, endpoints,
+      query(sql.gsub!("\n", ""), background_job_id, maze_type, set, x, y, endpoints,
       barriers, portals, experiment)
     end
   end

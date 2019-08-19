@@ -213,7 +213,7 @@ class AdminController < ApplicationController
   end
 
   post '/admin/mazes/formulas/:type' do # refactor
-    if params['job_type'] == 'generate_maze_permutations'
+    if params['job_type'] == 'generate_set_permutations'
       error_intro = "Jobs for the following formulas were already created: "
       duplicate_job_errors = []
       queued_job_ids = []

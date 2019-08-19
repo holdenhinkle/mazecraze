@@ -63,7 +63,7 @@ module ApplicationHelper
   end
 
   def date(date)
-    date.strftime("%d/%m/%Y")
+    date.strftime("%m/%d/%Y")
   end
 
   def time(time)

@@ -5,8 +5,8 @@ module MazeCraze
 
     JOB_TYPE_CLASS_NAMES = { 
       'generate_maze_formulas' => 'GenerateMazeFormulas',
-      'generate_maze_permutations' => 'GenerateMazePermutations',
-      'generate_maze_candidates' => 'GenerateMazeCandidates'
+      'generate_set_permutations' => 'GenerateSetPermutations',
+      'generate_mazes' => 'GenerateMazes'
     }
 
     JOB_STATUSES = %w(running queued completed).freeze
@@ -323,7 +323,7 @@ module MazeCraze
     end
   end
 
-  class GenerateMazePermutations < BackgroundJob
+  class GenerateSetPermutations < BackgroundJob
     def start
       update_start_time
       # results = run
@@ -336,11 +336,7 @@ module MazeCraze
     def run
       formula_values = MazeCraze::MazeFormula.retrieve_formula_values(params['formula_id'])
       formula = MazeCraze::MazeFormula.maze_formula_type_to_class(formula_values['maze_type']).new(formula_values)
-      # formula.generate_permutations(params[:formula_id], id)
-      formula.generate_permutations
-      # formula.generate_candidates(params[:formula_id])
-      # formula.update_status(params[:formula_id], params[:update_status_to]) # change to instance method
-      formula.id
+      MazeCraze::SetPermutation.generate_permutations(formula)
     end
 
     def finish
@@ -352,7 +348,7 @@ module MazeCraze
     end
 
     def create_resulting_job
-      job_type = 'generate_maze_candidates'
+      job_type = 'generate_mazes'
       job_params = { 'formula_id' => params['formula_id'] }
       self.class.new_background_job(job_type, job_params)
     end
@@ -363,7 +359,7 @@ module MazeCraze
     end
   end
 
-  class GenerateMazeCandidates < BackgroundJob
+  class GenerateMazes < BackgroundJob
     def start
       update_start_time
       # results = run
@@ -373,9 +369,7 @@ module MazeCraze
     end
 
     def run
-      formula_values = MazeCraze::MazeFormula.retrieve_formula_values(params['formula_id'])
-      formula = MazeCraze::MazeFormula.maze_formula_type_to_class(formula_values['maze_type']).new(formula_values)
-      formula.generate_candidates
+      MazeCraze::Maze.generate_mazes(params['formula_id'], id)
     end
 
     def finish
@@ -387,7 +381,7 @@ module MazeCraze
     end
 
     def undo
-      sql = "DELETE FROM maze_candidates WHERE background_job_id = $1;"
+      sql = "DELETE FROM mazes WHERE background_job_id = $1;"
       query(sql, id)
     end
   end
