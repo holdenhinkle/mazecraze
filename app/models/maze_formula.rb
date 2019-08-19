@@ -675,22 +675,6 @@ module MazeCraze
       'Portal squares are only allowed on portal mazes.'
     end
 
-    # def generate_candidates
-    #   sql = <<~SQL
-    #     SELECT set_permutations.id AS id, maze_type, x, y, endpoints, permutation 
-    #     FROM set_permutations 
-    #     LEFT JOIN maze_formulas ON maze_formula_id = maze_formulas.id 
-    #     WHERE maze_formulas.id = $1;
-    #   SQL
-
-    #   results = query(sql.gsub!("\n", ""), id)
-
-    #   results.each do |permutation|
-    #     maze = MazeCraze::Maze.maze_type_to_class(permutation["maze_type"]).new(permutation)
-    #     maze.save_candidate!(background_job_id, permutation['id']) if maze.solutions.any?
-    #   end
-    # end
-
     private
 
     def integer_value(value)
