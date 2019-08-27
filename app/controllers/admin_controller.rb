@@ -143,7 +143,7 @@ class AdminController < ApplicationController
   post '/admin/mazes/formulas' do
     redirect "/admin/mazes/formulas" unless params['generate_formulas']
 
-    job_type = 'generate_maze_formulas'
+    job_type = 'generate_formulas'
     job_params = []
 
     if MazeCraze::BackgroundJob.duplicate_job?(job_type, job_params)
@@ -213,7 +213,7 @@ class AdminController < ApplicationController
   end
 
   post '/admin/mazes/formulas/:type' do # refactor
-    if params['job_type'] == 'generate_set_permutations'
+    if params['job_type'] == 'generate_permutations'
       error_intro = "Jobs for the following formulas were already created: "
       duplicate_job_errors = []
       queued_job_ids = []
@@ -231,7 +231,7 @@ class AdminController < ApplicationController
       session[:success] = "Jobs for the following formulas were created and queued: #{queued_job_ids.join(', ')}." if queued_job_ids.any?
       session[:error] = error_intro + duplicate_job_errors.join(', ') if !duplicate_job_errors.empty?
 
-    elsif params['job_type'] == 'generate_maze_formulas'
+    elsif params['job_type'] == 'generate_formulas'
       job_params = { 'maze_type' => params['type'] }
 
       if MazeCraze::BackgroundJob.duplicate_job?(params['job_type'], job_params)

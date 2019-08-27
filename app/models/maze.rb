@@ -13,15 +13,15 @@ module MazeCraze
         Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
       end
 
-      def generate_mazes(maze_formula_id, background_job_id)
+      def generate_mazes(formula_id, background_job_id)
         sql = <<~SQL
-          SELECT set_permutations.id AS id, maze_type, x, y, endpoints, permutation 
-          FROM set_permutations 
-          LEFT JOIN formulas ON maze_formula_id = formulas.id 
+          SELECT permutations.id AS id, maze_type, x, y, endpoints, permutation 
+          FROM permutations 
+          LEFT JOIN formulas ON formula_id = formulas.id 
           WHERE formulas.id = $1;
         SQL
   
-        results = query(sql.gsub!("\n", ""), maze_formula_id)
+        results = query(sql.gsub!("\n", ""), formula_id)
   
         results.each do |permutation|
           maze = Maze.maze_type_to_class(permutation["maze_type"]).new(permutation)
@@ -71,14 +71,14 @@ module MazeCraze
       end
     end
 
-    def save!(background_job_id, set_permutation_id)
+    def save!(background_job_id, permutation_id)
       sql = <<~SQL
         INSERT INTO mazes 
-        (background_job_id, set_permutation_id, number_of_solutions, solutions) 
+        (background_job_id, permutation_id, number_of_solutions, solutions) 
         VALUES ($1, $2, $3, $4);
       SQL
 
-      query(sql.gsub!("\n", ""), background_job_id, set_permutation_id, @solutions.length, @solutions)
+      query(sql.gsub!("\n", ""), background_job_id, permutation_id, @solutions.length, @solutions)
     end
 
     def valid?

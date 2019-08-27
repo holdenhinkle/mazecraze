@@ -4,8 +4,8 @@ module MazeCraze
     include MazeCraze::Queryable
 
     JOB_TYPE_CLASS_NAMES = { 
-      'generate_formulas' => 'GenerateMazeFormulas',
-      'generate_set_permutations' => 'GenerateSetPermutations',
+      'generate_formulas' => 'GenerateFormulas',
+      'generate_permutations' => 'GeneratePermutations',
       'generate_mazes' => 'GenerateMazes'
     }
 
@@ -288,7 +288,7 @@ module MazeCraze
     end
   end
 
-  class GenerateMazeFormulas < BackgroundJob
+  class GenerateFormulas < BackgroundJob
     def start
       update_start_time
       results = run
@@ -323,7 +323,7 @@ module MazeCraze
     end
   end
 
-  class GenerateSetPermutations < BackgroundJob
+  class GeneratePermutations < BackgroundJob
     def start
       update_start_time
       # results = run
@@ -354,7 +354,7 @@ module MazeCraze
     end
 
     def undo
-      sql = "DELETE FROM maze_formula_set_permutations WHERE background_job_id = $1;"
+      sql = "DELETE FROM permutations WHERE background_job_id = $1;"
       query(sql, id)
     end
   end

@@ -14,7 +14,7 @@
     <p>Update formula constraints on the <a href="/admin/settings">Settings</a> page.</p>
     <p>Create a new <a href="/admin/mazes/formulas/new">Experimental Formula</a>.</p>
     <form form action="/admin/mazes/formulas/<%= params['type'] %>" method="post">
-      <input type="hidden" name="job_type" value="generate_maze_formulas">
+      <input type="hidden" name="job_type" value="generate_formulas">
       <button type="type" class="btn btn-primary">Generate <%= params['type'].capitalize %> Maze Formulas</button>
     </form>
   </div>
@@ -25,7 +25,7 @@
     <h2 id=<%= status %>><%= status.capitalize %></h2>
     <% if status == 'pending' && @formulas.any? %>
       <form form action="/admin/mazes/formulas/<%= params['type'] %>" method="post">
-        <input type="hidden" name="job_type" value="generate_set_permutations">
+        <input type="hidden" name="job_type" value="generate_permutations">
         <button type="type" class="btn btn-primary mb-3">Queue Job</button>
     <% end %>
     <table class="table table-hover table-sm">

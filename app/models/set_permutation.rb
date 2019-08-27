@@ -36,11 +36,11 @@ module MazeCraze
       end
     end
 
-    attr_reader :permutation, :maze_formula_id, :background_job_id
+    attr_reader :permutation, :formula_id, :background_job_id
 
     def initialize(permutation, maze_id, job_id, x, y)
       @permutation = permutation
-      @maze_formula_id = maze_id
+      @formula_id = maze_id
       @background_job_id = job_id
       @rotate = MazeCraze::MazeRotate.new(x, y)
       @invert = MazeCraze::MazeInvert.new(x, y)
@@ -61,8 +61,8 @@ module MazeCraze
     end
 
     def save!
-      sql = "INSERT INTO set_permutations (background_job_id, maze_formula_id, permutation) VALUES($1, $2, $3);"
-      query(sql, background_job_id, maze_formula_id, permutation)
+      sql = "INSERT INTO permutations (background_job_id, formula_id, permutation) VALUES($1, $2, $3);"
+      query(sql, background_job_id, formula_id, permutation)
     end
 
     private
@@ -70,7 +70,7 @@ module MazeCraze
     attr_reader :rotate, :invert
 
     def each_variation
-      sql = "SELECT * FROM set_permutations WHERE permutation = $1;"
+      sql = "SELECT * FROM permutations WHERE permutation = $1;"
       permutation_rotations_and_inversions.each do |variation|
         yield(sql, variation)
       end
