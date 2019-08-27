@@ -299,11 +299,11 @@ module MazeCraze
 
     def run
       if params.empty?
-        formula_classes = MazeCraze::MazeFormula.maze_formula_classes
-        MazeCraze::MazeFormula.generate_formulas(id, formula_classes)
+        formula_classes = MazeCraze::Formula.maze_formula_classes
+        MazeCraze::Formula.generate_formulas(id, formula_classes)
       else
-        formula_class = MazeCraze::MazeFormula.maze_formula_type_to_class(params['maze_type'])
-        MazeCraze::MazeFormula.generate_formulas(id, formula_class)
+        formula_class = MazeCraze::Formula.maze_formula_type_to_class(params['maze_type'])
+        MazeCraze::Formula.generate_formulas(id, formula_class)
       end
     end
 
@@ -334,14 +334,14 @@ module MazeCraze
     end
 
     def run
-      formula_values = MazeCraze::MazeFormula.retrieve_formula_values(params['formula_id'])
-      formula = MazeCraze::MazeFormula.maze_formula_type_to_class(formula_values['maze_type']).new(formula_values)
+      formula_values = MazeCraze::Formula.retrieve_formula_values(params['formula_id'])
+      formula = MazeCraze::Formula.maze_formula_type_to_class(formula_values['maze_type']).new(formula_values)
       MazeCraze::Permutation.generate_permutations(formula)
     end
 
     def finish
       update_job_status('completed')
-      MazeCraze::MazeFormula.update_status(params['formula_id'], 'completed')
+      MazeCraze::Formula.update_status(params['formula_id'], 'completed')
       # alert = "#{results[:new]} formulas were created. "
       # alert << "#{results[:existed]} formulas already existed."
       # MazeCraze::AdminNotification.new(alert).save!

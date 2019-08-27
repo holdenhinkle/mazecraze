@@ -15,7 +15,7 @@ model_file_names = ["./app/models/database_connection.rb",
                     "./app/models/maze_invert.rb",
                     "./app/models/maze_navigate.rb",
                     "./app/models/maze_solve.rb",
-                    "./app/models/maze_formula.rb",
+                    "./app/models/formula.rb",
                     "./app/models/permutation.rb",
                     "./app/models/maze.rb",
                     "./app/models/maze_square.rb" ]

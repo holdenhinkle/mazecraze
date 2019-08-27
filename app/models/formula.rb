@@ -1,12 +1,12 @@
 module MazeCraze
-  class MazeFormula
+  class Formula
     extend MazeCraze::Queryable
     include MazeCraze::Queryable
 
-    MAZE_FORMULA_CLASS_NAMES = { 'simple' => 'SimpleMazeFormula',
-                                 'bridge' => 'BridgeMazeFormula',
-                                 'tunnel' => 'TunnelMazeFormula',
-                                 'portal' => 'PortalMazeFormula' }
+    MAZE_FORMULA_CLASS_NAMES = { 'simple' => 'SimpleFormula',
+                                 'bridge' => 'BridgeFormula',
+                                 'tunnel' => 'TunnelFormula',
+                                 'portal' => 'PortalFormula' }
 
     FORMULA_STATUSES = ['queued', 'pending', 'completed'].freeze
 
@@ -693,7 +693,7 @@ module MazeCraze
     end
   end
 
-  class SimpleMazeFormula < MazeFormula
+  class SimpleFormula < Formula
     def self.to_s
       'simple'
     end
@@ -756,7 +756,7 @@ module MazeCraze
     end
   end
 
-  class BridgeMazeFormula < MazeFormula
+  class BridgeFormula < Formula
     def self.to_s
       'bridge'
     end
@@ -847,7 +847,7 @@ module MazeCraze
     end
   end
 
-  class TunnelMazeFormula < MazeFormula
+  class TunnelFormula < Formula
     def self.to_s
       'tunnel'
     end
@@ -938,7 +938,7 @@ module MazeCraze
     end
   end
 
-  class PortalMazeFormula < MazeFormula
+  class PortalFormula < Formula
     def self.to_s
       'portal'
     end

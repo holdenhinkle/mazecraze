@@ -11,7 +11,7 @@ class AdminController < ApplicationController
     @min_max_threads = { min: MazeCraze::BackgroundThread::MIN_THREADS,
                          max: MazeCraze::BackgroundThread::MAX_THREADS }
     @number_of_threads = MazeCraze::BackgroundThread.number_of_threads
-    @maze_formula_constraints = MazeCraze::MazeFormula.constraints
+    @maze_formula_constraints = MazeCraze::Formula.constraints
     erb :admin_settings
   end
 
@@ -28,7 +28,7 @@ class AdminController < ApplicationController
       session[:success] = "The settings have been updated."
       redirect '/admin/settings'
     elsif params["formula_type"]
-      formula_type = MazeCraze::MazeFormula.maze_formula_type_to_class(params['formula_type'])
+      formula_type = MazeCraze::Formula.maze_formula_type_to_class(params['formula_type'])
 
       if formula_type.valid_constraints?(params)
         formula_type.update_constraints(params)
@@ -40,7 +40,7 @@ class AdminController < ApplicationController
         @min_max_threads = { min: MazeCraze::BackgroundThread::MIN_THREADS,
                              max: MazeCraze::BackgroundThread::MAX_THREADS }
         @number_of_threads = MazeCraze::BackgroundThread.number_of_threads
-        @maze_formula_constraints = MazeCraze::MazeFormula.constraints
+        @maze_formula_constraints = MazeCraze::Formula.constraints
         session[:error] = "Please see the #{params['formula_type'].capitalize} Maze error message(s) and try again."
         erb :admin_settings
       end
@@ -126,13 +126,13 @@ class AdminController < ApplicationController
   get '/admin/mazes/formulas' do
     @title = "Maze Formulas - Maze Craze Admin"
     @maze_types = MazeCraze::Maze::MAZE_TYPE_CLASS_NAMES.keys
-    @formula_statuses = MazeCraze::MazeFormula::FORMULA_STATUSES
+    @formula_statuses = MazeCraze::Formula::FORMULA_STATUSES
     @maze_status_counts = {}
 
     @maze_types.each do |type|
       status_counts_by_maze_type = {}
       @formula_statuses.each do |status|
-        status_counts_by_maze_type[status] = MazeCraze::MazeFormula.count_by_type_and_status(type, status)
+        status_counts_by_maze_type[status] = MazeCraze::Formula.count_by_type_and_status(type, status)
       end
       @maze_status_counts[type] = status_counts_by_maze_type
     end
@@ -159,12 +159,12 @@ class AdminController < ApplicationController
   get '/admin/mazes/formulas/new' do
     @title = "New Maze Formula - Maze Craze Admin"
     @maze_types = MazeCraze::Maze::MAZE_TYPE_CLASS_NAMES.keys
-    @popovers = MazeCraze::MazeFormula.form_popovers
+    @popovers = MazeCraze::Formula.form_popovers
     erb :mazes_formulas_new
   end
 
   post '/admin/mazes/formulas/new' do
-    @formula = MazeCraze::MazeFormula.maze_formula_type_to_class(params[:maze_type]).new(params)
+    @formula = MazeCraze::Formula.maze_formula_type_to_class(params[:maze_type]).new(params)
 
     if @formula.exists?
       session[:error] = "That maze formula already exists."
@@ -178,15 +178,15 @@ class AdminController < ApplicationController
     end
 
     @maze_types = MazeCraze::Maze::MAZE_TYPE_CLASS_NAMES.keys
-    @popovers = MazeCraze::MazeFormula.form_popovers
+    @popovers = MazeCraze::Formula.form_popovers
     erb :mazes_formulas_new
   end
 
   get '/admin/mazes/formulas/:type' do
     if MazeCraze::Maze::MAZE_TYPE_CLASS_NAMES.keys.include?(params[:type])
       @title = "#{params[:type]} Maze Formulas - Maze Craze Admin"
-      @formula_statuses = MazeCraze::MazeFormula::FORMULA_STATUSES
-      @formulas = MazeCraze::MazeFormula.status_list_by_maze_type(params[:type])
+      @formula_statuses = MazeCraze::Formula::FORMULA_STATUSES
+      @formulas = MazeCraze::Formula.status_list_by_maze_type(params[:type])
       erb :mazes_formulas_type
     else
       session[:error] = "Invalid maze type."
@@ -223,7 +223,7 @@ class AdminController < ApplicationController
           duplicate_job = MazeCraze::BackgroundJob.duplicate_jobs(params['job_type'], job_params).first
           duplicate_job_errors << "ID \##{id} (Job ID \##{duplicate_job['id']} (Status: #{duplicate_job['status'].capitalize})"
         else
-          MazeCraze::MazeFormula.update_status(id, 'queued')
+          MazeCraze::Formula.update_status(id, 'queued')
           MazeCraze::BackgroundJob.new_background_job(params['job_type'], job_params)
           queued_job_ids.push(id)
         end
@@ -249,7 +249,7 @@ class AdminController < ApplicationController
     # add :type validation
     @title = "Mazes - maze Craze Admin"
     @maze_types = MazeCraze::Maze::MAZE_TYPE_CLASS_NAMES.keys
-    @formula_statuses = MazeCraze::MazeFormula::FORMULA_STATUSES
+    @formula_statuses = MazeCraze::Formula::FORMULA_STATUSES
     erb :mazes_formulas_id
   end
 end
