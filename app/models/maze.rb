@@ -5,6 +5,8 @@ module MazeCraze
     include MazeCraze::Queryable
     extend MazeCraze::Queryable
 
+    MAZE_VARIATIONS = ['original', 'rotated_90_degrees', 'rotated_180_degrees', 'rotated_270_degrees', 'flipped_vertically', 'flipped_horizontally'].freeze
+
     class << self
       def maze_type_to_class(type)
         class_name = 'MazeCraze::' + MAZE_TYPE_CLASS_NAMES[type]
@@ -15,15 +17,20 @@ module MazeCraze
         sql = <<~SQL
           SELECT set_permutations.id AS id, maze_type, x, y, endpoints, permutation 
           FROM set_permutations 
-          LEFT JOIN maze_formulas ON maze_formula_id = maze_formulas.id 
-          WHERE maze_formulas.id = $1;
+          LEFT JOIN formulas ON maze_formula_id = formulas.id 
+          WHERE formulas.id = $1;
         SQL
   
         results = query(sql.gsub!("\n", ""), maze_formula_id)
   
         results.each do |permutation|
           maze = Maze.maze_type_to_class(permutation["maze_type"]).new(permutation)
-          maze.save!(background_job_id, permutation['id']) if maze.solutions.any?
+          # maze.save!(background_job_id, permutation['id']) if maze.solutions.any?
+          if maze.solutions.any?
+            maze.save!(background_job_id, permutation['id'])
+            
+          end
+
         end
       end
   

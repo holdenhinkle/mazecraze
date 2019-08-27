@@ -8,7 +8,7 @@ module MazeCraze
                                  'tunnel' => 'TunnelMazeFormula',
                                  'portal' => 'PortalMazeFormula' }
 
-    FORMULA_STATUSES = %w(queued pending completed).freeze
+    FORMULA_STATUSES = ['queued', 'pending', 'completed'].freeze
 
     # set and manage maze formula class constraints
     class << self
@@ -473,22 +473,22 @@ module MazeCraze
 
       # misc class methods
       def retrieve_formula_values(id)
-        sql = "SELECT * FROM maze_formulas WHERE id = $1;"
+        sql = "SELECT * FROM formulas WHERE id = $1;"
         query(sql, id)[0]
       end
 
       def count_by_type_and_status(maze_type, status)
-        sql = "SELECT count(maze_type) FROM maze_formulas WHERE maze_type = $1 AND status = $2;"
+        sql = "SELECT count(maze_type) FROM formulas WHERE maze_type = $1 AND status = $2;"
         query(sql, maze_type, status)
       end
 
       def status_list_by_maze_type(maze_type)
-        sql = "SELECT id, x, y, endpoints, barriers, bridges, tunnels, portals, experiment, status FROM maze_formulas WHERE maze_type = $1 ORDER BY x, y, endpoints, barriers;"
+        sql = "SELECT id, x, y, endpoints, barriers, bridges, tunnels, portals, experiment, status FROM formulas WHERE maze_type = $1 ORDER BY x, y, endpoints, barriers;"
         query(sql, maze_type)
       end
 
       def update_status(id, status)
-        sql = "UPDATE maze_formulas SET status = $1 WHERE id = $2;"
+        sql = "UPDATE formulas SET status = $1 WHERE id = $2;"
         query(sql, status, id)
       end
 
@@ -729,7 +729,7 @@ module MazeCraze
     def exists?
       sql = <<~SQL
         SELECT * 
-        FROM maze_formulas 
+        FROM formulas 
         WHERE 
         maze_type = $1 AND 
         x = $2 AND 
@@ -746,7 +746,7 @@ module MazeCraze
 
     def save!
       sql = <<~SQL
-        INSERT INTO maze_formulas 
+        INSERT INTO formulas 
         (background_job_id, maze_type, set, x, y, endpoints, barriers, experiment) 
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
       SQL
@@ -819,7 +819,7 @@ module MazeCraze
     def exists?
       sql = <<~SQL
         SELECT * 
-        FROM maze_formulas 
+        FROM formulas 
         WHERE 
         maze_type = $1 AND 
         x = $2 AND 
@@ -837,7 +837,7 @@ module MazeCraze
 
     def save!
       sql = <<~SQL
-        INSERT INTO maze_formulas 
+        INSERT INTO formulas 
         (background_job_id, maze_type, set, x, y, endpoints, barriers, bridges, experiment) 
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
       SQL
@@ -910,7 +910,7 @@ module MazeCraze
     def exists?
       sql = <<~SQL
         SELECT * 
-        FROM maze_formulas 
+        FROM formulas 
         WHERE 
         maze_type = $1 AND 
         x = $2 AND 
@@ -928,7 +928,7 @@ module MazeCraze
 
     def save!
       sql = <<~SQL
-        INSERT INTO maze_formulas 
+        INSERT INTO formulas 
         (background_job_id, maze_type, set, x, y, endpoints, barriers, tunnels, experiment) 
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
       SQL
@@ -1001,7 +1001,7 @@ module MazeCraze
     def exists?
       sql = <<~SQL
         SELECT * 
-        FROM maze_formulas 
+        FROM formulas 
         WHERE 
         maze_type = $1 AND 
         x = $2 AND 
@@ -1019,7 +1019,7 @@ module MazeCraze
 
     def save!
       sql = <<~SQL
-        INSERT INTO maze_formulas 
+        INSERT INTO formulas 
         (background_job_id, maze_type, set, x, y, endpoints, barriers, portals, experiment) 
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
       SQL

@@ -2,6 +2,8 @@ module MazeCraze
   class SetPermutation
     include MazeCraze::Queryable
 
+    PERMUTATION_STATUSES = ['queued', 'pending', 'completed'].freeze
+
     class << self
       def generate_permutations(formula)
         permutations = []

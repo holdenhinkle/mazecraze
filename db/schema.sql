@@ -17,7 +17,7 @@ CREATE TABLE background_threads (
   updated timestamp NOT NULL DEFAULT NOW()
 );
 
-CREATE TYPE job_type AS ENUM ('generate_maze_formulas', 'generate_set_permutations', 'generate_mazes');
+CREATE TYPE job_type AS ENUM ('generate_formulas', 'generate_set_permutations', 'generate_mazes');
 
 CREATE TYPE job_status AS ENUM ('queued', 'running', 'completed');
 
@@ -37,7 +37,7 @@ CREATE TABLE background_jobs (
 
 CREATE TYPE formula_status AS ENUM ('pending', 'completed', 'queued');
 
-CREATE TABLE maze_formulas (
+CREATE TABLE formulas (
   id serial PRIMARY KEY,
   background_job_id integer REFERENCES background_jobs(id) ON DELETE CASCADE,
   maze_type text NOT NULL,
@@ -60,7 +60,7 @@ CREATE TYPE permutation_status AS ENUM ('pending', 'completed', 'queued');
 CREATE TABLE set_permutations (
   id serial PRIMARY KEY,
   background_job_id integer NOT NULL REFERENCES background_jobs(id) ON DELETE CASCADE,
-  maze_formula_id integer NOT NULL REFERENCES maze_formulas(id) ON DELETE CASCADE,
+  formula_id integer NOT NULL REFERENCES formulas(id) ON DELETE CASCADE,
   permutation text NOT NULL,
   status permutation_status NOT NULL DEFAULT 'pending',
   created timestamp NOT NULL DEFAULT NOW(),
