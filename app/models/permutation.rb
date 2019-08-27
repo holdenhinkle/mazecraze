@@ -1,5 +1,5 @@
 module MazeCraze
-  class SetPermutation
+  class Permutation
     include MazeCraze::Queryable
 
     PERMUTATION_STATUSES = ['queued', 'pending', 'completed'].freeze
@@ -30,7 +30,7 @@ module MazeCraze
 
       def save_permutations(permutations, formula)
         permutations.each do |permutation|
-          permutation = SetPermutation.new(permutation, formula.id, formula.background_job_id, formula.x, formula.y)
+          permutation = Permutation.new(permutation, formula.id, formula.background_job_id, formula.x, formula.y)
           permutation.save! unless permutation.exists?
         end
       end

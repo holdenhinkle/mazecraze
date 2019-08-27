@@ -336,7 +336,7 @@ module MazeCraze
     def run
       formula_values = MazeCraze::MazeFormula.retrieve_formula_values(params['formula_id'])
       formula = MazeCraze::MazeFormula.maze_formula_type_to_class(formula_values['maze_type']).new(formula_values)
-      MazeCraze::SetPermutation.generate_permutations(formula)
+      MazeCraze::Permutation.generate_permutations(formula)
     end
 
     def finish
