@@ -364,11 +364,10 @@ module MazeCraze
   class GenerateMazes < BackgroundJob
     def start
       update_start_time
-      # results = run
-      run
+      results = run
       update_finish_time
       finish
-      # save_results(results)
+      save_results(results)
     end
 
     def run
@@ -381,9 +380,8 @@ module MazeCraze
     end
 
     def save_results(results)
-      # alert = "#{results[:new]} formulas were created. "
-      # alert << "#{results[:existed]} formulas already existed."
-      # MazeCraze::AdminNotification.new(alert).save!
+      alert = "#{results} new mazes were created from Formula ID #{params['formula_id']}."
+      MazeCraze::AdminNotification.new(alert).save!
     end
 
     def undo

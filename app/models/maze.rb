@@ -23,11 +23,17 @@ module MazeCraze
   
         results = query(sql.gsub!("\n", ""), formula_id)
 
+        maze_count = 0
+
         results.each do |permutation|
           # SAVE VARIATIONS OF MAZE
           maze = Maze.maze_type_to_class(permutation["maze_type"]).new(permutation)
-          maze.save!(background_job_id, permutation['id']) if maze.solutions.any?
+          next unless maze.solutions.any?
+          maze.save!(background_job_id, permutation['id'])
+          maze_count += 1
         end
+
+        maze_count
       end
   
       def types_popover
