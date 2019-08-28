@@ -298,7 +298,7 @@ module MazeCraze
       end
 
       def update_constraints(constraints)
-        formula_class = maze_formula_type_to_class(constraints['formula_type'])
+        formula_class = formula_type_to_class(constraints['formula_type'])
         name_partial = "#{constraints['formula_type']}_formula"
 
         constraints.each do |constraint, value|
@@ -359,13 +359,13 @@ module MazeCraze
         maze_formula_classes = []
 
         MAZE_FORMULA_CLASS_NAMES.keys.each do |maze_type|
-          maze_formula_classes << maze_formula_type_to_class(maze_type)
+          maze_formula_classes << formula_type_to_class(maze_type)
         end
 
         maze_formula_classes
       end
 
-      def maze_formula_type_to_class(type)
+      def formula_type_to_class(type)
         class_name = 'MazeCraze::' + MAZE_FORMULA_CLASS_NAMES[type]
         Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
       end
@@ -411,7 +411,7 @@ module MazeCraze
         existed_formula_count = 0
 
         formulas.each do |formula|
-          new_formula =  maze_formula_type_to_class(formula['maze_type']).new(formula)
+          new_formula =  formula_type_to_class(formula['maze_type']).new(formula)
           if new_formula.exists?
             existed_formula_count += 1
           else
@@ -472,7 +472,7 @@ module MazeCraze
       end
 
       # misc class methods
-      def retrieve_formula_values(id)
+      def formula_values(id)
         sql = "SELECT * FROM formulas WHERE id = $1;"
         query(sql, id)[0]
       end

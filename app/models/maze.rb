@@ -22,15 +22,11 @@ module MazeCraze
         SQL
   
         results = query(sql.gsub!("\n", ""), formula_id)
-  
-        results.each do |permutation|
-          maze = Maze.maze_type_to_class(permutation["maze_type"]).new(permutation)
-          # maze.save!(background_job_id, permutation['id']) if maze.solutions.any?
-          if maze.solutions.any?
-            maze.save!(background_job_id, permutation['id'])
-            
-          end
 
+        results.each do |permutation|
+          # SAVE VARIATIONS OF MAZE
+          maze = Maze.maze_type_to_class(permutation["maze_type"]).new(permutation)
+          maze.save!(background_job_id, permutation['id']) if maze.solutions.any?
         end
       end
   

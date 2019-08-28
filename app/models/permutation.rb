@@ -29,10 +29,16 @@ module MazeCraze
       end
 
       def save_permutations(permutations, formula)
+        permutation_count = 0
+
         permutations.each do |permutation|
           permutation = Permutation.new(permutation, formula.id, formula.background_job_id, formula.x, formula.y)
-          permutation.save! unless permutation.exists?
+          next if permutation.exists?
+          permutation.save!
+          permutation_count += 1
         end
+
+        permutation_count
       end
     end
 

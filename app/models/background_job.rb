@@ -302,7 +302,7 @@ module MazeCraze
         formula_classes = MazeCraze::Formula.maze_formula_classes
         MazeCraze::Formula.generate_formulas(id, formula_classes)
       else
-        formula_class = MazeCraze::Formula.maze_formula_type_to_class(params['maze_type'])
+        formula_class = MazeCraze::Formula.formula_type_to_class(params['maze_type'])
         MazeCraze::Formula.generate_formulas(id, formula_class)
       end
     end
@@ -326,25 +326,27 @@ module MazeCraze
   class GeneratePermutations < BackgroundJob
     def start
       update_start_time
-      # results = run
-      run
+      results = run
       update_finish_time
       finish
+      save_results(results)
       create_resulting_job
     end
 
     def run
-      formula_values = MazeCraze::Formula.retrieve_formula_values(params['formula_id'])
-      formula = MazeCraze::Formula.maze_formula_type_to_class(formula_values['maze_type']).new(formula_values)
+      values = MazeCraze::Formula.formula_values(params['formula_id'])
+      formula = MazeCraze::Formula.formula_type_to_class(values['maze_type']).new(values)
       MazeCraze::Permutation.generate_permutations(formula)
     end
 
     def finish
       update_job_status('completed')
       MazeCraze::Formula.update_status(params['formula_id'], 'completed')
-      # alert = "#{results[:new]} formulas were created. "
-      # alert << "#{results[:existed]} formulas already existed."
-      # MazeCraze::AdminNotification.new(alert).save!
+    end
+
+    def save_results(results)
+      alert = "#{results} new permutations were created from Formula ID #{params['formula_id']}."
+      MazeCraze::AdminNotification.new(alert).save!
     end
 
     def create_resulting_job
@@ -366,6 +368,7 @@ module MazeCraze
       run
       update_finish_time
       finish
+      # save_results(results)
     end
 
     def run
@@ -375,6 +378,9 @@ module MazeCraze
     def finish
       update_job_status('completed')
       # update maze permutation to completed
+    end
+
+    def save_results(results)
       # alert = "#{results[:new]} formulas were created. "
       # alert << "#{results[:existed]} formulas already existed."
       # MazeCraze::AdminNotification.new(alert).save!

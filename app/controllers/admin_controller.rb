@@ -28,7 +28,7 @@ class AdminController < ApplicationController
       session[:success] = "The settings have been updated."
       redirect '/admin/settings'
     elsif params["formula_type"]
-      formula_type = MazeCraze::Formula.maze_formula_type_to_class(params['formula_type'])
+      formula_type = MazeCraze::Formula.formula_type_to_class(params['formula_type'])
 
       if formula_type.valid_constraints?(params)
         formula_type.update_constraints(params)
@@ -164,7 +164,7 @@ class AdminController < ApplicationController
   end
 
   post '/admin/mazes/formulas/new' do
-    @formula = MazeCraze::Formula.maze_formula_type_to_class(params[:maze_type]).new(params)
+    @formula = MazeCraze::Formula.formula_type_to_class(params[:maze_type]).new(params)
 
     if @formula.exists?
       session[:error] = "That maze formula already exists."
