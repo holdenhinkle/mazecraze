@@ -376,7 +376,7 @@ module MazeCraze
 
     def finish
       update_job_status('completed')
-      # update maze permutation to completed
+      MazeCraze::Permutation.update_status(params['formula_id'], 'completed')
     end
 
     def save_results(results)

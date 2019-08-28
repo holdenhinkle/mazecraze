@@ -1,6 +1,7 @@
 module MazeCraze
   class Permutation
     include MazeCraze::Queryable
+    extend MazeCraze::Queryable
 
     PERMUTATION_STATUSES = ['queued', 'pending', 'completed'].freeze
 
@@ -39,6 +40,11 @@ module MazeCraze
         end
 
         permutation_count
+      end
+
+      def update_status(id, status)
+        sql = "UPDATE permutations SET status = $1 WHERE formula_id = $2;"
+        query(sql, status, id)
       end
     end
 
