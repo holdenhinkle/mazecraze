@@ -8,8 +8,8 @@ module MazeCraze
     end
 
     def all_inversions(maze)
-      { horizontal: horizontal(maze.clone),
-        vertical: vertical(maze.clone) }
+      { 'flipped_horizontally' => horizontal(maze.clone),
+        'flipped_vertically' => vertical(maze.clone) }
     end
 
     private

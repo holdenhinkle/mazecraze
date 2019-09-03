@@ -26,10 +26,18 @@ module MazeCraze
         maze_count = 0
 
         results.each do |permutation|
-          # SAVE VARIATIONS OF MAZE
           maze = Maze.maze_type_to_class(permutation["maze_type"]).new(permutation)
           next unless maze.solutions.any?
-          maze.save!(background_job_id, permutation['id'])
+
+          all_variations = Permutation.new(JSON.parse(permutation['permutation']), maze.x, maze.y, nil, nil).all_variations
+          
+          all_variations.each do |variation, board|
+            permutation['variation'] = variation
+            permutation['permutation'] = board.to_json
+            maze = Maze.maze_type_to_class(permutation["maze_type"]).new(permutation)
+            maze.save!(background_job_id, permutation['id'], board, variation)
+          end
+
           maze_count += 1
         end
 
@@ -73,14 +81,14 @@ module MazeCraze
       end
     end
 
-    def save!(background_job_id, permutation_id)
+    def save!(background_job_id, permutation_id, board, variation)
       sql = <<~SQL
         INSERT INTO mazes 
-        (background_job_id, permutation_id, number_of_solutions, solutions) 
-        VALUES ($1, $2, $3, $4);
+        (background_job_id, permutation_id, board, number_of_solutions, solutions, variation) 
+        VALUES ($1, $2, $3, $4, $5, $6);
       SQL
 
-      query(sql.gsub!("\n", ""), background_job_id, permutation_id, @solutions.length, @solutions)
+      query(sql.gsub!("\n", ""), background_job_id, permutation_id, board, @solutions.length, @solutions, variation)
     end
 
     def valid?

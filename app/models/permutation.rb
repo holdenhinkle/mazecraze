@@ -33,7 +33,7 @@ module MazeCraze
         permutation_count = 0
 
         permutations.each do |permutation|
-          permutation = Permutation.new(permutation, formula.id, formula.background_job_id, formula.x, formula.y)
+          permutation = Permutation.new(permutation, formula.x, formula.y, formula.id, formula.background_job_id)
           next if permutation.exists?
           permutation.save!
           permutation_count += 1
@@ -50,12 +50,12 @@ module MazeCraze
 
     attr_reader :permutation, :formula_id, :background_job_id
 
-    def initialize(permutation, maze_id, job_id, x, y)
+    def initialize(permutation, x, y, maze_id, job_id)
       @permutation = permutation
-      @formula_id = maze_id
-      @background_job_id = job_id
       @rotate = MazeCraze::MazeRotate.new(x, y)
       @invert = MazeCraze::MazeInvert.new(x, y)
+      @formula_id = maze_id
+      @background_job_id = job_id
     end
 
     def exists?
@@ -77,21 +77,21 @@ module MazeCraze
       query(sql, background_job_id, formula_id, permutation)
     end
 
+    def all_variations
+      { original: permutation }
+        .merge(rotate.all_rotations(permutation))
+        .merge(invert.all_inversions(permutation))
+    end
+
     private
 
     attr_reader :rotate, :invert
 
     def each_variation
       sql = "SELECT * FROM permutations WHERE permutation = $1;"
-      permutation_rotations_and_inversions.each do |variation|
+      all_variations.values.each do |variation|
         yield(sql, variation)
       end
-    end
-
-    def permutation_rotations_and_inversions
-      [permutation] +
-        rotate.all_rotations(permutation).values +
-        invert.all_inversions(permutation).values
     end
   end
 end

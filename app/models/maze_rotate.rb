@@ -8,10 +8,10 @@ module MazeCraze
     end
 
     def all_rotations(maze)
-      return { right_180_degrees: right_180_degrees(maze.clone) } if x != y
-      { right_90_degrees: right_90_degrees(maze.clone),
-        right_180_degrees: right_180_degrees(maze.clone),
-        right_270_degrees: right_270_degrees(maze.clone) }
+      return { 'rotated_180_degrees' => right_180_degrees(maze.clone) } if x != y
+      { 'rotated_90_degrees' => right_90_degrees(maze.clone),
+        'rotated_180_degrees' => right_180_degrees(maze.clone),
+        'rotated_270_degrees' => right_270_degrees(maze.clone) }
     end
 
     private

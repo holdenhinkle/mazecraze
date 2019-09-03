@@ -15,7 +15,6 @@ module MazeCraze
       def new_background_job(job_type, job_params)
         job_class = job_type_to_class(job_type)
         job = job_class.new({ 'job_type' => job_type, 'params' => job_params })
-
         worker = MazeCraze::BackgroundWorker.instance
 
         if worker.dead?
@@ -231,7 +230,6 @@ module MazeCraze
       query(sql, 'NOW()', 'NOW()', id)
     end
 
-
     def prepare_to_run(thread_obj)
       update_job_thread_id(thread_obj.id)
       update_job_status('running')
@@ -267,7 +265,6 @@ module MazeCraze
     def reset
       update_job_status('queued')
       update_job_thread_id(nil)
-      # update_start_time
     end
 
     def delete_from_db

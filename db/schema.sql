@@ -73,10 +73,10 @@ CREATE TABLE mazes (
   id serial PRIMARY KEY,
   background_job_id integer NOT NULL REFERENCES background_jobs(id) ON DELETE CASCADE,
   permutation_id integer NOT NULL REFERENCES permutations(id) ON DELETE CASCADE,
+  board text NOT NULL,
   number_of_solutions integer NOT NULL,
   solutions text NOT NULL,
-  -- variation text NOT NULL,
-  variation text,
+  variation text NOT NULL,
   created timestamp NOT NULL DEFAULT NOW(),
   updated timestamp NOT NULL DEFAULT NOW()
 );
