@@ -86,7 +86,7 @@ module MazeCraze
     end
 
     def variations
-      { original: permutation }
+      { 'original' => permutation }
         .merge(rotate.all_rotations(permutation))
         .merge(invert.all_inversions(permutation))
     end
