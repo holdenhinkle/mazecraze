@@ -14,31 +14,23 @@ module MazeCraze
       end
 
       def generate_mazes(formula_id, background_job_id)
-        sql = <<~SQL
-          SELECT permutations.id AS id, maze_type, x, y, endpoints, permutation 
-          FROM permutations 
-          LEFT JOIN formulas ON formula_id = formulas.id 
-          WHERE formulas.id = $1;
-        SQL
-  
-        results = query(sql.gsub!("\n", ""), formula_id)
+        permutation_tuples = MazeCraze::Permutation.permutations_by_formula_id(formula_id)
 
         maze_count = 0
 
-        results.each do |permutation|
-          maze = Maze.maze_type_to_class(permutation["maze_type"]).new(permutation)
+        permutation_tuples.each do |maze_args|
+          maze = Maze.maze_type_to_class(maze_args["maze_type"]).new(maze_args)
           next unless maze.solutions.any?
 
-          all_variations = Permutation.new(JSON.parse(permutation['permutation']), maze.x, maze.y, nil, nil).all_variations
+          permutation = Permutation.new(JSON.parse(maze_args['permutation']), maze_args['x'], maze_args['y'], nil, nil)
           
-          all_variations.each do |variation, board|
-            permutation['variation'] = variation
-            permutation['permutation'] = board.to_json
-            maze = Maze.maze_type_to_class(permutation["maze_type"]).new(permutation)
-            maze.save!(background_job_id, permutation['id'], board, variation)
+          permutation.variations.each do |variation, board|
+            maze_args['variation'] = variation
+            maze_args['permutation'] = board.to_json
+            maze_variation = Maze.maze_type_to_class(maze_args["maze_type"]).new(maze_args)
+            maze_variation.save!(background_job_id, maze_args['id'], board, variation)
+            maze_count += 1
           end
-
-          maze_count += 1
         end
 
         maze_count

@@ -42,6 +42,17 @@ module MazeCraze
         permutation_count
       end
 
+      def permutations_by_formula_id(formula_id)
+        sql = <<~SQL
+          SELECT permutations.id AS id, maze_type, x, y, endpoints, permutation 
+          FROM permutations 
+          LEFT JOIN formulas ON formula_id = formulas.id 
+          WHERE formulas.id = $1;
+        SQL
+  
+        query(sql.gsub!("\n", ""), formula_id)
+      end
+
       def update_status(id, status)
         sql = "UPDATE permutations SET status = $1 WHERE formula_id = $2;"
         query(sql, status, id)
@@ -77,7 +88,7 @@ module MazeCraze
       query(sql, background_job_id, formula_id, permutation)
     end
 
-    def all_variations
+    def variations
       { original: permutation }
         .merge(rotate.all_rotations(permutation))
         .merge(invert.all_inversions(permutation))
@@ -89,7 +100,7 @@ module MazeCraze
 
     def each_variation
       sql = "SELECT * FROM permutations WHERE permutation = $1;"
-      all_variations.values.each do |variation|
+      variations.values.each do |variation|
         yield(sql, variation)
       end
     end
