@@ -56,14 +56,6 @@ module MazeCraze
 
     attr_reader :permutation, :formula_id, :background_job_id
 
-    # def initialize(permutation, x, y, maze_id, job_id)
-    #   @permutation = permutation
-    #   @rotate = MazeCraze::MazeRotate.new(x, y)
-    #   @invert = MazeCraze::MazeInvert.new(x, y)
-    #   @formula_id = maze_id
-    #   @background_job_id = job_id
-    # end
-
     def initialize(permutation)
       @permutation = permutation['permutation']
       x = permutation['x'].to_i

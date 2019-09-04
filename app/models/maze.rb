@@ -14,7 +14,7 @@ module MazeCraze
       end
 
       def generate_mazes(formula_id)
-        candidate_values_for_mazes = permutations_by_formula_id(formula_id)
+        candidate_values_for_mazes = maze_candidate_values_by_formula_id(formula_id)
 
         maze_count = 0
 
@@ -41,7 +41,7 @@ module MazeCraze
         maze_count
       end      
 
-      def permutations_by_formula_id(formula_id)
+      def maze_candidate_values_by_formula_id(formula_id)
         sql = <<~SQL
           SELECT permutations.id AS permutation_id, permutations.background_job_id AS background_job_id, maze_type, x, y, endpoints, permutation AS board 
           FROM permutations 
