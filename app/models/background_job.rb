@@ -220,14 +220,10 @@ module MazeCraze
       query(sql, queue_order, id)
     end
 
-    def update_start_time
-      sql = 'UPDATE background_jobs SET start_time = $1, updated = $2 WHERE id = $3;'
+    def update_time(time_column)
+      sql = "UPDATE background_jobs SET #{time_column} = $1, updated = $2 WHERE id = $3;"
       query(sql, 'NOW()', 'NOW()', id)
-    end
 
-    def update_finish_time
-      sql = 'UPDATE background_jobs SET finish_time = $1, updated = $2 WHERE id = $3;'
-      query(sql, 'NOW()', 'NOW()', id)
     end
 
     def prepare_to_run(thread_obj)
@@ -287,9 +283,9 @@ module MazeCraze
 
   class GenerateFormulas < BackgroundJob
     def start
-      update_start_time
+      update_time('start_time')
       results = run
-      update_finish_time
+      update_time('finish_time')
       finish
       save_results(results)
     end
@@ -322,9 +318,9 @@ module MazeCraze
 
   class GeneratePermutations < BackgroundJob
     def start
-      update_start_time
+      update_time('start_time')
       results = run
-      update_finish_time
+      update_time('finish_time')
       finish
       save_results(results)
       create_resulting_job
@@ -360,9 +356,9 @@ module MazeCraze
 
   class GenerateMazes < BackgroundJob
     def start
-      update_start_time
+      update_time('start_time')
       results = run
-      update_finish_time
+      update_time('finish_time')
       finish
       save_results(results)
     end
