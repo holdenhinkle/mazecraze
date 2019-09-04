@@ -368,7 +368,7 @@ module MazeCraze
     end
 
     def run
-      MazeCraze::Maze.generate_mazes(params['formula_id'], id)
+      MazeCraze::Maze.generate_mazes(params['formula_id'])
     end
 
     def finish

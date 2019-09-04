@@ -13,27 +13,43 @@ module MazeCraze
         Kernel.const_get(class_name) if Kernel.const_defined?(class_name)
       end
 
-      def generate_mazes(formula_id, background_job_id)
-        permutation_tuples = MazeCraze::Permutation.permutations_by_formula_id(formula_id)
+      def generate_mazes(formula_id)
+        candidate_values_for_mazes = permutations_by_formula_id(formula_id)
 
         maze_count = 0
 
-        permutation_tuples.each do |maze_args|
-          maze = Maze.maze_type_to_class(maze_args["maze_type"]).new(maze_args)
+        candidate_values_for_mazes.each do |candidate_values_for_maze|
+          maze = Maze.maze_type_to_class(candidate_values_for_maze["maze_type"]).new(candidate_values_for_maze)
           next unless maze.solutions.any?
 
-          permutation = Permutation.new(JSON.parse(maze_args['permutation']), maze_args['x'], maze_args['y'], nil, nil)
-          
+          permutation_values = { 'permutation' => JSON.parse(candidate_values_for_maze['board']), 
+                                 'x' => candidate_values_for_maze['x'],
+                                 'y' => candidate_values_for_maze['y'] }
+
+          permutation = Permutation.new(permutation_values)
+
           permutation.variations.each do |variation, board|
-            maze_args['variation'] = variation
-            maze_args['permutation'] = board.to_json
-            maze_variation = Maze.maze_type_to_class(maze_args["maze_type"]).new(maze_args)
-            maze_variation.save!(background_job_id, maze_args['id'], board, variation)
+            maze_values = candidate_values_for_maze.clone
+            maze_values['variation'] = variation
+            maze_values['board'] = board.to_json
+            maze_variation = Maze.maze_type_to_class(maze_values["maze_type"]).new(maze_values)
+            maze_variation.save!(board)
             maze_count += 1
           end
         end
 
         maze_count
+      end      
+
+      def permutations_by_formula_id(formula_id)
+        sql = <<~SQL
+          SELECT permutations.id AS permutation_id, permutations.background_job_id AS background_job_id, maze_type, x, y, endpoints, permutation AS board 
+          FROM permutations 
+          LEFT JOIN formulas ON formula_id = formulas.id 
+          WHERE formulas.id = $1;
+        SQL
+  
+        query(sql.gsub!("\n", ""), formula_id)
       end
   
       def types_popover
@@ -57,14 +73,18 @@ module MazeCraze
                               'tunnel' => 'TunnelMaze',
                               'portal' => 'PortalMaze' }
 
-    attr_reader :maze_type, :level, :x, :y, :squares, :valid, :solutions
+    attr_reader :background_job_id, :permutation_id, :maze_type, :x, :y,
+                :squares, :solutions, :variation
 
     def initialize(maze)
+      @background_job_id = maze['background_job_id']
+      @permutation_id = maze['permutation_id']
       @maze_type = maze['maze_type']
       @x = maze['x'].to_i
       @y = maze['y'].to_i
-      @squares = create_maze(JSON.parse(maze['permutation']), maze['endpoints'].to_i)
+      @squares = create_maze(JSON.parse(maze['board']), maze['endpoints'].to_i)
       @solutions = []
+      @variation = maze['variation']
       
       if maze['solutions']
         @solutions = maze['solutions']
@@ -73,14 +93,14 @@ module MazeCraze
       end
     end
 
-    def save!(background_job_id, permutation_id, board, variation)
+    def save!(board)
       sql = <<~SQL
         INSERT INTO mazes 
         (background_job_id, permutation_id, board, number_of_solutions, solutions, variation) 
         VALUES ($1, $2, $3, $4, $5, $6);
       SQL
 
-      query(sql.gsub!("\n", ""), background_job_id, permutation_id, board, @solutions.length, @solutions, variation)
+      query(sql.gsub!("\n", ""), background_job_id, permutation_id, board, solutions.length, solutions, variation)
     end
 
     def valid?

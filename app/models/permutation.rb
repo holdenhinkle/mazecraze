@@ -33,24 +33,19 @@ module MazeCraze
         permutation_count = 0
 
         permutations.each do |permutation|
-          permutation = Permutation.new(permutation, formula.x, formula.y, formula.id, formula.background_job_id)
+          permutation_values = { 'permutation' => permutation, 
+                                 'x' => formula.x,
+                                 'y' => formula.y,
+                                 'formula_id' => formula.id,
+                                 'background_job_id' => formula.background_job_id }
+
+          permutation = Permutation.new(permutation_values)
           next if permutation.exists?
           permutation.save!
           permutation_count += 1
         end
 
         permutation_count
-      end
-
-      def permutations_by_formula_id(formula_id)
-        sql = <<~SQL
-          SELECT permutations.id AS id, maze_type, x, y, endpoints, permutation 
-          FROM permutations 
-          LEFT JOIN formulas ON formula_id = formulas.id 
-          WHERE formulas.id = $1;
-        SQL
-  
-        query(sql.gsub!("\n", ""), formula_id)
       end
 
       def update_status(id, status)
@@ -61,12 +56,22 @@ module MazeCraze
 
     attr_reader :permutation, :formula_id, :background_job_id
 
-    def initialize(permutation, x, y, maze_id, job_id)
-      @permutation = permutation
+    # def initialize(permutation, x, y, maze_id, job_id)
+    #   @permutation = permutation
+    #   @rotate = MazeCraze::MazeRotate.new(x, y)
+    #   @invert = MazeCraze::MazeInvert.new(x, y)
+    #   @formula_id = maze_id
+    #   @background_job_id = job_id
+    # end
+
+    def initialize(permutation)
+      @permutation = permutation['permutation']
+      x = permutation['x'].to_i
+      y = permutation['y'].to_i
       @rotate = MazeCraze::MazeRotate.new(x, y)
       @invert = MazeCraze::MazeInvert.new(x, y)
-      @formula_id = maze_id
-      @background_job_id = job_id
+      @formula_id = permutation['formula_id']
+      @background_job_id = permutation['background_job_id']
     end
 
     def exists?
