@@ -100,10 +100,24 @@ class AdminController < ApplicationController
   get '/admin/background-jobs/queued/sort' do
     worker = MazeCraze::BackgroundWorker.instance
     worker.stop if worker.alive?
+    @queued_jobs = MazeCraze::BackgroundJob.jobs_of_status_type('queued', 'queue_order', 'ASC')
     erb :background_jobs_sort_queue
   end
 
   post '/admin/background-jobs/queued/sort' do
+    # select jobs with updated queue order number
+
+    # I'm left with two lists
+    # updated_order: list of jobs with updated queue order
+    # all: list of all queued jobs
+
+    # updated_order_ids: get list of ids from update_order
+    # reject 'updated_order_ids' in 'all'
+
+    # combine lists
+    # sort list by queue order
+    # iterate through combined list with index, update all queue order values to index
+
     MazeCraze::BackgroundWorker.instance.start
     redirect "/admin/background-jobs"
   end

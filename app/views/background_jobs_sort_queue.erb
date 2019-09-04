@@ -10,4 +10,30 @@
   <h1>Sort Queued Background Jobs</h1>
 </header>
 <section>
+  <table class="table table-hover table-sm">
+    <thead class="thead-dark">
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">ID</th>
+        <th scope="col">Queue Order</th>
+        <th scope="col">Job Type</th>
+        <th scope="col">Params</th>
+        <th scope="col">Assigned to Worker ID</th>
+        <th scope="col">Last Updated</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @queued_jobs.each_with_index do |job, index| %>
+        <tr>
+          <th scope='row'><%= index + 1 %></th>
+          <td><%= job['id'] %></td>
+          <td><%= job['queue_order'] %></td>
+          <td><%= capitalize_words(underscores_to_spaces(job['job_type'])) %></td>
+          <td><%= format_background_job_params(job['params']) %></td>
+          <td><%= job['background_worker_id'] %></td>
+          <td><%= format_timestamp(job['updated']) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  <table>
 </section>

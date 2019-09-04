@@ -83,9 +83,9 @@ module MazeCraze
         end
       end
 
-      def jobs_of_status_type(status)
-        sql = "SELECT * FROM background_jobs WHERE status = $1 ORDER BY created DESC;"
-        query(sql, status)
+      def jobs_of_status_type(status, order_by ='created', sort_order = 'DESC')
+        sql = "SELECT * FROM background_jobs WHERE status = $1 ORDER BY $2 #{sort_order};"
+        query(sql, status, order_by)
       end
 
       def duplicate_job?(type, params = nil)
