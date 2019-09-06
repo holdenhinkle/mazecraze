@@ -233,6 +233,15 @@ module MazeCraze
       start
     end
 
+    def start
+      update_time('start_time')
+      results = run
+      update_time('finish_time')
+      finish
+      save_results(results)
+      create_resulting_job
+    end
+
     def cancel
       kill_thread
       update_queue_order_for('cancel_job') # not completed sometimes
@@ -282,14 +291,6 @@ module MazeCraze
   end
 
   class GenerateFormulas < BackgroundJob
-    def start
-      update_time('start_time')
-      results = run
-      update_time('finish_time')
-      finish
-      save_results(results)
-    end
-
     def run
       if params.empty?
         formula_classes = MazeCraze::Formula.maze_formula_classes
@@ -310,6 +311,8 @@ module MazeCraze
       MazeCraze::AdminNotification.new(alert).save!
     end
 
+    def create_resulting_job; end
+
     def undo
       sql = "DELETE FROM formulas WHERE background_job_id = $1;"
       query(sql, id)
@@ -317,15 +320,6 @@ module MazeCraze
   end
 
   class GeneratePermutations < BackgroundJob
-    def start
-      update_time('start_time')
-      results = run
-      update_time('finish_time')
-      finish
-      save_results(results)
-      create_resulting_job
-    end
-
     def run
       values = MazeCraze::Formula.formula_values(params['formula_id'])
       formula = MazeCraze::Formula.formula_type_to_class(values['maze_type']).new(values)
@@ -355,14 +349,6 @@ module MazeCraze
   end
 
   class GenerateMazes < BackgroundJob
-    def start
-      update_time('start_time')
-      results = run
-      update_time('finish_time')
-      finish
-      save_results(results)
-    end
-
     def run
       MazeCraze::Maze.generate_mazes(params['formula_id'])
     end
@@ -376,6 +362,8 @@ module MazeCraze
       alert = "#{results} new mazes were created from Formula ID #{params['formula_id']}."
       MazeCraze::AdminNotification.new(alert).save!
     end
+
+    def create_resulting_job; end
 
     def undo
       sql = "DELETE FROM mazes WHERE background_job_id = $1;"
