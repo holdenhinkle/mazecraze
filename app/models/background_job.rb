@@ -14,7 +14,8 @@ module MazeCraze
     class << self
       def new_background_job(job_type, job_params)
         job_class = job_type_to_class(job_type)
-        job = job_class.new({ 'job_type' => job_type, 'params' => job_params })
+        job_values = { 'job_type' => job_type, 'params' => job_params }
+        job = job_class.new(job_values)
         worker = MazeCraze::BackgroundWorker.instance
 
         if worker.dead?
@@ -25,22 +26,22 @@ module MazeCraze
         end
       end
 
-      def sanitize_background_jobs_table
-        sql = 'UPDATE background_jobs SET status = $1 WHERE status = $2;'
-        query(sql, 'queued', 'running')
+      # def sanitize_background_jobs_table
+      #   sql = 'UPDATE background_jobs SET status = $1 WHERE status = $2;'
+      #   query(sql, 'queued', 'running')
 
-        sql = 'UPDATE background_jobs SET background_worker_id = $1, background_thread_id = $2 WHERE status = $3 OR status = $4;'
-        query(sql, nil, nil, 'queued', 'running')
+      #   sql = 'UPDATE background_jobs SET background_worker_id = $1, background_thread_id = $2 WHERE status = $3 OR status = $4;'
+      #   query(sql, nil, nil, 'queued', 'running')
 
-        # THE FOLLOWING REVERSES THE QUEUE ORDER
-        # sql = 'SELECT id, queue_order FROM background_jobs WHERE status = $1 ORDER BY $2;'
-        # results = query(sql, 'queued', 'queue_order')
+      #   # THE FOLLOWING REVERSES THE QUEUE ORDER
+      #   # sql = 'SELECT id, queue_order FROM background_jobs WHERE status = $1 ORDER BY $2;'
+      #   # results = query(sql, 'queued', 'queue_order')
 
-        # update_queue_order_sql = 'UPDATE background_jobs SET queue_order = $1 WHERE id = $2;'
-        # results.each_with_index do |job, index|
-        #   query(update_queue_order_sql, index + 1, job['id'])
-        # end
-      end
+      #   # update_queue_order_sql = 'UPDATE background_jobs SET queue_order = $1 WHERE id = $2;'
+      #   # results.each_with_index do |job, index|
+      #   #   query(update_queue_order_sql, index + 1, job['id'])
+      #   # end
+      # end
 
       def queue_count
         sql = "SELECT COUNT(status) FROM background_jobs WHERE status = $1;"
@@ -147,36 +148,42 @@ module MazeCraze
         @status = job['status']
       else
         @params = job['params']
-        @status = 'queued'
         @id = save!
-        update_queue_order_for('new_job')
+        sync_updates_that_can_affect_queue_order('update_job_status', 'queued')
+        sync_updates_that_can_affect_queue_order('queue_order_sequence', 'new_job')
       end
     end
 
     def save!
-      sql = "INSERT INTO background_jobs (job_type, params, status, queue_order) VALUES ($1, $2, $3, $4) RETURNING id;"
-      query(sql, type, params.to_json, status, queue_order).first['id']
+      sql = "INSERT INTO background_jobs (job_type, params) VALUES ($1, $2) RETURNING id;"
+      query(sql, type, params.to_json).first['id']
     end
 
-    def update_queue_order_for(sequence, thread = nil)
+    def sync_updates_that_can_affect_queue_order(operation, arg = nil, thread = nil)
       if thread
-        queue_order_sequence(sequence)
+        sync_update(operation, arg)
       else
         threads = []
         threads << Thread.new do
-          queue_order_sequence(sequence)
+          sync_update(operation, arg)
         end
         threads.each(&:join)
       end
     end
 
-    def queue_order_sequence(sequence)
+    def sync_update(operation, arg)
       MazeCraze::BackgroundWorker.mutex.synchronize do
-        case sequence
-        when 'new_job' then update_queue_order_for_new_job
-        when 'running_job' then update_queue_order_for_running_job
-        when 'cancel_job' then update_queue_order_for_cancel_job
-        when 'delete_job' then update_queue_order_for_delete_job
+        if operation == 'update_job_status'
+          update_job_status(arg)
+        elsif operation == 'queue_order_sequence'
+          case arg
+          when 'new_job' then update_queue_order_for_new_job
+          when 'running_job' then update_queue_order_for_running_job
+          when 'cancel_job' then update_queue_order_for_cancel_job
+          when 'delete_job' then update_queue_order_for_delete_job
+          end
+        elsif operation == 'delete_from_db'
+          delete_from_db
         end
       end
     end
@@ -223,14 +230,12 @@ module MazeCraze
     def update_time(time_column)
       sql = "UPDATE background_jobs SET #{time_column} = $1, updated = $2 WHERE id = $3;"
       query(sql, 'NOW()', 'NOW()', id)
-
     end
 
-    def prepare_to_run(thread_obj)
-      update_job_thread_id(thread_obj.id)
-      update_job_status('running')
-      update_queue_order_for('running_job', thread_obj.thread)
-      start
+    def update_values_to_start_job(thread_id)
+      update_job_thread_id(thread_id)
+      sync_updates_that_can_affect_queue_order('update_job_status', 'running', background_thread)
+      sync_updates_that_can_affect_queue_order('queue_order_sequence', 'running_job', background_thread)
     end
 
     def start
@@ -239,16 +244,14 @@ module MazeCraze
       update_time('finish_time')
       finish
       save_results(results)
-      create_resulting_job
+      new_job_as_a_result_of_this_job
     end
 
     def cancel
       kill_thread
-      update_queue_order_for('cancel_job') # not completed sometimes
-      binding.pry if queue_order == nil
-      undo # not completed sometimes
-      reset # not completed sometimes
-      binding.pry if status == 'running'
+      sync_updates_that_can_affect_queue_order('queue_order_sequence', 'cancel_job')
+      undo
+      reset
       background_worker.enqueue_job(id)
       background_worker.new_thread
     end
@@ -258,17 +261,21 @@ module MazeCraze
       when 'running'
         kill_thread
         undo
-        delete_from_db
+        sync_updates_that_can_affect_queue_order('delete_from_db')
+        # update formulas, permutations, mazes tables
+        # if current job is formula, select all formulas with background_job_id and status = running and change back to pending
         background_worker.new_thread
       when 'queued'
         background_worker.skip_job_in_queue(id)
-        delete_from_db
-        update_queue_order_for('delete_job')
+        sync_updates_that_can_affect_queue_order('delete_from_db')
+        # update formulas, permutations, mazes tables
+        # if current job is formula, select all formulas with background_job_id and status = queued and change back to pending
+        sync_updates_that_can_affect_queue_order('queue_order_sequence', 'delete_job')
       end
     end
 
     def reset
-      update_job_status('queued')
+      sync_updates_that_can_affect_queue_order('update_job_status', 'queued')
       update_job_thread_id(nil)
     end
 
@@ -283,10 +290,16 @@ module MazeCraze
       MazeCraze::BackgroundWorker.instance
     end
 
+    def background_thread_object
+      MazeCraze::BackgroundThread.thread_from_id(background_thread_id)
+    end
+
+    def background_thread
+      background_thread_object.thread
+    end
+
     def kill_thread
-      background_thread = MazeCraze::BackgroundThread.thread_from_id(background_thread_id)
-      binding.pry if background_thread.nil?
-      MazeCraze::BackgroundThread.all.delete(background_thread).kill_thread
+      background_thread_object.kill_thread
     end
   end
 
@@ -302,7 +315,7 @@ module MazeCraze
     end
 
     def finish
-      update_job_status('completed')
+      sync_updates_that_can_affect_queue_order('update_job_status', 'completed', background_thread)
     end
 
     def save_results(results)
@@ -311,7 +324,7 @@ module MazeCraze
       MazeCraze::AdminNotification.new(alert).save!
     end
 
-    def create_resulting_job; end
+    def new_job_as_a_result_of_this_job; end
 
     def undo
       sql = "DELETE FROM formulas WHERE background_job_id = $1;"
@@ -327,7 +340,7 @@ module MazeCraze
     end
 
     def finish
-      update_job_status('completed')
+      sync_updates_that_can_affect_queue_order('update_job_status', 'completed', background_thread)
       MazeCraze::Formula.update_status(params['formula_id'], 'completed')
     end
 
@@ -336,7 +349,7 @@ module MazeCraze
       MazeCraze::AdminNotification.new(alert).save!
     end
 
-    def create_resulting_job
+    def new_job_as_a_result_of_this_job
       job_type = 'generate_mazes'
       job_params = { 'formula_id' => params['formula_id'] }
       self.class.new_background_job(job_type, job_params)
@@ -354,7 +367,7 @@ module MazeCraze
     end
 
     def finish
-      update_job_status('completed')
+      sync_updates_that_can_affect_queue_order('update_job_status', 'completed', background_thread)
       MazeCraze::Permutation.update_status(params['formula_id'], 'completed')
     end
 
@@ -363,7 +376,7 @@ module MazeCraze
       MazeCraze::AdminNotification.new(alert).save!
     end
 
-    def create_resulting_job; end
+    def new_job_as_a_result_of_this_job; end
 
     def undo
       sql = "DELETE FROM mazes WHERE background_job_id = $1;"

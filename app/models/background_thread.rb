@@ -11,10 +11,10 @@ module MazeCraze
     class << self
       attr_accessor :all
 
-      def sanitize_background_threads_table
-        sql = 'UPDATE background_threads SET status = $1 WHERE status = $2;'
-        query(sql, 'dead', 'alive')
-      end
+      # def sanitize_background_threads_table
+      #   sql = 'UPDATE background_threads SET status = $1 WHERE status = $2;'
+      #   query(sql, 'dead', 'alive')
+      # end
 
       def number_of_threads
         sql = 'SELECT integer_value FROM settings WHERE name = $1;'
@@ -50,8 +50,8 @@ module MazeCraze
       end
 
       def kill_all_threads
-        all.each(&:kill_thread)
-        all.clear
+        all_copy = all.clone
+        all_copy.each(&:kill_thread)
       end
     end
 
@@ -69,11 +69,17 @@ module MazeCraze
     def kill_thread
       update_thread_status_to_dead
       Thread.kill(thread)
+      self.class.all.delete(self)
     end
 
     def save!
       sql = 'INSERT INTO background_threads (background_worker_id, status) VALUES ($1, $2) RETURNING id;'
       query(sql, background_worker_id, status).first['id'].to_i
+    end
+
+    def update_thread_mode_and_background_job_id(updated_mode, updated_background_job_id)
+      self.mode = updated_mode
+      self.background_job_id = updated_background_job_id
     end
 
     def update_thread_status_to_dead

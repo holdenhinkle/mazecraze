@@ -25,28 +25,26 @@ module MazeCraze
       self.deleted_jobs_to_skip_in_queue = []
       enqueue_jobs
       work
-      self
     end
 
     def stop
       MazeCraze::BackgroundThread.kill_all_threads
+      MazeCraze::BackgroundThread.all.clear
       MazeCraze::BackgroundJob.undo_running_jobs
       MazeCraze::BackgroundJob.update_queue_order_upon_stop
       MazeCraze::BackgroundJob.reset_running_jobs
       reset
-      self
     end
 
     def restart
-      stop.start
+      stop
+      start
     end
 
     def enqueue_jobs
-      queued_jobs = MazeCraze::BackgroundJob.jobs_of_status_type('queued')
-
-      sorted_jobs = queued_jobs.each.sort_by { |job, _| job['queue_order'] }
-
-      sorted_jobs.each { |job, _| enqueue_job(job['id'].to_i) }
+      MazeCraze::BackgroundJob.jobs_of_status_type('queued')
+                              .sort_by { |job, _| job['queue_order'] }
+                              .each { |job, _| enqueue_job(job['id'].to_i) }
     end
 
     def enqueue_job(job_id)
@@ -76,7 +74,7 @@ module MazeCraze
         next if thread_obj.thread.nil?
 
         while job_queue_open?
-          thread_wait(thread_obj)
+          thread_obj.update_thread_mode_and_background_job_id('waiting', nil)
           job_id = wait_for_job
 
           if job_id && deleted_jobs_to_skip_in_queue.include?(job_id)
@@ -84,31 +82,20 @@ module MazeCraze
             next
           elsif job_id
             job = MazeCraze::BackgroundJob.job_from_id(job_id)
-            thread_process(thread_obj, job)
+            thread_obj.update_thread_mode_and_background_job_id('processing', job.id)
+            job.update_values_to_start_job(thread_obj.id)
+            job.start
           end
         end
       end
-
-      binding.pry if thread_obj.thread.nil?
     end
 
     private
 
-    def housekeeping
-      MazeCraze::BackgroundThread.sanitize_background_threads_table
-      MazeCraze::BackgroundJob.sanitize_background_jobs_table
-    end
-
-    def thread_wait(thread_obj)
-      thread_obj.mode = 'waiting'
-      thread_obj.background_job_id = nil
-    end
-
-    def thread_process(thread_obj, job)
-      thread_obj.mode = 'processing'
-      thread_obj.background_job_id = job.id
-      job.prepare_to_run(thread_obj)
-    end
+    # def housekeeping
+    #   MazeCraze::BackgroundThread.sanitize_background_threads_table
+    #   MazeCraze::BackgroundJob.sanitize_background_jobs_table
+    # end
 
     def save!
       sql = "INSERT INTO background_workers DEFAULT VALUES RETURNING id;"

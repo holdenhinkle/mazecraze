@@ -105,7 +105,6 @@ class AdminController < ApplicationController
   end
 
   post '/admin/background-jobs/queued/sort' do
-    binding.pry
     # select jobs with updated queue order number
 
     # I'm left with two lists
