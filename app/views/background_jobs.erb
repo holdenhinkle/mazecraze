@@ -108,13 +108,17 @@
               <td><%= job['background_thread_id'] %></td>
             <% end %>
             <% if status == 'queued' %>
+              <% binding.pry if job['updated'].nil? %>
               <td><%= format_timestamp(job['updated']) %></td>
             <% end %>
             <% if status == 'running' %>
+              <% binding.pry if job['start_time'].nil? %>
               <td><%= format_timestamp(job['start_time']) %></td>
               <td><%= elapsed_time(job['start_time']) %></td>
             <% end %>
             <% if status == 'completed' %>
+              <% binding.pry if job['start_time'].nil? %>
+              <% binding.pry if job['finish_time'].nil? %>
               <td><%= format_timestamp(job['finish_time']) %></td>
               <td><%= total_time(job['start_time'], job['finish_time']) %></td>
             <% end %>

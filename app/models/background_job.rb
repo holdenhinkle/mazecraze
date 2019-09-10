@@ -26,23 +26,6 @@ module MazeCraze
         end
       end
 
-      # def sanitize_background_jobs_table
-      #   sql = 'UPDATE background_jobs SET status = $1 WHERE status = $2;'
-      #   query(sql, 'queued', 'running')
-
-      #   sql = 'UPDATE background_jobs SET background_worker_id = $1, background_thread_id = $2 WHERE status = $3 OR status = $4;'
-      #   query(sql, nil, nil, 'queued', 'running')
-
-      #   # THE FOLLOWING REVERSES THE QUEUE ORDER
-      #   # sql = 'SELECT id, queue_order FROM background_jobs WHERE status = $1 ORDER BY $2;'
-      #   # results = query(sql, 'queued', 'queue_order')
-
-      #   # update_queue_order_sql = 'UPDATE background_jobs SET queue_order = $1 WHERE id = $2;'
-      #   # results.each_with_index do |job, index|
-      #   #   query(update_queue_order_sql, index + 1, job['id'])
-      #   # end
-      # end
-
       def queue_count
         sql = "SELECT COUNT(status) FROM background_jobs WHERE status = $1;"
         query(sql, 'queued').first['count'].to_i
@@ -55,8 +38,8 @@ module MazeCraze
 
       def job_from_id(job_id)
         sql = "SELECT * FROM background_jobs WHERE id = $1;"
-        job = query(sql, job_id)[0]
-        job_type_to_class(job['job_type']).new(job)
+        job_values = query(sql, job_id)[0]
+        job_type_to_class(job_values['job_type']).new(job_values)
       end
 
       def each_running_job
@@ -177,9 +160,9 @@ module MazeCraze
         updates.each do |update|
           case update[:operation]
           when 'update_job_status' then update_job_status(update[:status])
+          when 'update_queue_order' then update_queue_order_for(update[:for])
           when 'delete_from_db' then delete_from_db
           when 'reset' then reset
-          when 'update_queue_order' then update_queue_order_for(update[:for])
           end
         end
       end
@@ -340,7 +323,7 @@ module MazeCraze
 
   class GeneratePermutations < BackgroundJob
     def run
-      values = MazeCraze::Formula.formula_values(params['formula_id'])
+      values = MazeCraze::Formula.formula_values(params['formula_id']).first
       formula = MazeCraze::Formula.formula_type_to_class(values['maze_type']).new(values)
       MazeCraze::Permutation.generate_permutations(formula)
     end
@@ -391,7 +374,7 @@ module MazeCraze
     def new_job_as_a_result_of_this_job; end
 
     def undo
-      if status == running
+      if status == 'running'
         sql = "DELETE FROM mazes WHERE background_job_id = $1;"
         query(sql, id)
       end

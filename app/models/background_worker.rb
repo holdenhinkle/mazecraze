@@ -29,7 +29,6 @@ module MazeCraze
 
     def stop
       MazeCraze::BackgroundThread.kill_all_threads
-      MazeCraze::BackgroundThread.all.clear
       MazeCraze::BackgroundJob.undo_running_jobs
       MazeCraze::BackgroundJob.update_queue_order_upon_stop
       MazeCraze::BackgroundJob.reset_running_jobs
@@ -91,11 +90,6 @@ module MazeCraze
     end
 
     private
-
-    # def housekeeping
-    #   MazeCraze::BackgroundThread.sanitize_background_threads_table
-    #   MazeCraze::BackgroundJob.sanitize_background_jobs_table
-    # end
 
     def save!
       sql = "INSERT INTO background_workers DEFAULT VALUES RETURNING id;"

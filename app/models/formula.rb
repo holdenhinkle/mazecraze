@@ -474,7 +474,7 @@ module MazeCraze
       # misc class methods
       def formula_values(id)
         sql = "SELECT * FROM formulas WHERE id = $1;"
-        query(sql, id)[0]
+        query(sql, id)
       end
 
       def count_by_type_and_status(maze_type, status)

@@ -11,11 +11,6 @@ module MazeCraze
     class << self
       attr_accessor :all
 
-      # def sanitize_background_threads_table
-      #   sql = 'UPDATE background_threads SET status = $1 WHERE status = $2;'
-      #   query(sql, 'dead', 'alive')
-      # end
-
       def number_of_threads
         sql = 'SELECT integer_value FROM settings WHERE name = $1;'
         query(sql, 'number_of_threads').first['integer_value'].to_i
@@ -67,8 +62,9 @@ module MazeCraze
     end
 
     def kill_thread
-      update_thread_status_to_dead
       Thread.kill(thread)
+      thread.join
+      update_thread_status_to_dead
       self.class.all.delete(self)
     end
 

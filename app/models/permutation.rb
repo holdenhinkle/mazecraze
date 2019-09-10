@@ -33,7 +33,7 @@ module MazeCraze
         permutation_count = 0
 
         permutations.each do |permutation|
-          permutation_values = { 'permutation' => permutation, 
+          permutation_values = { 'permutation' => permutation,
                                  'x' => formula.x,
                                  'y' => formula.y,
                                  'formula_id' => formula.id,
