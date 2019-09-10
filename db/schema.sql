@@ -28,7 +28,7 @@ CREATE TABLE background_jobs (
   background_thread_id integer REFERENCES background_threads(id),
   job_type job_type NOT NULL,
   params text NOT NULL,
-  status job_status NOT NULL DEFAULT 'queued',
+  status job_status,
   created timestamp NOT NULL DEFAULT NOW(),
   updated timestamp NOT NULL DEFAULT NOW(),
   start_time timestamp,
