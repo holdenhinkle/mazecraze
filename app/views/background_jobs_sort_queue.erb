@@ -23,11 +23,10 @@
         </tr>
       </thead>
       <tbody>
-        <% @queued_jobs.each_with_index do |job| %>
+        <% @queued_jobs.each do |job| %>
           <tr>
             <td><%= job['queue_order'] %></td>
             <input type="hidden" name="updated_queue_orders[][job_id]" value="<%= job["id"] %>">
-            <input type="hidden" name="updated_queue_orders[][old_queue_order]" value="<%= job["queue_order"] %>">
             <td><input class="form-control" type="text" name="updated_queue_orders[][new_queue_order]"></td>
             <td><%= capitalize_words(underscores_to_spaces(job['job_type'])) %></td>
             <td><%= format_background_job_params(job['params']) %></td>

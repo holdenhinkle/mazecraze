@@ -113,6 +113,28 @@ module MazeCraze
       def reset_running_jobs
         each_running_job(&:reset)
       end
+
+      def manually_sort_queue_order(updated_queue_values)
+        updated_queue_values = updated_queue_values.select do |job|
+          job['new_queue_order'] != ''
+        end
+
+        updated_queue_values.each do |job_values|
+          job = job_from_id(job_values['job_id'].to_i)
+          job.update_queue_order(job_values['new_queue_order'].to_i)
+        end
+
+        not_updated_queue_values = jobs_of_status_type('queued', 'queue_order', 'ASC')
+                                   .reject { |job| updated_queue_values.any? { |updated_job| job['id'] == updated_job['job_id'] } }
+                                   .sort_by { |job| job['queue_order'].to_i }
+
+        1.upto(queue_count) do |number|
+          next if updated_queue_values.any? { |job| number == job['new_queue_order'].to_i }
+          job = job_from_id(not_updated_queue_values.first['id'].to_i)
+          job.update_queue_order(number)
+          not_updated_queue_values.shift
+        end
+      end
     end
 
     attr_reader :type, :params, :thread_id
