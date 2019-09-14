@@ -113,8 +113,7 @@ class AdminController < ApplicationController
     # add validation:
       # error:
         # only numbers
-        # only numbers 1 - n are allowed
-        # no duplicate values
+        # no negative numbers
       # success:
         # success message
     redirect "/admin/background-jobs/queued/sort"

@@ -115,11 +115,12 @@ module MazeCraze
       end
 
       def manually_sort_queue_order(updated_queue_values)
-        updated_queue_values = updated_queue_values.select do |job|
-          job['new_queue_order'] != ''
-        end
+        updated_queue_values =
+          updated_queue_values
+          .select { |job| job['new_queue_order'] != '' }
+          .sort { |job1, job2| job2['new_queue_order'].to_i <=> job1['new_queue_order'].to_i }
 
-        updated_queue_values.each do |job_values|
+        clean_updated_queue_order(updated_queue_values).each do |job_values|
           job = job_from_id(job_values['job_id'].to_i)
           job.update_queue_order(job_values['new_queue_order'].to_i)
         end
@@ -133,6 +134,19 @@ module MazeCraze
           job = job_from_id(not_updated_queue_values.first['id'].to_i)
           job.update_queue_order(number)
           not_updated_queue_values.shift
+        end
+      end
+
+      def clean_updated_queue_order(updated_queue_values)
+        greatest_available_queue_count_value = queue_count
+
+        updated_queue_values.each do |job, _|
+          if job['new_queue_order'].to_i > greatest_available_queue_count_value
+            job['new_queue_order'] = greatest_available_queue_count_value
+            greatest_available_queue_count_value -= 1
+          else
+            greatest_available_queue_count_value = job['new_queue_order'].to_i - 1
+          end
         end
       end
     end
