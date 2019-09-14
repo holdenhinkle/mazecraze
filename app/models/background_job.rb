@@ -138,27 +138,62 @@ module MazeCraze
       end
 
       def correct_new_sort_values(new_sort_values)
+        binding.pry
+        # REFACTOR THIS
         new_sort_values = correct_duplicate_and_too_big_sort_orders(new_sort_values)
         correct_negative_sort_orders(new_sort_values)
       end
 
       def correct_duplicate_and_too_big_sort_orders(new_sort_values)
+        # THIS IS NOT CORRECT
+        # IT TURNS THIS:
+        # [
+        # {"job_id"=>"673", "new_order"=>"3.3"},
+        # {"job_id"=>"666", "new_order"=>"3"},
+        # {"job_id"=>"668", "new_order"=>"3.2"},
+        # {"job_id"=>"669", "new_order"=>"3.1"}
+        # ]
+        # INTO
+        # [
+        # {"job_id"=>"673","new_order"=>3.3},
+        # {"job_id"=>"666", "new_order"=>0}
+        # {"job_id"=>"668", "new_order"=>2},
+        # {"job_id"=>"669", "new_order"=>1}
+        # ]
+
+        # It should turn it into 3, 4, 5, 6
+        # Not 0, 1, 2, 3
+
         new_sort_values =
           new_sort_values
           .sort { |thing1, thing2| thing2['new_order'].to_f <=> thing1['new_order'].to_f }
-          # .sort { |thing1, thing2| thing2['new_order'].to_i <=> thing1['new_order'].to_i }
 
         greatest_available_queue_count_value = queue_count
 
-        new_sort_values.each do |thing, _|
-          new_order = thing['new_order'].to_i
+        # queue_count = 10
+        # Given: 25, 15, 10, 3, 3, 3
+
+        # new_sort_values.each do |thing, _|
+        #   new_order = thing['new_order'].to_i # 25, 15, 10, 3, 3, 3
+
+        #   if new_order > greatest_available_queue_count_value # 25 > 10, 15 > 9, 10 > 8, 3 > 7, 3 > 2, 3 > 1, 3 > 0
+        #     thing['new_order'] = greatest_available_queue_count_value # 10, 9, 8, 2, 1, 0
+        #     greatest_available_queue_count_value -= 1 # 9, 8, 7, 1, 0, -1
+        #   else
+        #     thing['new_order'] = new_order # 3, 
+        #     greatest_available_queue_count_value = new_order - 1 # 2
+        #   end
+        # end
+
+        new_sort_values.each_with_index do |(thing, _), i|
+          new_order = thing['new_order'].to_f
 
           if new_order > greatest_available_queue_count_value
             thing['new_order'] = greatest_available_queue_count_value
             greatest_available_queue_count_value -= 1
           else
             thing['new_order'] = new_order
-            greatest_available_queue_count_value = new_order - 1
+            greatest_available_queue_count_value = new_order.to_i - 1
           end
         end
 
@@ -169,18 +204,17 @@ module MazeCraze
         new_sort_values =
           new_sort_values
           .sort { |thing1, thing2| thing1['new_order'].to_f <=> thing2['new_order'].to_f }
-          # .sort { |thing1, thing2| thing1['new_order'].to_i <=> thing2['new_order'].to_i }
 
         lowest_available_queue_count_value = 1
 
         new_sort_values.each do |thing, _|
-          new_order = thing['new_order'].to_i
+          new_order = thing['new_order'].to_f
 
           if new_order < lowest_available_queue_count_value
             thing['new_order'] = lowest_available_queue_count_value
             lowest_available_queue_count_value += 1
           else
-            lowest_available_queue_count_value = new_order + 1
+            lowest_available_queue_count_value = new_order.to_i + 1
           end
         end
 
