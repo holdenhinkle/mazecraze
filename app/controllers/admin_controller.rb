@@ -109,11 +109,10 @@ class AdminController < ApplicationController
   end
 
   post '/admin/background-jobs/queued/sort' do
-    MazeCraze::BackgroundJob.manually_sort_queue_order(params['updated_queue_orders'])
+    MazeCraze::BackgroundJob.manually_sort_order(params['updated_queue_orders'])
     # add validation:
       # error:
         # only numbers
-        # no negative numbers
       # success:
         # success message
     redirect "/admin/background-jobs/queued/sort"

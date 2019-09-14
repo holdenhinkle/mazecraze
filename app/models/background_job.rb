@@ -114,70 +114,77 @@ module MazeCraze
         each_running_job(&:reset)
       end
 
-      def manually_sort_queue_order(updated_queue_values)
-        updated_queue_values =
-          updated_queue_values
-          .select { |job| job['new_queue_order'] != '' }
+      def manually_sort_order(new_sort_values)
+        new_sort_values =
+          new_sort_values
+          .select { |value| value['new_order'] != '' }
 
-        clean_updated_queue_orders(updated_queue_values).each do |job_values|
-          job = job_from_id(job_values['job_id'].to_i)
-          job.update_queue_order(job_values['new_queue_order'].to_i)
+        correct_new_sort_values(new_sort_values).each do |value|
+          job = job_from_id(value['job_id'].to_i)
+          job.update_queue_order(value['new_order'].to_i)
         end
 
-        not_updated_queue_values =
+        old_sort_values =
           jobs_of_status_type('queued', 'queue_order', 'ASC')
-          .reject { |job| updated_queue_values.any? { |updated_job| job['id'] == updated_job['job_id'] } }
+          .reject { |job| new_sort_values.any? { |updated_job| job['id'] == updated_job['job_id'] } }
           .sort_by { |job| job['queue_order'].to_i }
 
         1.upto(queue_count) do |number|
-          next if updated_queue_values.any? { |job| number == job['new_queue_order'].to_i }
-          job = job_from_id(not_updated_queue_values.first['id'].to_i)
+          next if new_sort_values.any? { |job| number == job['new_order'].to_i }
+          job = job_from_id(old_sort_values.first['id'].to_i)
           job.update_queue_order(number)
-          not_updated_queue_values.shift
+          old_sort_values.shift
         end
       end
 
-      def clean_updated_queue_orders(updated_queue_values)
-        updated_queue_values = clean_greater_than_valid_orders(updated_queue_values)
-        clean_less_than_valid_orders(updated_queue_values)
+      def correct_new_sort_values(new_sort_values)
+        new_sort_values = correct_duplicate_and_too_big_sort_orders(new_sort_values)
+        correct_negative_sort_orders(new_sort_values)
       end
 
-      def clean_greater_than_valid_orders(updated_queue_values)
-        updated_queue_values =
-          updated_queue_values
-          .sort { |job1, job2| job2['new_queue_order'].to_i <=> job1['new_queue_order'].to_i }
+      def correct_duplicate_and_too_big_sort_orders(new_sort_values)
+        new_sort_values =
+          new_sort_values
+          .sort { |thing1, thing2| thing2['new_order'].to_f <=> thing1['new_order'].to_f }
+          # .sort { |thing1, thing2| thing2['new_order'].to_i <=> thing1['new_order'].to_i }
 
         greatest_available_queue_count_value = queue_count
 
-        updated_queue_values.each do |job, _|
-          if job['new_queue_order'].to_i > greatest_available_queue_count_value
-            job['new_queue_order'] = greatest_available_queue_count_value
+        new_sort_values.each do |thing, _|
+          new_order = thing['new_order'].to_i
+
+          if new_order > greatest_available_queue_count_value
+            thing['new_order'] = greatest_available_queue_count_value
             greatest_available_queue_count_value -= 1
           else
-            greatest_available_queue_count_value = job['new_queue_order'].to_i - 1
+            thing['new_order'] = new_order
+            greatest_available_queue_count_value = new_order - 1
           end
         end
 
-        updated_queue_values
+        new_sort_values
       end
 
-      def clean_less_than_valid_orders(updated_queue_values)
-        updated_queue_values =
-          updated_queue_values
-          .sort { |job1, job2| job1['new_queue_order'].to_i <=> job2['new_queue_order'].to_i }
+      def correct_negative_sort_orders(new_sort_values)
+        new_sort_values =
+          new_sort_values
+          .sort { |thing1, thing2| thing1['new_order'].to_f <=> thing2['new_order'].to_f }
+          # .sort { |thing1, thing2| thing1['new_order'].to_i <=> thing2['new_order'].to_i }
 
-        least_available_queue_count_value = 1
+        lowest_available_queue_count_value = 1
 
-        updated_queue_values.each do |job, _|
-          if job['new_queue_order'].to_i < least_available_queue_count_value
-            job['new_queue_order'] = least_available_queue_count_value
-            least_available_queue_count_value += 1
+        new_sort_values.each do |thing, _|
+          new_order = thing['new_order'].to_i
+
+          if new_order < lowest_available_queue_count_value
+            thing['new_order'] = lowest_available_queue_count_value
+            lowest_available_queue_count_value += 1
           else
-            least_available_queue_count_value = job['new_queue_order'].to_i + 1
+            lowest_available_queue_count_value = new_order + 1
           end
         end
 
-        updated_queue_values
+        new_sort_values
       end
     end
 
