@@ -358,7 +358,7 @@ module MazeCraze
           new_sort_values
           .select { |value| value['new_order'] != '' }
 
-        correct_new_sort_values(new_sort_values).each do |value|
+        adjust_new_sort_values(new_sort_values).each do |value|
           job = job_from_id(value['job_id'].to_i)
           job.update_queue_order(value['new_order'].to_i)
         end
@@ -376,32 +376,37 @@ module MazeCraze
         end
       end
 
-      def correct_new_sort_values(new_sort_values)
-        binding.pry
-        # REFACTOR THIS
-        new_sort_values = correct_duplicate_and_too_big_sort_orders(new_sort_values)
-        correct_negative_sort_orders(new_sort_values)
+      def adjust_new_sort_values(new_sort_values)
+        adjust_desc_to_min_valid_sort_value(adjust_asc_to_max_valid_sort_value(new_sort_values))
       end
 
-      def correct_duplicate_and_too_big_sort_orders(new_sort_values)
-        # THIS IS NOT CORRECT
-        # IT TURNS THIS:
-        # [
-        # {"job_id"=>"673", "new_order"=>"3.3"},
-        # {"job_id"=>"666", "new_order"=>"3"},
-        # {"job_id"=>"668", "new_order"=>"3.2"},
-        # {"job_id"=>"669", "new_order"=>"3.1"}
-        # ]
-        # INTO
-        # [
-        # {"job_id"=>"673","new_order"=>3.3},
-        # {"job_id"=>"666", "new_order"=>0}
-        # {"job_id"=>"668", "new_order"=>2},
-        # {"job_id"=>"669", "new_order"=>1}
-        # ]
+      def adjust_asc_to_max_valid_sort_value(new_sort_values)
+        new_sort_values =
+          new_sort_values
+          .sort { |thing1, thing2| thing1['new_order'].to_f <=> thing2['new_order'].to_f }
 
-        # It should turn it into 3, 4, 5, 6
-        # Not 0, 1, 2, 3
+        sort_order = 1
+
+        new_sort_values.each do |thing, _|
+          new_order = thing['new_order'].to_f
+
+          # if new_sort_order <= queue_count && new_sort_order > sort_order
+          #   sort_order = new_sort_order + 1
+          #   next
+          # else if new_sort_order < sort_order
+          #   new_sort_order = sort_order (WE NEED TO PRESERVE FLOATS)
+          # end 
+
+          # if new_sort_order <= sort_order # this will always be new_sort_order == sort_order because new_sort_order is set to sort_order
+          #   sort_order += 1
+          # end
+        end
+
+        new_sort_values
+      end
+
+      def adjust_desc_to_min_valid_sort_value(new_sort_values)
+        sort_order = queue_count
 
         new_sort_values =
           new_sort_values
@@ -409,53 +414,20 @@ module MazeCraze
 
         greatest_available_queue_count_value = queue_count
 
-        # queue_count = 10
-        # Given: 25, 15, 10, 3, 3, 3
-
-        # new_sort_values.each do |thing, _|
-        #   new_order = thing['new_order'].to_i # 25, 15, 10, 3, 3, 3
-
-        #   if new_order > greatest_available_queue_count_value # 25 > 10, 15 > 9, 10 > 8, 3 > 7, 3 > 2, 3 > 1, 3 > 0
-        #     thing['new_order'] = greatest_available_queue_count_value # 10, 9, 8, 2, 1, 0
-        #     greatest_available_queue_count_value -= 1 # 9, 8, 7, 1, 0, -1
-        #   else
-        #     thing['new_order'] = new_order # 3, 
-        #     greatest_available_queue_count_value = new_order - 1 # 2
-        #   end
-        # end
-
         new_sort_values.each_with_index do |(thing, _), i|
           new_order = thing['new_order'].to_f
 
-          if new_order > greatest_available_queue_count_value
-            thing['new_order'] = greatest_available_queue_count_value
-            greatest_available_queue_count_value -= 1
-          else
-            thing['new_order'] = new_order
-            greatest_available_queue_count_value = new_order.to_i - 1
-          end
-        end
-
-        new_sort_values
+          # if new_sort_order < sort_order
+          #   sort_order = new_sort_order - 1
+          #   next
+          # else if new_sort_order > sort_order 
+          #     new_sort_order = sort_order (WE NEED TO PRESERVE FLOATS)
+          # end
+          
+          # if new_sort_order >= sort_order # this will always be new_sort_order == sort_order because new_sort_order is set to sort_order
+          #   sort_order -=1
+          # end
       end
-
-      def correct_negative_sort_orders(new_sort_values)
-        new_sort_values =
-          new_sort_values
-          .sort { |thing1, thing2| thing1['new_order'].to_f <=> thing2['new_order'].to_f }
-
-        lowest_available_queue_count_value = 1
-
-        new_sort_values.each do |thing, _|
-          new_order = thing['new_order'].to_f
-
-          if new_order < lowest_available_queue_count_value
-            thing['new_order'] = lowest_available_queue_count_value
-            lowest_available_queue_count_value += 1
-          else
-            lowest_available_queue_count_value = new_order.to_i + 1
-          end
-        end
 
         new_sort_values
       end
