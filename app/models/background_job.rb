@@ -114,249 +114,16 @@ module MazeCraze
         each_running_job(&:reset)
       end
 
-      PROBLEM:
-      sort order can have negative values.
-        the lowest negative value becomes 0, the next becomes 1, etc.
-
-      sort order can have values that are greater than the queue count
-        the greatest value should become queue_count, the next should become queue_count - 1, etc.
-
-      when values are adjusted 'down' for sort orders that are greater than queue_count,
-        they can 'push into' or duplicate other new sort orders, like this:
-
-        queue_count = 10
-        1 - new sort_order
-        2 - new sort_order
-
-        8 - new sort_order
-        7 - adjusted sort_order (due to sort_order being greater than queue_count)
-        8 - adjusted sort_order (due to sort_order being greater than queue_count)
-        9 - adjusted sort_order (due to sort_order being greater than queue_count)
-        10 - adjusted sort_order (due to sort_order being greater than queue_count)
-
-        the '8 - new sort_order' will have to be adjusted to 6
-
-      idea:
-      allow sort orders to be 2 decimal places
-      upon submission, convert all updated sort_orders to two decimal places
-      starting at .00001 and incrementing by .00001, add the number to the new sort_order so it will be like this
-
-      1.10
-      1.11 (duplicate) 
-      1.11 (duplicate)
-      1.12
-      2.00
-
-      becomes...
-
-      1.10001
-      1.11002 (not duplicate any more, and order is perserved) 
-      1.11003 (not duplicate any more, and order is perserved)
-      1.12004
-      2.00005
-
-      .00001 will allow for 999 submitted sort orders, which is way more than will ever be requested
-
-      .00001 is a constant so it can be easily adjusted
-
-      adding this to each new_sort_order will preserve the order in which they were submitted, if any were duplicates
-
-      METHOD: adjust ascending
-        sort new_sort_orders ASC.
-        sort_order = 0
-        iterate through new_sort_orders
-
-        if new_sort_order <= queue_count && new_sort_order > sort_order
-          sort_order = new_sort_order + 1
-          next
-        else if new_sort_order < sort_order
-          new_sort_order = sort_order (WE NEED TO PRESERVE FLOATS)
-        end 
-
-        if new_sort_order <= sort_order # this will always be new_sort_order == sort_order because new_sort_order is set to sort_order
-          sort_order += 1
-        end
-
-        # two scenarios to increase sort_order (see above if statement):
-        #   if new_sort_order < sort_order
-        #   if new_sort_order === sort_order
-        # sort_order += 1 # what about queue_count?
-
-        queue_count = 10
-        -5
-        -1
-        0
-        1
-        3
-        11
-        12
-        14
-        14
-        15
-
-        iteration 1
-        queue_count = 10
-        => -5 becomes 1
-        -1
-        0
-        1
-        3
-        11
-        12
-        14
-        14
-        15
-
-        iteration 2
-        queue_count = 10
-        => -5 becomes 1
-        => -1 becomes 2
-        0
-        1
-        3
-        11
-        12
-        14
-        14
-        15
-
-        iteration 3
-        queue_count = 10
-        => -5 becomes 1
-        => -1 becomes 2
-        => 0 becomes 3
-        1
-        3
-        11
-        12
-        14
-        14
-        15
-
-        iteration 4
-        queue_count = 10
-        => -5 becomes 1
-        => -1 becomes 2
-        => 0 becomes 3
-        => 1 becomes 4
-        3
-        11
-        12
-        14
-        14
-        15
-
-        iteration 5
-        queue_count = 10
-        => -5 becomes 1
-        => -1 becomes 2
-        => 0 becomes 3
-        => 1 becomes 4
-        => 3 becomes 5
-        11
-        12
-        14
-        14
-        15
-
-      METHOD: adjust descending
-          sort new_sort_orders DESC
-          sort_order = queue_count
-          iterate through new_sort_orders
-          if new_sort_order < sort_order
-            sort_order = new_sort_order - 1
-            next
-          else if new_sort_order > sort_order 
-              new_sort_order = sort_order (WE NEED TO PRESERVE FLOATS)
-          end
-          
-          if new_sort_order >= sort_order # this will always be new_sort_order == sort_order because new_sort_order is set to sort_order
-            sort_order -=1
-          end
-
-          queue_count = 10
-          15
-          14
-          14
-          12
-          11
-          5
-          4
-          3
-          2
-          1
-
-          iteration 1
-          queue_count = 10
-          => 15 becomes 10
-          14
-          14
-          12
-          11
-          5
-          4
-          3
-          2
-          1
-
-          iteration 2
-          queue_count = 10
-          => 15 becomes 10
-          => 14 becomes 9
-          14
-          12
-          11
-          5
-          4
-          3
-          2
-          1
-
-          iteration 3
-          queue_count = 10
-          => 15 becomes 10
-          => 14 becomes 9
-          => 14 becomes 8
-          12
-          11
-          5
-          4
-          3
-          2
-          1
-
-          iteration 4
-          queue_count = 10
-          => 15 becomes 10
-          => 14 becomes 9
-          => 14 becomes 8
-          => 12 becomes 7
-          11
-          5
-          4
-          3
-          2
-          1
-
-          iteration 5
-          queue_count = 10
-          => 15 becomes 10
-          => 14 becomes 9
-          => 14 becomes 8
-          => 12 becomes 7
-          => 11 becomes 6
-          5
-          4
-          3
-          2
-          1
-
-        ... the rest of the sort orders are preserved on the next 5 iterations
-
       def manually_sort_order(new_sort_values)
         new_sort_values =
           new_sort_values
           .select { |value| value['new_order'] != '' }
+
+        ending_number = 0.00001
+        new_sort_values.each do |value|
+          value['new_order'] = value['new_order'].to_f.round(2) + ending_number
+          ending_number += 0.00001
+        end
 
         adjust_new_sort_values(new_sort_values).each do |value|
           job = job_from_id(value['job_id'].to_i)
@@ -383,51 +150,41 @@ module MazeCraze
       def adjust_asc_to_max_valid_sort_value(new_sort_values)
         new_sort_values =
           new_sort_values
-          .sort { |thing1, thing2| thing1['new_order'].to_f <=> thing2['new_order'].to_f }
+          .sort { |value1, value2| value1['new_order'] <=> value2['new_order'] }
 
-        sort_order = 1
+        min_available_sort_number = 1
 
-        new_sort_values.each do |thing, _|
-          new_order = thing['new_order'].to_f
+        new_sort_values.each do |value|
+          if value['new_order'] <= queue_count && value['new_order'] > min_available_sort_number
+            min_available_sort_number = value['new_order'].to_i + 1
+            next
+          elsif value['new_order'] < min_available_sort_number
+            value['new_order'] = min_available_sort_number
+          end
 
-          # if new_sort_order <= queue_count && new_sort_order > sort_order
-          #   sort_order = new_sort_order + 1
-          #   next
-          # else if new_sort_order < sort_order
-          #   new_sort_order = sort_order (WE NEED TO PRESERVE FLOATS)
-          # end 
-
-          # if new_sort_order <= sort_order # this will always be new_sort_order == sort_order because new_sort_order is set to sort_order
-          #   sort_order += 1
-          # end
+          min_available_sort_number += 1 if value['new_order'] <= min_available_sort_number
         end
 
         new_sort_values
       end
 
       def adjust_desc_to_min_valid_sort_value(new_sort_values)
-        sort_order = queue_count
-
         new_sort_values =
           new_sort_values
-          .sort { |thing1, thing2| thing2['new_order'].to_f <=> thing1['new_order'].to_f }
+          .sort { |value1, value2| value2['new_order'] <=> value1['new_order'] }
 
-        greatest_available_queue_count_value = queue_count
+        max_available_sort_number = queue_count
 
-        new_sort_values.each_with_index do |(thing, _), i|
-          new_order = thing['new_order'].to_f
+        new_sort_values.each do |value|
+          if value['new_order'] < max_available_sort_number
+            max_available_sort_number = value['new_order'].to_i - 1
+            next
+          elsif value['new_order'] > max_available_sort_number
+            value['new_order'] = max_available_sort_number
+          end
 
-          # if new_sort_order < sort_order
-          #   sort_order = new_sort_order - 1
-          #   next
-          # else if new_sort_order > sort_order 
-          #     new_sort_order = sort_order (WE NEED TO PRESERVE FLOATS)
-          # end
-          
-          # if new_sort_order >= sort_order # this will always be new_sort_order == sort_order because new_sort_order is set to sort_order
-          #   sort_order -=1
-          # end
-      end
+          max_available_sort_number -= 1 if value['new_order'] >= max_available_sort_number
+        end
 
         new_sort_values
       end
