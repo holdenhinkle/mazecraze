@@ -115,26 +115,36 @@ module MazeCraze
       end
 
       def manually_sort_order(new_sort_values)
-        new_sort_values =
-          new_sort_values
-          .select { |value| value['new_order'] != '' }
+        new_sort_values = select_and_format_new_sort_values(new_sort_values)
+        update_new_sort_values(new_sort_values)
 
+        old_sort_values = select_old_sort_values(new_sort_values)
+        update_old_sort_values(new_sort_values, old_sort_values)
+      end
+
+      def select_and_format_new_sort_values(new_sort_values)
         ending_number = 0.00001
-        new_sort_values.each do |value|
+
+        new_sort_values.select { |value| value['new_order'] != '' }.each do |value|
           value['new_order'] = value['new_order'].to_f.round(2) + ending_number
           ending_number += 0.00001
         end
+      end
 
+      def update_new_sort_values(new_sort_values)
         adjust_new_sort_values(new_sort_values).each do |value|
           job = job_from_id(value['job_id'].to_i)
-          job.update_queue_order(value['new_order'].to_i)
+          job.update_queue_order(value['new_order'])
         end
+      end
 
-        old_sort_values =
-          jobs_of_status_type('queued', 'queue_order', 'ASC')
+      def select_old_sort_values(new_sort_values)
+        jobs_of_status_type('queued', 'queue_order', 'ASC')
           .reject { |job| new_sort_values.any? { |updated_job| job['id'] == updated_job['job_id'] } }
           .sort_by { |job| job['queue_order'].to_i }
+      end
 
+      def update_old_sort_values(new_sort_values, old_sort_values)
         1.upto(queue_count) do |number|
           next if new_sort_values.any? { |job| number == job['new_order'].to_i }
           job = job_from_id(old_sort_values.first['id'].to_i)
