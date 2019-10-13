@@ -114,57 +114,57 @@ module MazeCraze
         each_running_job(&:reset)
       end
 
-      def manually_sort_order(new_sort_values)
-        new_sort_values = select_and_format_new_sort_values(new_sort_values)
-        update_new_sort_values(new_sort_values)
+      def manually_sort_order(changed_sort_values)
+        changed_sort_values = select_and_format_changed_sort_values(changed_sort_values)
+        update_changed_sort_values(changed_sort_values)
 
-        old_sort_values = select_old_sort_values(new_sort_values)
-        update_old_sort_values(new_sort_values, old_sort_values)
+        not_changed_sort_values = select_not_changed_sort_values(changed_sort_values)
+        update_not_changed_sort_values(changed_sort_values, not_changed_sort_values)
       end
 
-      def select_and_format_new_sort_values(new_sort_values)
+      def select_and_format_changed_sort_values(changed_sort_values)
         ending_number = 0.00001
 
-        new_sort_values.select { |value| value['new_order'] != '' }.each do |value|
+        changed_sort_values.select { |value| value['new_order'] != '' }.each do |value|
           value['new_order'] = value['new_order'].to_f.round(2) + ending_number
           ending_number += 0.00001
         end
       end
 
-      def update_new_sort_values(new_sort_values)
-        adjust_new_sort_values(new_sort_values).each do |value|
+      def update_changed_sort_values(changed_sort_values)
+        adjust_new_sort_values(changed_sort_values).each do |value|
           job = job_from_id(value['job_id'].to_i)
-          job.update_queue_order(value['new_order'])
+          job.update_queue_order(value['new_order'].to_i)
         end
       end
 
-      def select_old_sort_values(new_sort_values)
+      def select_not_changed_sort_values(changed_sort_values)
         jobs_of_status_type('queued', 'queue_order', 'ASC')
-          .reject { |job| new_sort_values.any? { |updated_job| job['id'] == updated_job['job_id'] } }
+          .reject { |job| changed_sort_values.any? { |updated_job| job['id'] == updated_job['job_id'] } }
           .sort_by { |job| job['queue_order'].to_i }
       end
 
-      def update_old_sort_values(new_sort_values, old_sort_values)
+      def update_not_changed_sort_values(changed_sort_values, not_changed_sort_values)
         1.upto(queue_count) do |number|
-          next if new_sort_values.any? { |job| number == job['new_order'].to_i }
-          job = job_from_id(old_sort_values.first['id'].to_i)
+          next if changed_sort_values.any? { |job| number == job['new_order'].to_i }
+          job = job_from_id(not_changed_sort_values.first['id'].to_i)
           job.update_queue_order(number)
-          old_sort_values.shift
+          not_changed_sort_values.shift
         end
       end
 
-      def adjust_new_sort_values(new_sort_values)
-        adjust_desc_to_min_valid_sort_value(adjust_asc_to_max_valid_sort_value(new_sort_values))
+      def adjust_new_sort_values(changed_sort_values)
+        adjust_desc_to_min_valid_sort_value(adjust_asc_to_max_valid_sort_value(changed_sort_values))
       end
 
-      def adjust_asc_to_max_valid_sort_value(new_sort_values)
-        new_sort_values =
-          new_sort_values
+      def adjust_asc_to_max_valid_sort_value(changed_sort_values)
+        changed_sort_values =
+          changed_sort_values
           .sort { |value1, value2| value1['new_order'] <=> value2['new_order'] }
 
         min_available_sort_number = 1
 
-        new_sort_values.each do |value|
+        changed_sort_values.each do |value|
           if value['new_order'] <= queue_count && value['new_order'] > min_available_sort_number
             min_available_sort_number = value['new_order'].to_i + 1
             next
@@ -175,17 +175,17 @@ module MazeCraze
           min_available_sort_number += 1 if value['new_order'] <= min_available_sort_number
         end
 
-        new_sort_values
+        changed_sort_values
       end
 
-      def adjust_desc_to_min_valid_sort_value(new_sort_values)
-        new_sort_values =
-          new_sort_values
+      def adjust_desc_to_min_valid_sort_value(changed_sort_values)
+        changed_sort_values =
+          changed_sort_values
           .sort { |value1, value2| value2['new_order'] <=> value1['new_order'] }
 
         max_available_sort_number = queue_count
 
-        new_sort_values.each do |value|
+        changed_sort_values.each do |value|
           if value['new_order'] < max_available_sort_number
             max_available_sort_number = value['new_order'].to_i - 1
             next
@@ -196,7 +196,7 @@ module MazeCraze
           max_available_sort_number -= 1 if value['new_order'] >= max_available_sort_number
         end
 
-        new_sort_values
+        changed_sort_values
       end
     end
 
