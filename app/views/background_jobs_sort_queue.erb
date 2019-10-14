@@ -9,6 +9,19 @@
 <header>
   <h1>Sort Queued Background Jobs</h1>
 </header>
+
+<section>
+  <div class="p-4 bg-light text-dark border border-dark rounded-sm mb-3" role="alert">
+      <p>Here's some text about the values you can enter.</p>
+      <hr>
+      <p>Press the <strong>Start</strong> button when you're ready to restart the background jobs system.</p> 
+      <form action="/admin/background-jobs" method="post">
+        <input type="hidden" name="start" value="true">
+        <button type="type" class="btn btn-secondary">Start</button>
+      </form>
+  </div>
+</section>
+
 <section>
   <form action="/admin/background-jobs/queued/sort" method="post">
     <button type="type" class="btn btn-primary mb-3">Update Queue Order</button>
@@ -26,8 +39,17 @@
         <% @queued_jobs.each do |job| %>
           <tr>
             <td><%= job['queue_order'] %></td>
-            <input type="hidden" name="updated_queue_orders[][job_id]" value="<%= job["id"] %>">
-            <td><input class="form-control" type="text" name="updated_queue_orders[][new_order]"></td>
+            <input type="hidden" name="sort_values[][job_id]" value="<%= job["id"] %>">
+            <td>
+              <% if @validation && @validation[job["id"]] %>
+                <input class="form-control <%= @validation[job["id"]]['validation_css'] %>" type="text" name="sort_values[][new_order]" value="<%= @validation[job["id"]]['new_order'] %>">
+                <div class="<%= @validation[job["id"]]['validation_feedback_css'] %>">
+                  <%= @validation[job["id"]]['validation_feedback'] %>
+                </div>
+              <% else %>
+                <input class="form-control" type="text" name="sort_values[][new_order]">
+              <% end %>
+            </td>
             <td><%= capitalize_words(underscores_to_spaces(job['job_type'])) %></td>
             <td><%= format_background_job_params(job['params']) %></td>
             <td><%= format_timestamp(job['updated']) %></td>

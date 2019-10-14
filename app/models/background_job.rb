@@ -114,6 +114,37 @@ module MazeCraze
         each_running_job(&:reset)
       end
 
+      def changed_sort_values_valid?(sort_values)
+        sort_values
+          .select { |value| value['new_order'] != '' }
+          .map { |value| value['new_order'] }
+          .all? { |value| valid_number?(value) }
+      end
+
+      def changed_sort_values_validation(sort_values)
+        changed_sort_values =
+          sort_values.select { |value| value['new_order'] != '' }
+
+        changed_sort_values.each_with_object({}) do |value, validation|
+          validation[value['job_id']] = {}
+          validation[value['job_id']]['new_order'] = value['new_order']
+
+          if valid_number?(value['new_order'])
+            validation[value['job_id']]['validation_css'] = 'is-valid'
+            validation[value['job_id']]['validation_feedback_css'] = 'valid-feedback'
+            validation[value['job_id']]['validation_feedback'] = 'Looks good!'
+          else
+            validation[value['job_id']]['validation_css'] = 'is-invalid'
+            validation[value['job_id']]['validation_feedback_css'] = 'invalid-feedback'
+            validation[value['job_id']]['validation_feedback'] = 'Invalid number!'
+          end
+        end
+      end
+
+      def valid_number?(value)
+        /^-?[\d]*\.?[\d]*$/ =~ value
+      end
+
       def manually_sort_order(changed_sort_values)
         changed_sort_values = select_and_format_changed_sort_values(changed_sort_values)
         update_changed_sort_values(changed_sort_values)

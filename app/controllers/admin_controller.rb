@@ -109,13 +109,18 @@ class AdminController < ApplicationController
   end
 
   post '/admin/background-jobs/queued/sort' do
-    MazeCraze::BackgroundJob.manually_sort_order(params['updated_queue_orders'])
-    # add validation:
-      # error:
-        # only numbers
-      # success:
-        # success message
-    redirect "/admin/background-jobs/queued/sort"
+    sort_values = params['sort_values']
+
+    if MazeCraze::BackgroundJob.changed_sort_values_valid?(sort_values)
+      MazeCraze::BackgroundJob.manually_sort_order(params['sort_values'])
+      session[:success] = 'The queued background jobs have been resorted.'
+      redirect "/admin/background-jobs/queued/sort"
+    else
+      @validation = MazeCraze::BackgroundJob.changed_sort_values_validation(sort_values)
+      session[:error] = 'Invalid entry. Only enter interger or decimal numbers.'
+      @queued_jobs = MazeCraze::BackgroundJob.jobs_of_status_type('queued', 'queue_order', 'ASC')
+      erb :background_jobs_sort_queue
+    end
   end
 
   get '/admin/mazes' do
