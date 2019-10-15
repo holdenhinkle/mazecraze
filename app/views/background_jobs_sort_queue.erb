@@ -12,7 +12,51 @@
 
 <section>
   <div class="p-4 bg-light text-dark border border-dark rounded-sm mb-3" role="alert">
-      <p>Here's some text about the values you can enter.</p>
+    <p>Click on the button below for tips and tricks on how to order queued jobs. </p>
+    <!-- Button trigger modal -->
+    <button type="button" class="btn btn-secondary" data-toggle="modal" data-target=".bd-example-modal-lg">
+      Ordering Tips & Tricks
+    </button>
+
+    <!-- Modal -->
+    <div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Tips on Sort Ordering</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>Enter new sort order values for the jobs that are queued. Some tips:</p>
+            <ul>
+              <li>Enter values for all jobs or only the jobs you want to update</li>
+              <li>Enter 1 or a negative value to make a job appear first in the queue</li>
+              <ul>
+                <li>For example: -100, -50, -1, 1 will become 1, 2, 3, 4
+              </ul>
+              <li>Enter a large positive value (larger than the number of queued jobs) to make a job appear last in the queue</li>
+              <ul>
+                <li>For example: 10, 100, 200 will become 8, 9, 10 if the number of queued jobs is 10 
+              </ul>
+              <li>If you enter the same sort value for more than one job, the job that appears first in the list below with that value will be assigned that value and the others will increment by 1 accordingly</li>
+              <ul>
+                <li>For example: 2, 2, 2 will become 2, 3, 4
+              </ul>
+              <li>Enter fractional numbers, up to two decimal spaces, for more fine-grained control</li>
+              <ul>
+                <li>For example: 1.1, 1.3, 1.2, 1.15 will become 1, 4, 3, 2 (which will then be rendered by ascending order on the page)</li>
+                <li>If you enter a number with more than two decimal places it will be trucated to two decimal places</li>
+              </ul>
+            </ul>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
       <hr>
       <p>Press the <strong>Start</strong> button when you're ready to restart the background jobs system.</p> 
       <form action="/admin/background-jobs" method="post">
