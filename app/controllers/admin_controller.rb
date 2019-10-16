@@ -15,7 +15,8 @@ class AdminController < ApplicationController
     erb :admin_settings
   end
 
-  post '/admin/settings' do # refactor
+  # REFACTOR
+  post '/admin/settings' do
     if params['number_of_threads']
       worker = MazeCraze::BackgroundWorker.instance
       worker.stop
@@ -53,11 +54,9 @@ class AdminController < ApplicationController
       @jobs = MazeCraze::BackgroundJob.all_jobs
     end
 
-    binding.pry if @jobs['running'].any? { |job, _| job['start_time'].nil? }
-
     worker = MazeCraze::BackgroundWorker.instance
 
-    if @background_workers_status = worker.alive? # this isn't a perfect indicator of whether or not the system alive or dead
+    if @background_workers_status = worker.alive?
       @number_of_threads = MazeCraze::BackgroundThread.number_of_threads
       @thread_stats = MazeCraze::BackgroundThread.thread_details(worker.id)
     end
@@ -66,6 +65,29 @@ class AdminController < ApplicationController
   end
 
   post '/admin/background-jobs' do
+    process_background_jobs_operation(params)
+    redirect "/admin/background-jobs"
+  end
+
+  get '/admin/background-jobs/:status' do
+    @status = params[:status]
+
+    if MazeCraze::BackgroundJob::JOB_STATUSES.none?(@status)
+      session[:error] = "The page you requested doesn't exist."
+      redirect '/admin'
+    end
+
+    @title = "#{@status.capitalize} Background Jobs - Maze Craze Admin"
+    @jobs = MazeCraze::BackgroundJob.jobs_of_status_type(@status)
+    erb :background_jobs_status
+  end
+
+  post '/admin/background-jobs/:status' do
+    process_background_jobs_operation(params)
+    redirect to("/admin/background-jobs/#{params['job_status']}")
+  end
+
+  def process_background_jobs_operation(params)
     if params['delete_job'] || params['cancel_job']
       job = MazeCraze::BackgroundJob.job_from_id(params['job_id'])
     elsif params['start'] || params['stop'] || params['restart']
@@ -85,20 +107,6 @@ class AdminController < ApplicationController
     elsif params['restart']
       worker.restart
     end
-
-    redirect "/admin/background-jobs"
-  end
-
-  get '/admin/background-jobs/:status' do
-    status = params[:status]
-    if MazeCraze::BackgroundJob::JOB_STATUSES.none?(status)
-      session[:error] = "The page you requested doesn't exist."
-      redirect '/admin'
-    end
-
-    @title = "#{status.capitalize} Background Jobs - Maze Craze Admin"
-    @jobs = MazeCraze::BackgroundJob.jobs_of_status_type(status)
-    erb :background_jobs_status
   end
 
   get '/admin/background-jobs/queued/sort' do
@@ -127,16 +135,6 @@ class AdminController < ApplicationController
     @title = "Mazes - maze Craze Admin"
     erb :mazes
   end
-
-  # get '/admin/mazes/:type' do
-  #   @title = "Mazes - maze Craze Admin"
-  #   erb :mazes
-  # end
-
-  # get '/admin/mazes/id/:id' do
-  #   @title = "Mazes - maze Craze Admin"
-  #   erb :mazes
-  # end
 
   get '/admin/mazes/formulas' do
     @title = "Maze Formulas - Maze Craze Admin"
@@ -209,6 +207,7 @@ class AdminController < ApplicationController
     end
   end
 
+  # NOT NECESSARY NOW - CAN'T SUBMIT DUPLICATE JOB
   def duplicate_job_error_message(job, params)
     duplicate_jobs = MazeCraze::BackgroundJob.duplicate_jobs(job, params)
 
@@ -227,7 +226,8 @@ class AdminController < ApplicationController
     message << jobs.join(', ') + '.'
   end
 
-  post '/admin/mazes/formulas/:type' do # refactor
+  # REFACTOR
+  post '/admin/mazes/formulas/:type' do
     if params['job_type'] == 'generate_permutations'
       error_intro = "Jobs for the following formulas were already created: "
       duplicate_job_errors = []
@@ -258,13 +258,5 @@ class AdminController < ApplicationController
     end
 
     redirect "/admin/mazes/formulas/#{params['type']}"
-  end
-
-  get '/admin/mazes/formulas/:type/:id' do
-    # add :type validation
-    @title = "Mazes - maze Craze Admin"
-    @maze_types = MazeCraze::Maze::MAZE_TYPE_CLASS_NAMES.keys
-    @formula_statuses = MazeCraze::Formula::FORMULA_STATUSES
-    erb :mazes_formulas_id
   end
 end
