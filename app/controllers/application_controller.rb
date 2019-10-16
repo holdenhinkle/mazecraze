@@ -7,7 +7,6 @@ require 'yaml'
 require 'fileutils'
 require 'json'
 require 'date'
-
 require 'pry'
 
 class ApplicationController < Sinatra::Base
@@ -35,14 +34,6 @@ class ApplicationController < Sinatra::Base
     enable :logging # IS THIS WORKING?
   end
 
-  # before do
-  #   @db = DatabasePersistence.new(logger)
-  # end
-  
-  # after do
-  #   @db.disconnect
-  # end
-
   not_found do
     title '404 -- Page Not Found'
     erb :not_found, layout: :layout
@@ -51,20 +42,4 @@ class ApplicationController < Sinatra::Base
   # $0 is the executed file
   # __FILE__ == $0
   run! if __FILE__ == $0
-
-  # MAZE - DONE
-  # board = { type: :simple, x: 3, y: 2, endpoints: 1, barriers: 1, level: 1 }
-
-  # BRIDGE MAZE - DONE
-  # board = { type: :bridge, x: 4, y: 4, endpoints: 1, barriers: 1, bridges: 1, level: 1 }
-
-  # TUNNEL MAZE - DONE
-  # 1 tunnel, 1 barrier
-  # board = { type: :tunnel, x: 3, y: 3, endpoints: 1, barriers: 1, tunnels: 1, level: 1 }
-
-  # PORTAL MAZE - DONE
-  # 1 portal, 1 barrier
-  # board = { type: :portal, x: 3, y: 3, endpoints: 1, barriers: 1, portals: 1, level: 1 }
-
-  # Board.new(board)
 end
