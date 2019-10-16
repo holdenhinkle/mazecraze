@@ -10,7 +10,7 @@
 <section>
   <div class="p-4 bg-light text-dark border border-dark rounded-sm" role="alert">
     <% if @background_workers_status %>
-      <p class='h2'>Status: <span class="badge badge-success">Running</span></p>
+      <p class="h2">Status: <span class="badge badge-success">Running</span></p>
       <div class="card">
         <p class="h4 card-header">Number of Threads: <%= @thread_stats.count %></p>
         <div class="card-body">
@@ -51,7 +51,7 @@
 </section>
 <section>
   <% @job_statuses.each do |status| %>
-    <h2><%= status.capitalize %></h2>
+    <h2 class="mt-3"><%= status.capitalize %></h2>
     <% if status == 'queued' && @jobs[status].values.length > 1 %>
       <p>If you press 'Sort Queue', the job(s) that are running will finish, then the background jobs system will stop so you can sort the jobs in the queue.</p>
       <a href="/admin/background-jobs/queued/sort" class="btn btn-secondary mb-3" role="button" aria-pressed="true">Sort Queue</a>
@@ -163,7 +163,7 @@
       </tbody>
     <table>
     <% if @jobs[(status + '_count')][0]['count'].to_i > 10 %>
-      <p><a href=""><%= @jobs[(status + '_count')][0]['count'].to_i - 10 %> more results...</a></p>
+      <p><a href="/admin/background-jobs/<%= status %>"><%= @jobs[(status + '_count')][0]['count'].to_i - 10 %> more results...</a></p>
     <% end %>
   <% end %>
 </section>
